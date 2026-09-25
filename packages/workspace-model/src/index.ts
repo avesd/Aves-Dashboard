@@ -5,6 +5,8 @@
  * @description Workspace Model exports
  */
 
+export type { CanvasCommand, CanvasContent, CanvasEvidence, CanvasItem, CanvasLink, CanvasOperation, CanvasPlacement, CanvasState } from "./canvas";
+export { applyCanvas, parseCanvasCommand, readCanvas, writeCanvasViewState } from "./canvas";
 export type {
     ApplyDashboardLayout,
     DashboardLayoutErrorCode,

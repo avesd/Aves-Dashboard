@@ -5,6 +5,7 @@
  * @description Workspace Snapshot
  */
 
+import { readCanvas } from "./canvas";
 import { assertDashboardLayout } from "./dashboard-layout";
 import type { WorkspaceSnapshot } from "./workspace-model";
 
@@ -51,6 +52,7 @@ export const parseWorkspaceSnapshot = (input: unknown): WorkspaceSnapshot | unde
         requireWorkspace(dashboard.workspaceId);
         integer(dashboard.layoutRevision, 0);
         record(dashboard.viewState);
+        readCanvas(dashboard as unknown as WorkspaceSnapshot["dashboards"][number]);
     }
     for (const source of sources.values()) {
         text(source.name);
