@@ -13,8 +13,10 @@ add subtree-specific constraints.
 
 ## Product boundary
 
-- Avesd is the kiosk that grows with its user: a local-first, extensible desktop
-  workspace whose capabilities expand through replaceable plugins.
+- Avesd is a local-first spatial desktop workspace. Its primary interaction is
+  a canvas that people and Agents can both change through explicit operations.
+- The older dashboard and plugin systems are retained for compatibility and
+  migration; do not make them dependencies of new canvas capabilities.
 - Its core local workflow must remain usable without an account, network
   connection, or cloud service.
 - Cloud accounts and synchronization are optional future capabilities, not

@@ -1,9 +1,16 @@
 # Avesd Core Monorepo
 
-Avesd is the kiosk that grows with you: a local-first, extensible desktop
-workspace that gains capabilities through replaceable plugins. The first
-product is an Electron application; optional account and cloud capabilities can
-be added later without becoming a dependency of the local workflow.
+Avesd is a local-first spatial desktop workspace. Its primary surface is an
+infinite canvas of ideas, URL sources, cited conclusions, groups, and links.
+People can edit the canvas directly
+or type an instruction for an Agent that inspects and changes it through scoped
+tools. Voice input is planned for a later stage. The Electron application keeps
+local canvas use independent of an account or cloud service.
+
+The earlier dashboard, widget, and plugin infrastructure remains in the
+repository while existing workspace data and services are migrated. The canvas
+is the current primary view; old widget data is retained in workspace snapshots
+but is not shown there yet. See [Canvas architecture](docs/canvas.md).
 
 ## Prerequisites
 
@@ -38,16 +45,16 @@ browser test setup, and dependency maintenance.
 - `apps/desktop` — Electron main, preload, and React renderer processes.
 - `packages/acp-client` — provider-neutral ACP v1 client boundary.
 - `packages/configuration` — shared TypeScript, ESLint, and Vitest defaults.
-- `packages/kernel` — Cordis-backed plugin lifecycle adapter and contribution
-  registries.
+- `packages/kernel` — legacy Cordis-backed plugin lifecycle adapter and
+  contribution registries.
 - `packages/plugin-api` — stable contracts implemented by plugins.
 - `packages/plugin-data` — runtime-neutral local data-source contributions.
 - `packages/plugin-ui` — framework-neutral renderer widget contracts and
   contribution points.
 - `packages/ui` — internal React components and design tokens for trusted Avesd
   product surfaces.
-- `packages/workspace-model` — runtime-neutral workspace, dashboard, widget, and
-  data-source ownership contracts.
+- `packages/workspace-model` — runtime-neutral canvas commands and legacy
+  workspace, dashboard, widget, and data-source ownership contracts.
 - `.agents/common-skills-policy.md` and `.agents/audit-policy.md` — local
   repository policy for globally installed shared skills.
 - `working` — non-authoritative audits, plans, notes, and archived project
@@ -115,27 +122,30 @@ autofixable, including the requirement to use braces around conditional bodies.
 
 ## Architecture overview
 
-Avesd keeps a small trusted Electron host and moves product capabilities into
-replaceable plugins. Renderer code reaches privileged behavior only through
-narrow typed preload APIs and explicit IPC contracts. The internal runtime uses
-Cordis behind `@avesd/plugin-api`, so public plugins do not depend on the runtime
-framework.
+Avesd keeps a small trusted Electron host. Renderer code reaches privileged
+behavior only through narrow typed preload APIs and explicit IPC contracts.
+Canvas edits from the UI and Agent use the same validated, serialized main-process
+operation path. Canvas objects live in the active dashboard's versioned view
+state, while old widget state remains available for future migration.
 
-Workspaces own dashboards and shared data sources. Dashboards own widget
-instances, private data sources, and view state. Plugin identity is a separate
-security namespace injected by the kernel. Layout, navigation, persistence, and
-permission changes pass through host-owned transactional services.
+Workspaces still own dashboards and shared data sources during this transition.
+The canvas is currently scoped to a dashboard. Agent tools can inspect, add,
+move, update, group, link, remove, and undo canvas content. The renderer never
+writes a workspace snapshot directly.
 
 The local workflow requires no account or cloud service. Workspace snapshots,
 plugin data, browser grants, and application settings remain on the user's
 machine. Sandboxed local widgets and embedded web pages receive only explicitly
 declared, host-mediated capabilities.
 
-See [Runtime architecture](docs/runtime-architecture.md) for the complete model.
+See [Canvas architecture](docs/canvas.md) for the current interaction model and
+[Runtime architecture](docs/runtime-architecture.md) for the retained dashboard
+and plugin infrastructure.
 
 ## Documentation
 
 - [Development](docs/development.md) — validation, tests, and dependency tasks.
+- [Canvas architecture](docs/canvas.md) — canvas data, interaction, and Agent tools.
 - [Runtime architecture](docs/runtime-architecture.md) — process boundaries,
   workspace ownership, navigation, persistence, and Agent integration.
 - [Application configuration](docs/application-configuration.md) — local data

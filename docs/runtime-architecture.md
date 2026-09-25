@@ -1,9 +1,15 @@
 # Runtime architecture
 
+> This document describes the retained dashboard and plugin infrastructure.
+> The primary desktop view and Agent dock are composed directly. Legacy plugin
+> contributions initialize after that view renders to support historical widget
+> definitions and tools. See [Canvas architecture](canvas.md) for the current
+> interaction and persistence path.
+
 ## Plugin and process boundaries
 
-Avesd keeps a small trusted Electron host and moves product capabilities into
-replaceable plugins. The internal runtime uses upstream Cordis, hidden behind
+Avesd keeps a small trusted Electron host. Its retained plugin runtime uses
+upstream Cordis, hidden behind
 `@avesd/plugin-api`, so public plugins do not depend on the runtime framework.
 Plugin registrations are reversible effects: activating a new version adds its
 contributions first, then disposes the previous version in reverse registration
@@ -11,8 +17,8 @@ order. Failed activation removes only the candidate's effects, leaving the
 previous version active.
 
 Plugins interact with the host through two explicit surfaces on their activation
-context. `contributions` publishes typed extension points such as workbench
-views, while `services` contains only the storage, command, or external-opening
+context. `contributions` publishes typed widget and data-source extension
+points, while `services` contains only the storage, command, or external-opening
 capabilities declared by the plugin and authorized by the host. The kernel binds
 service scopes to the plugin identifier before activation, so plugin code cannot
 select another plugin's service namespace. Concrete persistence and privileged
@@ -25,9 +31,8 @@ plugin replacement. Widget configuration is versioned JSON with optional schema
 metadata for future settings UI and Agent tooling. React is an implementation
 choice of an individual widget rather than part of the public widget API.
 
-The dashboard separates layout editing, grid controls, and widget mounting.
-Scoped data, configuration, and browser services are assembled by the workbench;
-the mounting component does not select privileges by plugin identity.
+The old widget definitions remain available to compatibility tools while their
+saved instances await migration to the canvas.
 
 ## Workspace ownership and persistence
 
