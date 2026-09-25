@@ -21,8 +21,8 @@ import type { LocalWidgetRunner } from "../plugins/local-widget-sandbox";
 import type { PluginStorage } from "../storage/plugin-storage";
 import type { SharedResources } from "../storage/shared-resources";
 import type { WorkspaceFile } from "../storage/workspace-file";
-import type { DashboardLayoutOperation, DashboardScope, DataSourceId, JsonObject, JsonValue, WidgetInstanceId, WorkspaceNavigationCommand, WorkspaceNavigationState, WorkspaceSnapshot } from "@avesd/workspace-model";
-import { DashboardLayoutCoordinator, navigateWorkspace, PersistentWorkspaceRepository, readWorkspaceCatalog, sameDashboard, WorkspaceDataCoordinator } from "@avesd/workspace-model";
+import type { CanvasContent, CanvasState, DashboardLayoutOperation, DashboardScope, DataSourceId, JsonObject, JsonValue, WidgetInstanceId, WorkspaceNavigationCommand, WorkspaceNavigationState, WorkspaceSnapshot } from "@avesd/workspace-model";
+import { applyCanvas, DashboardLayoutCoordinator, navigateWorkspace, parseCanvasCommand, PersistentWorkspaceRepository, readCanvas, readWorkspaceCatalog, sameDashboard, WorkspaceDataCoordinator, writeCanvasViewState } from "@avesd/workspace-model";
 import { randomUUID } from "node:crypto";
 
 const result = (value: unknown, image?: string): AgentToolResult => {
@@ -153,6 +153,58 @@ export class AgentWorkbench {
         });
     }
 
+    async inspectCanvas(scope: DashboardScope): Promise<CanvasState> {
+
+        const snapshot = await this.file.load();
+        if (!snapshot || !sameDashboard(snapshot.selection, scope)) {
+            throw new Error("The canvas is not active.");
+        }
+        const dashboard = snapshot.dashboards.find(value => {
+
+            return value.id === scope.dashboardId && value.workspaceId === scope.workspaceId;
+        });
+        if (!dashboard) {
+            throw new Error("Canvas was not found.");
+        }
+
+        return readCanvas(dashboard);
+    }
+
+    applyCanvas(scope: DashboardScope, input: unknown): Promise<CanvasState> {
+
+        const command = parseCanvasCommand(input);
+
+        return this.#serial(async () => {
+
+            const snapshot = await this.file.load();
+            if (!snapshot || !sameDashboard(snapshot.selection, scope)) {
+                throw new Error("The canvas is not active.");
+            }
+            const dashboard = snapshot.dashboards.find(value => {
+
+                return value.id === scope.dashboardId && value.workspaceId === scope.workspaceId;
+            });
+            if (!dashboard) {
+                throw new Error("Canvas was not found.");
+            }
+            const next = applyCanvas(readCanvas(dashboard), command);
+            await this.file.save({
+                ...snapshot,
+                dashboards: snapshot.dashboards.map(value => {
+
+                    return value.id === dashboard.id
+                        ? {
+                            ...value,
+                            viewState: writeCanvasViewState(value, next),
+                        } : value;
+                }),
+            }, { snapshot });
+            this.workspaceChanged();
+
+            return next;
+        });
+    }
+
     widgetWorkspace(request: WidgetWorkspaceRequest, authorize: (snapshot: WorkspaceSnapshot) => void | Promise<void>, storageOperation?: () => Promise<WidgetWorkspaceResult>): Promise<WidgetWorkspaceResult> {
 
         return this.#serial(async () => {
@@ -270,6 +322,174 @@ export class AgentWorkbench {
         }
         const definitions = agentToolDefinitions;
         const parsed: unknown = definitions[name as keyof typeof definitions].schema.parse(input);
+        if (name === "avesd_inspect_canvas") {
+            const scope = expectedScope ?? this.#scope;
+            if (!scope) {
+                throw new Error("The canvas is not ready.");
+            }
+
+            return result(await this.inspectCanvas(scope));
+        }
+        if (name.startsWith("avesd_") && name.endsWith("_canvas_item")
+            || name === "avesd_link_canvas_items" || name === "avesd_undo_canvas") {
+            const scope = expectedScope ?? this.#scope;
+            if (!scope) {
+                throw new Error("The canvas is not ready.");
+            }
+            const canvas = await this.inspectCanvas(scope);
+            switch (name) {
+                case "avesd_add_canvas_item": {
+                    const value = definitions.avesd_add_canvas_item.schema.parse(parsed);
+                    const kind = value.kind === "card" ? "idea" : value.kind;
+                    let content: CanvasContent;
+                    if (kind === "source") {
+                        if (!value.url || value.evidenceIds) {
+                            throw new Error("A source needs a URL and cannot cite evidence.");
+                        }
+                        content = {
+                            kind,
+                            version: 1,
+                            text: value.text,
+                            url: value.url,
+                            ...(value.excerpt === undefined ? {} : { excerpt: value.excerpt }),
+                        };
+                    } else if (kind === "result") {
+                        if (value.url || value.excerpt || !value.evidenceIds) {
+                            throw new Error("A result needs evidence IDs and cannot have source details.");
+                        }
+                        const evidence = value.evidenceIds.map(id => {
+
+                            const item = canvas.items.find(candidate => {
+
+                                return candidate.id === id && candidate.content.kind !== "group";
+                            });
+                            if (!item) {
+                                throw new Error(`Evidence card was not found: ${id}`);
+                            }
+
+                            return {
+                                itemId: id,
+                                label: item.content.text.slice(0, 200),
+                                ...(item.content.kind === "source" ? {
+                                    url: item.content.url,
+                                    ...(item.content.excerpt ? { excerpt: item.content.excerpt } : {}),
+                                } : {}),
+                            };
+                        });
+                        content = {
+                            kind,
+                            version: 1,
+                            text: value.text,
+                            evidence,
+                        };
+                    } else {
+                        if (value.url || value.excerpt || value.evidenceIds) {
+                            throw new Error("Only sources have URLs and excerpts; only results cite evidence.");
+                        }
+                        content = {
+                            kind,
+                            version: 1,
+                            text: value.text,
+                        };
+                    }
+
+                    return result(await this.applyCanvas(scope, {
+                        expectedRevision: canvas.revision,
+                        operations: [
+                            {
+                                type: "add",
+                                item: {
+                                    id: randomUUID(),
+                                    content,
+                                    placement: {
+                                        x: value.x,
+                                        y: value.y,
+                                        width: value.width ?? (kind === "group" ? 540 : 280),
+                                        height: value.height ?? (kind === "group" ? 360 : kind === "source" ? 260 : kind === "result" ? 220 : 180),
+                                    },
+                                },
+                            },
+                        ],
+                    }));
+                }
+                case "avesd_move_canvas_item": return result(await this.applyCanvas(scope, {
+                    expectedRevision: canvas.revision,
+                    operations: [
+                        {
+                            type: "move",
+                            ...definitions.avesd_move_canvas_item.schema.parse(parsed),
+                        },
+                    ],
+                }));
+                case "avesd_update_canvas_item": {
+                    const value = definitions.avesd_update_canvas_item.schema.parse(parsed);
+                    const target = canvas.items.find(item => {
+
+                        return item.id === value.id;
+                    });
+                    if (!target || (value.text === undefined && value.url === undefined && value.excerpt === undefined)) {
+                        throw new Error("Provide content for an existing canvas item.");
+                    }
+                    if ((value.url !== undefined || value.excerpt !== undefined) && target.content.kind !== "source") {
+                        throw new Error("Only source cards have URLs and excerpts.");
+                    }
+
+                    return result(await this.applyCanvas(scope, {
+                        expectedRevision: canvas.revision,
+                        operations: [
+                            (value.url !== undefined || value.excerpt !== undefined) && target.content.kind === "source" ? {
+                                type: "updateContent",
+                                id: value.id,
+                                content: {
+                                    ...target.content,
+                                    text: value.text ?? target.content.text,
+                                    url: value.url ?? target.content.url,
+                                    excerpt: value.excerpt === undefined ? target.content.excerpt : value.excerpt ?? undefined,
+                                },
+                            } : {
+                                type: "update",
+                                id: value.id,
+                                text: value.text!,
+                            },
+                        ],
+                    }));
+                }
+                case "avesd_group_canvas_item": return result(await this.applyCanvas(scope, {
+                    expectedRevision: canvas.revision,
+                    operations: [
+                        {
+                            type: "group",
+                            ...definitions.avesd_group_canvas_item.schema.parse(parsed),
+                        },
+                    ],
+                }));
+                case "avesd_link_canvas_items": return result(await this.applyCanvas(scope, {
+                    expectedRevision: canvas.revision,
+                    operations: [
+                        {
+                            type: "link",
+                            link: {
+                                id: randomUUID(),
+                                ...definitions.avesd_link_canvas_items.schema.parse(parsed),
+                            },
+                        },
+                    ],
+                }));
+                case "avesd_remove_canvas_item": return result(await this.applyCanvas(scope, {
+                    expectedRevision: canvas.revision,
+                    operations: [
+                        {
+                            type: "remove",
+                            ...definitions.avesd_remove_canvas_item.schema.parse(parsed),
+                        },
+                    ],
+                }));
+                case "avesd_undo_canvas": return result(await this.applyCanvas(scope, {
+                    expectedRevision: canvas.revision,
+                    operations: [{ type: "undo" }],
+                }));
+            }
+        }
         if (name === "avesd_browser_task") {
             const workspaceId = this.#scope?.workspaceId;
             if (!workspaceId || !this.#browserTasks) {

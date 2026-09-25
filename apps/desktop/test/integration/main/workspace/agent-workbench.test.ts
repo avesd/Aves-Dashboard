@@ -11,7 +11,7 @@ import { LocalPluginStore } from "../../../../src/main/plugins/local-plugin-stor
 import { WorkspaceFile } from "../../../../src/main/storage/workspace-file";
 import { AgentWorkbench } from "../../../../src/main/workspace/agent-workbench";
 import type { LocalPluginDraft } from "../../../../src/shared/plugins/local-plugins";
-import type { DashboardId, WorkspaceId } from "@avesd/workspace-model";
+import type { CanvasState, DashboardId, WorkspaceId } from "@avesd/workspace-model";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -35,6 +35,127 @@ const textResult = (result: AgentToolResult): unknown => {
         return item.type === "text";
     })!.text);
 };
+
+it("routes agent canvas tools and direct edits through the same persisted state", async () => {
+
+    const directory = await mkdtemp(join(tmpdir(), "avesd-canvas-workbench-")); directories.push(directory);
+    const file = new WorkspaceFile(join(directory, "workspace.json"));
+    const scope = {
+        workspaceId: "test-workspace" as WorkspaceId,
+        dashboardId: "test-dashboard" as DashboardId,
+    };
+    await file.save({
+        version: 1,
+        workspaces: [
+            {
+                id: scope.workspaceId,
+                name: "Test",
+            },
+        ],
+        dashboards: [
+            {
+                id: scope.dashboardId,
+                workspaceId: scope.workspaceId,
+                name: "Canvas",
+                layoutRevision: 0,
+                viewState: {},
+            },
+        ],
+        widgets: [],
+        dataSources: [],
+        selection: scope,
+    });
+    const changed = vi.fn();
+    const workbench = new AgentWorkbench(file, new LocalPluginStore(join(directory, "plugins")), {
+        async test() {
+
+            throw new Error("Not used.");
+        },
+        async preview() {
+
+            throw new Error("Not used.");
+        },
+    }, changed, vi.fn());
+    await workbench.navigate({ type: "inspect" });
+    changed.mockClear();
+    const added = textResult(await workbench.invoke("avesd_add_canvas_item", {
+        kind: "card",
+        text: "Synthetic idea",
+        x: 10,
+        y: 20,
+    }, scope)) as CanvasState;
+    expect(added.items[0]?.content).toMatchObject({
+        kind: "idea",
+        text: "Synthetic idea",
+    });
+    await workbench.applyCanvas(scope, {
+        expectedRevision: added.revision,
+        operations: [
+            {
+                type: "move",
+                id: added.items[0]!.id,
+                x: 80,
+                y: 90,
+            },
+        ],
+    });
+    expect((await workbench.inspectCanvas(scope)).items[0]).toMatchObject({
+        placement: {
+            x: 80,
+            y: 90,
+        },
+    });
+    const source = textResult(await workbench.invoke("avesd_add_canvas_item", {
+        kind: "source",
+        text: "Reference",
+        url: "https://example.com/first",
+        excerpt: "Initial evidence",
+        x: 360,
+        y: 20,
+    }, scope)) as CanvasState;
+    const sourceId = source.items.at(-1)!.id;
+    const result = textResult(await workbench.invoke("avesd_add_canvas_item", {
+        kind: "result",
+        text: "A supported conclusion",
+        evidenceIds: [
+            added.items[0]!.id,
+            sourceId,
+        ],
+        x: 700,
+        y: 20,
+    }, scope)) as CanvasState;
+    expect(result.items.at(-1)?.content).toMatchObject({
+        kind: "result",
+        evidence: [
+            {
+                itemId: added.items[0]!.id,
+                label: "Synthetic idea",
+            },
+            {
+                itemId: sourceId,
+                label: "Reference",
+                url: "https://example.com/first",
+                excerpt: "Initial evidence",
+            },
+        ],
+    });
+    await workbench.invoke("avesd_update_canvas_item", {
+        id: sourceId,
+        url: "https://example.com/updated",
+        excerpt: "New evidence",
+    }, scope);
+    expect((await workbench.inspectCanvas(scope)).items.at(-1)?.content).toMatchObject({
+        evidence: [
+            { itemId: added.items[0]!.id },
+            {
+                url: "https://example.com/first",
+                excerpt: "Initial evidence",
+            },
+        ],
+    });
+    expect((await file.load())?.dashboards[0]?.viewState.canvas).toBeDefined();
+    expect(changed).toHaveBeenCalledTimes(5);
+});
 
 it("exposes installed types immediately and protects agent writes against stale renderer saves", async () => {
 

@@ -13,6 +13,7 @@ import type { BrowserTasksApi } from "./browser/browser-tasks";
 import type { WebSurfaceApi } from "./browser/web-surface";
 import type { LocalPluginsApi } from "./plugins/local-plugins";
 import type { WorkbenchPreferencesApi } from "./workbench/preferences";
+import type { CanvasApi } from "./workspace/canvas";
 import type { DesktopWidgetWorkspaceApi } from "./workspace/widget-workspace";
 import type { WorkspaceNavigationApi } from "./workspace/workspace-navigation";
 import type { AgentService } from "@avesd/plugin-api";
@@ -28,6 +29,7 @@ export interface DesktopRuntime {
 }
 
 export interface DesktopApi {
+    readonly canvas: CanvasApi;
     readonly browserTasks: BrowserTasksApi;
     readonly agentSessions: AgentSessionsApi;
     readonly widgetAgent: WidgetAgentApi;

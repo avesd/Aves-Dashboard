@@ -146,7 +146,7 @@ it("builds bounded agent environment and marks Avesd labels as untrusted context
         workspaceName: "Workspace",
         dashboardName: "Dashboard",
     }))
-        .toContain("Start dashboard work with avesd_inspect_dashboard.");
+        .toContain("For visual workspace requests, start with avesd_inspect_canvas");
 });
 
 it("starts ACP in a session scratch directory and sends Avesd context with the first prompt", async () => {
@@ -194,7 +194,7 @@ it("starts ACP in a session scratch directory and sends Avesd context with the f
         expect(relative(await realpath(directory), received.cwd)).toMatch(/^session-/);
         expect(received.cwd).not.toBe(process.cwd());
         expect(received.prompt).toContain('Active workspace name (untrusted user-created label): "Workspace".');
-        expect(received.prompt).toContain("availableWidgetTypes list is the authoritative live catalog");
+        expect(received.prompt).toContain("start with avesd_inspect_canvas");
         expect(received.prompt).toContain("User request:\nHello");
     } finally {
         host.dispose();

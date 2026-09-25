@@ -22,16 +22,40 @@ import type { LocalPluginSummary, LocalWidgetCommand } from "../shared/plugins/l
 import { localPluginsChannels } from "../shared/plugins/local-plugins";
 import type { SidebarSide } from "../shared/workbench/preferences";
 import { workbenchPreferencesChannels } from "../shared/workbench/preferences";
+import { canvasChannels } from "../shared/workspace/canvas";
 import type { WidgetWorkspaceRequest, WidgetWorkspaceResult } from "../shared/workspace/widget-workspace";
 import { workspaceNavigationChannel } from "../shared/workspace/workspace-navigation";
 import type { AgentTier } from "@avesd/plugin-api";
 import type { AgentEvent, AgentSettings } from "@avesd/plugin-api";
 import type { WidgetInstanceId } from "@avesd/workspace-model";
-import type { JsonObject, WorkspaceSnapshot } from "@avesd/workspace-model";
+import type { CanvasCommand, CanvasState, DashboardScope, JsonObject, WorkspaceSnapshot } from "@avesd/workspace-model";
 import type { WorkspaceNavigationCommand, WorkspaceNavigationState } from "@avesd/workspace-model";
 import { ipcRenderer } from "electron";
 
 export const desktopApi: DesktopApi = Object.freeze({
+    canvas: Object.freeze({
+        inspect: (scope: DashboardScope) => {
+
+            return ipcRenderer.invoke(canvasChannels.inspect, scope) as Promise<CanvasState>;
+        },
+        apply: (scope: DashboardScope, command: CanvasCommand) => {
+
+            return ipcRenderer.invoke(canvasChannels.apply, scope, command) as Promise<CanvasState>;
+        },
+        subscribe(listener: () => void) {
+
+            const handler = () => {
+
+                listener();
+            };
+            ipcRenderer.on(workspaceIpcChannels.changed, handler);
+
+            return () => {
+
+                ipcRenderer.off(workspaceIpcChannels.changed, handler);
+            };
+        },
+    }),
     browserTasks: {
         command: (command: BrowserTaskCommand) => {
 

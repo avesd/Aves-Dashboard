@@ -23,6 +23,87 @@ export interface AgentToolResult {
 }
 
 export const agentToolDefinitions = {
+    avesd_inspect_canvas: {
+        description: "Inspect the active spatial canvas. Returns versioned idea, source, result, and group content with separate placement, links, and revision. Use this before referring to existing item IDs or changing the canvas.",
+        schema: z.strictObject({}),
+    },
+    avesd_add_canvas_item: {
+        description: "Add an idea card, source card, cited result, or labeled group at world coordinates. A source needs an HTTP(S) URL and may include an excerpt; adding a URL does not read the page. A result cites IDs of existing cards as evidence. Card is accepted as a legacy alias for idea. Group cards with avesd_group_canvas_item.",
+        schema: z.strictObject({
+            kind: z.enum([
+                "card",
+                "idea",
+                "group",
+                "source",
+                "result",
+            ]),
+            text: z.string().min(1)
+                .max(8_000),
+            url: z.string().max(2_048)
+                .optional(),
+            excerpt: z.string().min(1)
+                .max(4_000)
+                .optional(),
+            evidenceIds: z.array(z.string()).min(1)
+                .max(24)
+                .optional(),
+            x: z.number().min(-1_000_000)
+                .max(1_000_000),
+            y: z.number().min(-1_000_000)
+                .max(1_000_000),
+            width: z.number().min(80)
+                .max(4_000)
+                .optional(),
+            height: z.number().min(60)
+                .max(4_000)
+                .optional(),
+        }),
+    },
+    avesd_move_canvas_item: {
+        description: "Move a canvas item to world coordinates. Moving a group also moves its cards.",
+        schema: z.strictObject({
+            id: z.string(),
+            x: z.number(),
+            y: z.number(),
+        }),
+    },
+    avesd_update_canvas_item: {
+        description: "Update text on a canvas item, or the URL or excerpt on a source card. At least one field is required.",
+        schema: z.strictObject({
+            id: z.string(),
+            text: z.string().min(1)
+                .max(8_000)
+                .optional(),
+            url: z.string().max(2_048)
+                .optional(),
+            excerpt: z.string().min(1)
+                .max(4_000)
+                .nullable()
+                .optional(),
+        }),
+    },
+    avesd_group_canvas_item: {
+        description: "Place a card inside a group, or omit groupId to ungroup it.",
+        schema: z.strictObject({
+            id: z.string(),
+            groupId: z.string().optional(),
+        }),
+    },
+    avesd_link_canvas_items: {
+        description: "Draw a connection between two existing canvas items.",
+        schema: z.strictObject({
+            from: z.string(),
+            to: z.string(),
+        }),
+    },
+    avesd_remove_canvas_item: {
+        description: "Remove a canvas item or link by ID. Removing a group removes its cards.",
+        schema: z.strictObject({ id: z.string() }),
+    },
+    avesd_undo_canvas: {
+        description: "Undo the latest canvas operation.",
+        schema: z.strictObject({}),
+    },
     avesd_browser_task: {
         description: "Manage persistent background browser collection tasks in the active workspace. Save a name, URL, text field CSS selectors, and intervalMinutes (0 for manual). A task owns its private persistent login session and page independently of widgets. Refresh reads exactly one element per field at the configured origin; no clicks or arbitrary scripts. Open for user login and close the login window before refreshing. Pause stops scheduled work; close releases the page but retains the task/login/results. Remove explicitly deletes the task/result, not cookies. List returns metadata only, never extracted values. Display saved output using avesd.builtin.collections/result configured with taskId. Use only for user-requested sites and fields; selector discovery is not automatic.",
         schema: z.strictObject({

@@ -17,6 +17,7 @@ import { agentIpcChannels,
 import { parseLocalWidgetCommand } from "../shared/plugins/local-plugins";
 import { localPluginsChannels } from "../shared/plugins/local-plugins";
 import { workbenchPreferencesChannels } from "../shared/workbench/preferences";
+import { canvasChannels } from "../shared/workspace/canvas";
 import { parseWidgetWorkspaceRequest, widgetWorkspaceChannels } from "../shared/workspace/widget-workspace";
 import { parseWorkspaceNavigation, workspaceNavigationChannel } from "../shared/workspace/workspace-navigation";
 import { AcpAgentHost } from "./agent/acp-agent-host";
@@ -42,7 +43,7 @@ import { WorkspaceFile } from "./storage/workspace-file";
 import { WorkbenchPreferences } from "./workbench/preferences";
 import { AgentWorkbench } from "./workspace/agent-workbench";
 import { WidgetWorkspaceBridge } from "./workspace/widget-workspace-bridge";
-import type { WidgetInstanceId } from "@avesd/workspace-model";
+import type { DashboardScope, WidgetInstanceId } from "@avesd/workspace-model";
 import type { WorkspaceSnapshot } from "@avesd/workspace-model";
 import { sameDashboard } from "@avesd/workspace-model";
 import type { IpcMainInvokeEvent } from "electron";
@@ -224,6 +225,24 @@ export function startDesktop() {
         }
 
         return workbench.navigate(parseWorkspaceNavigation(input));
+    });
+    ipcMain.handle(canvasChannels.inspect, (event, scope: DashboardScope) => {
+
+        hostForEvent(event);
+        if (!workbench) {
+            throw new Error("Canvas is unavailable.");
+        }
+
+        return workbench.inspectCanvas(scope);
+    });
+    ipcMain.handle(canvasChannels.apply, (event, scope: DashboardScope, input: unknown) => {
+
+        hostForEvent(event);
+        if (!workbench) {
+            throw new Error("Canvas is unavailable.");
+        }
+
+        return workbench.applyCanvas(scope, input);
     });
 
     ipcMain.handle(workbenchPreferencesChannels.sessionGet, event => {
