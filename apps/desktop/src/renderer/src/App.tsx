@@ -5,9 +5,9 @@
  * @description App
  */
 
-import { DashboardEditingProvider } from "./workbench/dashboard-editing";
-import { agentOverlayRegistry, mainViewRegistry, workbenchNavigation } from "./workbench/runtime";
-import { agentOverlayContribution, mainViewContribution } from "./workbench/types";
+import { CanvasShell } from "./components/CanvasShell";
+import { ManagedAgentDock } from "./components/ManagedAgentDock";
+import { workbenchNavigation } from "./workbench/runtime";
 import { WorkbenchChrome } from "./workbench/WorkbenchChrome";
 import { useSyncExternalStore } from "react";
 
@@ -15,71 +15,32 @@ export const App = () => {
 
     const navigationState = useSyncExternalStore(workbenchNavigation.subscribe, workbenchNavigation.getSnapshot);
     const { scope } = navigationState;
-    const view = useSyncExternalStore(
-        (listener) => {
 
-            const unsubscribe = mainViewRegistry.subscribe(listener);
+    return <WorkbenchChrome
+        browserTasks={window.avesd.browserTasks}
+        preferences={window.avesd.preferences}
+        agentProviders={window.avesd.agentProviders}
+        agentSessions={window.avesd.agentSessions}
+        workspaceStorage={window.avesd.workspaceStorage}
+        workspaceNavigation={{
+            state: navigationState,
+            select: scope => {
 
-            return () => {
-
-                void unsubscribe();
-            };
-        },
-        () => {
-
-            return mainViewRegistry.get(mainViewContribution.id);
-        },
-    );
-    const overlay = useSyncExternalStore(
-        (listener) => {
-
-            const unsubscribe = agentOverlayRegistry.subscribe(listener);
-
-            return () => {
-
-                void unsubscribe();
-            };
-        },
-        () => {
-
-            return agentOverlayRegistry.get(agentOverlayContribution.id);
-        },
-    );
-
-    return (
-        <DashboardEditingProvider
+                return workbenchNavigation.command({
+                    type: "select",
+                    scope,
+                });
+            },
+        }}
+    >
+        <CanvasShell
             key={`${scope.workspaceId}/${scope.dashboardId}`}
-        >
-            <WorkbenchChrome
-                browserTasks={window.avesd.browserTasks}
-                preferences={window.avesd.preferences}
-                agentProviders={window.avesd.agentProviders}
-                agentSessions={window.avesd.agentSessions}
-                agentAvailable={!!overlay}
-                workspaceStorage={window.avesd.workspaceStorage}
-                workspaceNavigation={{
-                    state: navigationState,
-                    select: scope => {
-
-                        return workbenchNavigation.command({
-                            type: "select",
-                            scope,
-                        });
-                    },
-                }}
-            >
-                <div
-                    className="plugin-slot"
-                >
-                    {view?.render()}
-                </div>
-                <div
-                    className="overlay-slot"
-                    key={`${scope.workspaceId}/${scope.dashboardId}`}
-                >
-                    {overlay?.render()}
-                </div>
-            </WorkbenchChrome>
-        </DashboardEditingProvider>
-    );
+            api={window.avesd.canvas}
+            agent={window.avesd.agentSessions}
+            scope={scope}
+        />
+        <ManagedAgentDock
+            key={`${scope.workspaceId}/${scope.dashboardId}`}
+        />
+    </WorkbenchChrome>;
 };

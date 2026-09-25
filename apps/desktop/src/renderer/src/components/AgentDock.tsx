@@ -360,7 +360,7 @@ export const AgentDock = ({ service, label, managed = false }: {
                             />
                         </span>
                         <h2>What are we working on?</h2>
-                        <p>Your agent can inspect and arrange this dashboard through scoped local tools.</p>
+                        <p>Your agent can inspect and arrange this canvas through scoped local tools.</p>
                     </div>
                 ) : messages.map((message) => {
 

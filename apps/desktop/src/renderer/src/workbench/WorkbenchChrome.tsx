@@ -15,11 +15,10 @@ import { BrowserTasksPanel } from "../components/BrowserTasksPanel";
 import { AgentProviderSettings } from "../components/settings/AgentProviderSettings";
 import { AgentTierSettings } from "../components/settings/AgentTierSettings";
 import { WorkspaceTree } from "../components/WorkspaceTree";
-import { useDashboardEditing } from "./dashboard-editing";
 import type { AgentTier } from "@avesd/plugin-api";
 import { IconButton, PanelHeader, SidePanel, ToolRail, ToolRailButton } from "@avesd/ui";
 import type { DashboardScope, WorkspaceNavigationState } from "@avesd/workspace-model";
-import { Bot, FolderTree, Globe, LockKeyhole, MessagesSquare, PanelLeft, PanelRight, Settings2, UnlockKeyhole, X } from "lucide-react";
+import { Bot, FolderTree, Globe, MessagesSquare, PanelLeft, PanelRight, Settings2, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 
@@ -38,11 +37,10 @@ export function useAgentPanel() {
     return context;
 }
 
-export function WorkbenchChrome({ children, preferences, agentAvailable = true, agentProviders, agentSessions, workspaceNavigation, workspaceStorage, browserTasks }: {
+export function WorkbenchChrome({ children, preferences, agentProviders, agentSessions, workspaceNavigation, workspaceStorage, browserTasks }: {
     readonly browserTasks?: BrowserTasksApi;
     readonly children: ReactNode;
     readonly preferences: WorkbenchPreferencesApi;
-    readonly agentAvailable?: boolean;
     readonly agentProviders?: AgentProvidersApi;
     readonly agentSessions?: AgentSessionsApi;
     readonly workspaceNavigation?: {
@@ -191,7 +189,6 @@ export function WorkbenchChrome({ children, preferences, agentAvailable = true, 
         error,
         setError,
     ] = useState<string>();
-    const { isEditing, setIsEditing } = useDashboardEditing();
     const agentButton = useRef<HTMLButtonElement>(null);
     const workspacesButton = useRef<HTMLButtonElement>(null);
     const settingsButton = useRef<HTMLButtonElement>(null);
@@ -294,7 +291,7 @@ export function WorkbenchChrome({ children, preferences, agentAvailable = true, 
                     aria-label="Open agent"
                     title="Agent"
                     aria-expanded={panel === "agent"}
-                    disabled={!agentAvailable || creatingSession}
+                    disabled={creatingSession}
                     onClick={() => {
 
                         if (!agentSessions) {
@@ -340,28 +337,6 @@ export function WorkbenchChrome({ children, preferences, agentAvailable = true, 
                         aria-hidden="true"
                     />
                 </ToolRailButton>}
-                <ToolRailButton
-                    style={{ order: 4 }}
-                    {...sessionDrop(2)}
-                    aria-label={isEditing ? "Lock dashboard" : "Unlock dashboard"}
-                    aria-pressed={isEditing}
-                    title={isEditing ? "Lock dashboard (⌘ / Ctrl E)" : "Unlock dashboard (⌘ / Ctrl E)"}
-                    onClick={() => {
-
-                        setIsEditing(value => {
-
-                            return !value;
-                        }); setPanel(undefined);
-                    }}
-                >
-                    {isEditing ? <UnlockKeyhole
-                        size={19}
-                        aria-hidden="true"
-                    /> : <LockKeyhole
-                        size={19}
-                        aria-hidden="true"
-                    />}
-                </ToolRailButton>
                 <ToolRailButton
                     style={{ order: 10 }}
                     {...sessionDrop(3)}

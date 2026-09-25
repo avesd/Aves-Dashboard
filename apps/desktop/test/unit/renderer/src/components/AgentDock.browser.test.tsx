@@ -8,7 +8,6 @@
 import "../../../../../src/renderer/src/styles.css";
 import "@avesd/ui/styles.css";
 import { AgentDock } from "../../../../../src/renderer/src/components/AgentDock";
-import { DashboardEditingProvider, useDashboardEditing } from "../../../../../src/renderer/src/workbench/dashboard-editing";
 import { WorkbenchChrome } from "../../../../../src/renderer/src/workbench/WorkbenchChrome";
 import type { AgentEvent, AgentService, AgentSettings } from "@avesd/plugin-api";
 import { createRoot } from "react-dom/client";
@@ -23,15 +22,6 @@ const preferences = {
     setSidebarSide: async () => {
     },
 };
-const EditingState = () => {
-
-    const { isEditing } = useDashboardEditing();
-
-    return <output>
-        {isEditing ? "Editing" : "Locked"}
-    </output>;
-};
-
 describe("AgentDock", () => {
 
     afterEach(() => {
@@ -99,16 +89,13 @@ describe("AgentDock", () => {
         const container = document.createElement("div");
         document.body.append(container);
         const root = createRoot(container);
-        root.render(<DashboardEditingProvider>
-            <WorkbenchChrome
-                preferences={preferences}
-            >
-                <AgentDock
-                    service={service}
-                />
-                <EditingState />
-            </WorkbenchChrome>
-        </DashboardEditingProvider>);
+        root.render(<WorkbenchChrome
+            preferences={preferences}
+        >
+            <AgentDock
+                service={service}
+            />
+        </WorkbenchChrome>);
 
         await page.getByRole("button", { name: "Open agent" }).click();
         await expect.element(page.getByRole("dialog", { name: "Workspace agent" })).toBeVisible();
@@ -116,18 +103,6 @@ describe("AgentDock", () => {
         await expect.element(page.getByRole("button", { name: "ACP harness" })).toBeDisabled();
         await expect.element(page.getByRole("button", { name: "Agent model" })).toBeDisabled();
         await expect.element(page.getByRole("button", { name: /coming soon/ })).not.toBeInTheDocument();
-        await page.getByRole("button", {
-            name: "Unlock dashboard",
-            exact: true,
-        }).click();
-        await expect.element(page.getByText("Editing", { exact: true })).toBeVisible();
-        await expect.element(page.getByRole("dialog", { name: "Workspace agent" })).not.toBeInTheDocument();
-        expect(service.connect).not.toHaveBeenCalled();
-        await page.getByRole("button", {
-            name: "Lock dashboard",
-            exact: true,
-        }).click();
-        await expect.element(page.getByText("Locked", { exact: true })).toBeVisible();
         await page.getByRole("button", { name: "Open settings" }).click();
         await page.getByText("Left", {
             exact: true,
@@ -279,15 +254,13 @@ it("applies live model selections and clears the old conversation on provider ch
     const container = document.createElement("div"); document.body.append(container);
     const root = createRoot(container);
     try {
-        root.render(<DashboardEditingProvider>
-            <WorkbenchChrome
-                preferences={preferences}
-            >
-                <AgentDock
-                    service={service}
-                />
-            </WorkbenchChrome>
-        </DashboardEditingProvider>);
+        root.render(<WorkbenchChrome
+            preferences={preferences}
+        >
+            <AgentDock
+                service={service}
+            />
+        </WorkbenchChrome>);
         await page.getByRole("button", { name: "Open agent" }).click();
         const harness = page.getByRole("button", { name: "ACP harness" });
         const model = page.getByRole("button", { name: "Agent model" });

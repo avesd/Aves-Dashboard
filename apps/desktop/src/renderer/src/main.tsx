@@ -25,6 +25,15 @@ const render = async (): Promise<void> => {
     createRoot(rootElement).render(<StrictMode>
         <App />
     </StrictMode>);
+    void import("./workbench/legacy-plugin-runtime")
+        .then(module => {
+
+            return module.startLegacyPluginRuntime();
+        })
+        .catch(() => {
+
+            console.error("Legacy plugin compatibility initialization failed.");
+        });
 };
 
 void render();
