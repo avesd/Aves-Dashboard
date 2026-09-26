@@ -209,6 +209,74 @@ describe("canvas operations", () => {
         })).toBe(true);
     });
 
+    it("removes links to cards deleted with a group", () => {
+
+        const initial = applyCanvas(readCanvas(dashboard), parseCanvasCommand({
+            expectedRevision: 0,
+            operations: [
+                ...[
+                    {
+                        id: "group",
+                        kind: "group",
+                        groupId: undefined,
+                    },
+                    {
+                        id: "child",
+                        kind: "card",
+                        groupId: "group",
+                    },
+                    {
+                        id: "outside",
+                        kind: "card",
+                        groupId: undefined,
+                    },
+                ].map(value => {
+
+                    return {
+                        type: "add",
+                        item: {
+                            id: value.id,
+                            kind: value.kind,
+                            text: value.id,
+                            x: 0,
+                            y: 0,
+                            width: 200,
+                            height: 120,
+                            ...(value.groupId ? { groupId: value.groupId } : {}),
+                        },
+                    };
+                }),
+                {
+                    type: "link",
+                    link: {
+                        id: "connected",
+                        from: "child",
+                        to: "outside",
+                    },
+                },
+            ],
+        }));
+        const removed = applyCanvas(initial, {
+            expectedRevision: 1,
+            operations: [
+                {
+                    type: "remove",
+                    id: "group",
+                },
+            ],
+        });
+
+        expect(removed.items.map(value => {
+
+            return value.id;
+        })).toEqual(["outside"]);
+        expect(removed.links).toEqual([]);
+        expect(applyCanvas(removed, {
+            expectedRevision: 2,
+            operations: [{ type: "undo" }],
+        }).links).toEqual(initial.links);
+    });
+
     it("rejects unsafe source URLs and unknown result evidence", () => {
 
         expect(() => {

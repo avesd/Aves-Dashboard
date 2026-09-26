@@ -535,14 +535,21 @@ export function applyCanvas(state: CanvasState, command: CanvasCommand): CanvasS
                 })) {
                     throw new Error("Canvas item was not found.");
                 }
+                const removedIds = new Set(current.items.filter(value => {
+
+                    return value.id === operation.id || value.groupId === operation.id;
+                }).map(value => {
+
+                    return value.id;
+                }));
                 current = {
                     items: current.items.filter(value => {
 
-                        return value.id !== operation.id && value.groupId !== operation.id;
+                        return !removedIds.has(value.id);
                     }),
                     links: current.links.filter(value => {
 
-                        return value.id !== operation.id && value.from !== operation.id && value.to !== operation.id;
+                        return value.id !== operation.id && !removedIds.has(value.from) && !removedIds.has(value.to);
                     }),
                 };
                 break;
