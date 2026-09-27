@@ -3,6 +3,7 @@ import type { CanvasApi } from "../../../shared/workspace/canvas";
 import type { Viewport } from "./canvas-geometry";
 import { fitViewport, initialViewport, placeCanvasItem } from "./canvas-geometry";
 import { CanvasWorld } from "./CanvasWorld";
+import { BirdMark } from "@avesd/ui";
 import type { CanvasContent, CanvasItem, CanvasOperation, CanvasState, DashboardScope } from "@avesd/workspace-model";
 import { ArrowRight, Frame, Link2, Maximize2, Plus, RotateCcw, Sparkles, SquareArrowOutUpRight } from "lucide-react";
 import type { PointerEvent, SyntheticEvent, WheelEvent } from "react";
@@ -413,11 +414,21 @@ export const CanvasShell = ({ api, agent, scope }: Props) => {
             className="canvas-topbar"
         >
             <div>
-                <span
-                    className="canvas-eyebrow"
+                <div
+                    className="canvas-brand"
                 >
-                    AVESD / CANVAS
-                </span>
+                    <BirdMark
+                        detail="compact"
+                        variant="solid"
+                        width={24}
+                        height={24}
+                    />
+                    <span
+                        className="canvas-eyebrow"
+                    >
+                        AVESD / CANVAS
+                    </span>
+                </div>
                 <h1>Think in space.</h1>
             </div>
             <div

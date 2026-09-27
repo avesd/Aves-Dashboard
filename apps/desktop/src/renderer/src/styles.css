@@ -51,8 +51,10 @@ button {
 }
 
 .canvas-topbar > * { pointer-events: auto; }
+.canvas-brand { display: flex; align-items: center; gap: 10px; color: #70c8db; white-space: nowrap; }
+.canvas-brand svg { flex: none; }
 .canvas-eyebrow { color: #70c8db; font-size: 10px; font-weight: 700; letter-spacing: .23em; }
-.canvas-topbar h1 { margin: 6px 0 0; font-size: 26px; font-weight: 500; letter-spacing: -.045em; }
+.canvas-topbar h1 { margin: 6px 0 0; font-size: 26px; font-weight: 500; letter-spacing: -.045em; white-space: nowrap; }
 .canvas-actions { display: flex; gap: 8px; }
 .canvas-actions button {
   display: inline-flex; align-items: center; gap: 7px;
