@@ -42,6 +42,7 @@ browser test setup, and dependency maintenance.
 
 ## Repository layout
 
+- `assets/brand` — source SVGs and usage notes for the Avesd bird mark.
 - `apps/desktop` — Electron main, preload, and React renderer processes.
 - `packages/acp-client` — provider-neutral ACP v1 client boundary.
 - `packages/configuration` — shared TypeScript, ESLint, and Vitest defaults.
