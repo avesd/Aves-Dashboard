@@ -5,6 +5,8 @@
  * @description UI exports
  */
 
+export type { BirdMarkDetail, BirdMarkProps, BirdMarkVariant } from "./brand/BirdMark";
+export { BirdMark } from "./brand/BirdMark";
 export * from "./dropdown-menu/DropdownMenu";
 export type { ToolRailButtonProps, ToolRailProps } from "./navigation/ToolRail";
 export { ToolRail, ToolRailButton } from "./navigation/ToolRail";

@@ -14,6 +14,20 @@ belongs with the component.
 This package is separate from `@avesd/plugin-ui`. The latter is a framework-neutral
 plugin contract and does not expose host React components to sandboxed plugins.
 
+## Bird mark
+
+Use `BirdMark` for the six optical variants of the Avesd logo. `detail` selects
+`full`, `regular`, or `compact`; `variant` selects `outline` or `solid`. The mark
+inherits the current text color and accepts standard SVG sizing and class props.
+
+```tsx
+<BirdMark detail="compact" variant="solid" width={24} height={24} />
+```
+
+The mark is hidden from assistive technology by default. Supply an `aria-label`
+when it is the only visible brand name. Standalone SVG sources are in
+[`assets/brand`](../../../assets/brand/README.md).
+
 ## Component styling
 
 Use the exported `cn` helper (`clsx` followed by `tailwind-merge`) to compose
