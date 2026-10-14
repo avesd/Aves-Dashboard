@@ -14,6 +14,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@agentclientprotocol/claude-agent-acp": "catalog:",
     "@agentclientprotocol/codex-acp": "catalog:",
     "@avesd/acp-client": "workspace:*",
     "@avesd/kernel": "workspace:*",
@@ -23,13 +24,12 @@
     "@avesd/ui": "workspace:*",
     "@avesd/workspace-model": "workspace:*",
     "@modelcontextprotocol/server": "catalog:",
+    "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-markdown": "catalog:",
     "remark-gfm": "catalog:",
-    "zod": "catalog:",
-    "@agentclientprotocol/claude-agent-acp": "catalog:",
-    "lucide-react": "catalog:"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@avesd/configuration": "workspace:*",
@@ -41,9 +41,9 @@
     "electron": "catalog:",
     "electron-vite": "catalog:",
     "eslint": "catalog:",
+    "globals": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "catalog:",
-    "globals": "catalog:"
+    "vitest": "catalog:"
   }
 }

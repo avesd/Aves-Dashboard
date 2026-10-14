@@ -16,13 +16,13 @@
     "./vitest": "./vitest/create-vitest-config.ts"
   },
   "dependencies": {
-    "@stylistic/eslint-plugin": "catalog:",
-    "eslint-plugin-simple-import-sort": "catalog:",
-    "typescript-eslint": "catalog:",
-    "vitest": "catalog:",
     "@eslint/js": "catalog:",
+    "@stylistic/eslint-plugin": "catalog:",
     "eslint-plugin-react-hooks": "catalog:",
-    "globals": "catalog:"
+    "eslint-plugin-simple-import-sort": "catalog:",
+    "globals": "catalog:",
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

@@ -77,7 +77,11 @@ make update-all ARGS=--dry-run
 Run `pnpm validate` after applying updates. Root tooling tests cover maintenance
 previews, failure propagation, sorting, and workflow policy; they run as part of
 `pnpm test`. Equivalent Make targets remain thin wrappers around pnpm scripts;
-running plain `make` performs no work.
+running plain `make` (or `make help`) displays the available targets. The root
+Makefile includes `make/development.mk`, `make/checks.mk`,
+`make/maintenance.mk`, and `make/help.mk`. Use `make install` for a frozen
+lockfile installation, and `make test-electron ARGS="storage resources"` to
+select native scenarios. `make default` remains an alias for help.
 
 ## Continuous integration
 

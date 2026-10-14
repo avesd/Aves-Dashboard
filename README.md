@@ -37,7 +37,8 @@ pnpm validate
 ```
 
 Equivalent Make targets provide short, stable entry points such as `make dev`,
-`make validate`, and `make update-all`; running plain `make` performs no work.
+`make validate`, and `make update-all`; running plain `make` displays help.
+Targets are grouped under `make/`, with the root Makefile including each group.
 See [Development](docs/development.md) for test selection, validation boundaries,
 browser test setup, and dependency maintenance.
 
