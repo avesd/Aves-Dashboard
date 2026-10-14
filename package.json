@@ -8,22 +8,31 @@
   "scripts": {
     "build": "turbo build",
     "compile": "turbo compile",
-    "depcheck": "pnpm outdated -r",
+    "depcheck": "pnpm outdated -r --include-github-actions",
     "dev": "pnpm --filter @avesd/desktop dev",
-    "iud": "pnpm install && pnpm update -r && pnpm dedupe && pnpm run self-update",
-    "lint": "eslint scripts eslint.config.mjs && turbo lint && pnpm validate-repository-boundaries",
-    "self-update": "corepack use pnpm@latest",
-    "test": "turbo test",
+    "iud": "node scripts/dependencies/maintenance.mjs iud",
+    "lint": "eslint scripts test eslint.config.mjs && turbo lint && pnpm validate-repository-boundaries && pnpm check:workflows",
+    "self-update": "pnpm update-self",
+    "test": "node --test test/unit/scripts/*/*.test.mjs && turbo test",
     "test:electron": "pnpm build && pnpm --filter @avesd/desktop test:electron",
-    "ud": "pnpm update -r && pnpm dedupe",
-    "update-all": "pnpm update -r --latest --include-github-actions && pnpm dedupe",
+    "ud": "node scripts/dependencies/maintenance.mjs ud",
+    "update-all": "node scripts/dependencies/maintenance.mjs update-all",
     "validate-repository-boundaries": "node --check scripts/validate-repository-boundaries.mjs && node scripts/validate-repository-boundaries.mjs",
-    "validate": "pnpm lint && pnpm compile && pnpm test && pnpm build"
+    "validate": "pnpm lint && pnpm compile && pnpm test && pnpm build",
+    "update-dependencies": "node scripts/dependencies/maintenance.mjs update-dependencies",
+    "update-actions": "node scripts/dependencies/maintenance.mjs update-actions",
+    "update-self": "node scripts/dependencies/maintenance.mjs update-self",
+    "sort-dependencies": "node scripts/dependencies/maintenance.mjs sort-dependencies",
+    "sort-workspace": "node scripts/dependencies/maintenance.mjs sort-workspace",
+    "sort-all": "node scripts/dependencies/maintenance.mjs sort-all",
+    "lint:fix": "eslint scripts test eslint.config.mjs --fix && pnpm -r --if-present lint:fix && pnpm validate-repository-boundaries && pnpm check:workflows",
+    "check:workflows": "node scripts/validation/workflows.mjs"
   },
   "devDependencies": {
     "eslint": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "yaml": "catalog:"
   }
 }

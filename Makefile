@@ -36,12 +36,24 @@ depcheck:
 
 .PHONY: ud
 ud:
-	pnpm ud
+	pnpm ud $(ARGS)
 
 .PHONY: iud
 iud:
-	pnpm iud
+	pnpm iud $(ARGS)
 
 .PHONY: update-all
 update-all:
-	pnpm update-all
+	pnpm update-all $(ARGS)
+
+.PHONY: lint-fix check-workflows
+lint-fix:
+	pnpm lint:fix
+
+check-workflows:
+	pnpm check:workflows
+
+MAINTENANCE_TARGETS := update-dependencies update-actions update-self sort-dependencies sort-workspace sort-all
+.PHONY: $(MAINTENANCE_TARGETS)
+$(MAINTENANCE_TARGETS):
+	pnpm run $@ $(ARGS)

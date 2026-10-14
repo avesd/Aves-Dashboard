@@ -7,7 +7,7 @@ import { BirdMark } from "@avesd/ui";
 import type { CanvasContent, CanvasItem, CanvasOperation, CanvasState, DashboardScope } from "@avesd/workspace-model";
 import { ArrowRight, Frame, Link2, Maximize2, Plus, RotateCcw, Sparkles, SquareArrowOutUpRight } from "lucide-react";
 import type { PointerEvent, SyntheticEvent, WheelEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Props {
     readonly api: CanvasApi;
@@ -17,6 +17,7 @@ interface Props {
 
 export const CanvasShell = ({ api, agent, scope }: Props) => {
 
+    const { workspaceId, dashboardId } = scope;
     const surface = useRef<HTMLDivElement>(null);
     const fitInitialized = useRef(false);
     const commandInput = useRef<HTMLInputElement>(null);
@@ -87,7 +88,10 @@ export const CanvasShell = ({ api, agent, scope }: Props) => {
         let active = true;
         const refresh = () => {
 
-            void api.inspect(scope).then(value => {
+            void api.inspect({
+                workspaceId,
+                dashboardId,
+            }).then(value => {
 
                 if (active) {
                     setCanvas(value); setError(undefined);
@@ -116,17 +120,23 @@ export const CanvasShell = ({ api, agent, scope }: Props) => {
         };
     }, [
         api,
-        scope.dashboardId,
-        scope.workspaceId,
+        dashboardId,
+        workspaceId,
     ]);
 
-    const apply = (operations: readonly CanvasOperation[]): Promise<void> => {
+    const apply = useCallback((operations: readonly CanvasOperation[]): Promise<void> => {
 
         const write = writeQueue.current.then(async () => {
 
             try {
-                const current = await api.inspect(scope);
-                const next = await api.apply(scope, {
+                const current = await api.inspect({
+                    workspaceId,
+                    dashboardId,
+                });
+                const next = await api.apply({
+                    workspaceId,
+                    dashboardId,
+                }, {
                     expectedRevision: current.revision,
                     operations,
                 });
@@ -134,7 +144,10 @@ export const CanvasShell = ({ api, agent, scope }: Props) => {
                 setError(undefined);
             } catch (cause) {
                 setError(cause instanceof Error ? cause.message : "Canvas could not be changed.");
-                setCanvas(await api.inspect(scope));
+                setCanvas(await api.inspect({
+                    workspaceId,
+                    dashboardId,
+                }));
             }
         });
         writeQueue.current = write.catch(() => {
@@ -143,7 +156,11 @@ export const CanvasShell = ({ api, agent, scope }: Props) => {
         });
 
         return write;
-    };
+    }, [
+        api,
+        dashboardId,
+        workspaceId,
+    ]);
 
     const add = (content: CanvasContent) => {
 
@@ -202,7 +219,7 @@ export const CanvasShell = ({ api, agent, scope }: Props) => {
             window.removeEventListener("keydown", keyDown);
         };
     }, [
-        canvas,
+        apply,
         selected,
     ]);
 

@@ -5,9 +5,12 @@
   "scripts": {
     "compile": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint:fix": "eslint . --fix"
   },
-  "exports": { ".": "./src/index.ts" },
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "dependencies": {
     "@avesd/plugin-api": "workspace:*",
     "@avesd/workspace-model": "workspace:*"

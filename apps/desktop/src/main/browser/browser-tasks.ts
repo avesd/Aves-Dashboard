@@ -65,6 +65,7 @@ export class BrowserTasks {
             service.#tasks = stored.tasks;
         } catch (error) {
             if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) {
+                // eslint-disable-next-line preserve-caught-error -- Public errors must not expose local paths or persisted task content.
                 throw new Error("Background browser storage could not be loaded.");
             }
         }

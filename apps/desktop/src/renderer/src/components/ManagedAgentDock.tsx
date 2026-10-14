@@ -7,10 +7,11 @@ import { useMemo } from "react";
 export const ManagedAgentDock = () => {
 
     const { activeSession } = useAgentPanel();
+    const activeSessionId = activeSession?.id;
     const service = useMemo(() => {
 
-        return activeSession ? sessionAgentService(window.avesd.agentSessions, activeSession.id) : undefined;
-    }, [activeSession?.id]);
+        return activeSessionId ? sessionAgentService(window.avesd.agentSessions, activeSessionId) : undefined;
+    }, [activeSessionId]);
 
     return service && activeSession ? <AgentDock
         key={activeSession.id}

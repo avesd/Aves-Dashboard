@@ -29,6 +29,7 @@ Use the root pnpm scripts for repository tasks:
 
 ```sh
 pnpm lint
+pnpm lint:fix
 pnpm compile
 pnpm test
 pnpm build
@@ -102,6 +103,7 @@ Unit and component tests mirror `src/` under `test/unit/` and import the covered
 implementation directly. Integration tests mirror the owning source path under
 `test/integration/`; native Electron scenarios live under `test/e2e/`.
 Configuration rule tests mirror `eslint/` under `test/unit/eslint/`.
+Root maintenance and workflow tests mirror `scripts/` under `test/unit/scripts/`.
 Path correspondence does not require a test for every source file. TypeScript
 tests remain included in compile and type-aware lint checks.
 Add a feature folder when several related files need a home; avoid generic

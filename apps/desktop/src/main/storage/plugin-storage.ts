@@ -140,11 +140,14 @@ export class PluginStorage {
             } catch (error) {
 
                 if (!isActive()) {
+                    // eslint-disable-next-line preserve-caught-error -- Public storage errors must not expose filesystem paths or native error details.
                     throw new Error("Storage context is no longer active.");
                 }
                 if (missing(error)) {
+                    // eslint-disable-next-line preserve-caught-error -- Public storage errors must not expose filesystem paths or native error details.
                     throw new Error("Storage entry was not found.");
                 }
+                // eslint-disable-next-line preserve-caught-error -- Public storage errors must not expose filesystem paths or native error details.
                 throw new Error("Storage operation failed or was denied.");
 
             }

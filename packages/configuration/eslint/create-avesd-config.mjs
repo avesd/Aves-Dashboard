@@ -6,8 +6,11 @@
  */
 
 import { bodyLeadingBlankLine } from "./rules/body-leading-blank-line.mjs";
+import js from "@eslint/js";
 import stylistic from "@stylistic/eslint-plugin";
+import reactHooks from "eslint-plugin-react-hooks";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
+import globals from "globals";
 import typescriptEslint from "typescript-eslint";
 
 export const createAvesdConfig = (tsconfigRootDir = import.meta.dirname) => {
@@ -15,18 +18,37 @@ export const createAvesdConfig = (tsconfigRootDir = import.meta.dirname) => {
     return [
         {
             ignores: [
-                "coverage/**",
-                "dist/**",
-                "node_modules/**",
-                "out/**",
-                "release/**",
+                "**/coverage/**",
+                "**/dist/**",
+                "**/node_modules/**",
+                "**/out/**",
+                "**/release/**",
+                "**/.turbo/**",
             ],
+        },
+        js.configs.recommended,
+        typescriptEslint.configs.eslintRecommended,
+        {
+            files: ["**/*.{js,jsx,mjs,cjs,ts,tsx}"],
+        },
+        {
+            files: ["**/*.{js,mjs,cjs}"],
+            languageOptions: { globals: globals.node },
+        },
+        {
+            files: ["**/*.{js,jsx,ts,tsx}"],
+            plugins: { "react-hooks": reactHooks },
+            rules: {
+                "react-hooks/rules-of-hooks": "error",
+                "react-hooks/exhaustive-deps": "error",
+            },
         },
         {
             languageOptions: {
                 parser: typescriptEslint.parser,
                 parserOptions: {
                     sourceType: "module",
+                    ecmaFeatures: { jsx: true },
                 },
             },
         },
@@ -52,6 +74,7 @@ export const createAvesdConfig = (tsconfigRootDir = import.meta.dirname) => {
                     "always",
                 ],
                 "no-var": "error",
+                "no-unused-vars": "off",
                 "object-shorthand": "error",
                 "prefer-const": "error",
                 "@typescript-eslint/consistent-type-imports": [

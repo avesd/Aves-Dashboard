@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "electron-vite preview",
     "test": "vitest run",
-    "test:electron": "node test/e2e/run.mjs"
+    "test:electron": "node test/e2e/run.mjs",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@agentclientprotocol/codex-acp": "catalog:",
@@ -42,6 +43,7 @@
     "eslint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "globals": "catalog:"
   }
 }

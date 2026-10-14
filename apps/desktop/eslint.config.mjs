@@ -6,20 +6,16 @@
  */
 
 import { createAvesdConfig } from "@avesd/configuration/eslint";
+import globals from "globals";
 
 export default [
     ...createAvesdConfig(import.meta.dirname),
     {
-        files: ["tests/**/*.mjs"],
+        files: ["test/**/*.mjs"],
         languageOptions: {
             globals: {
-                process: "readonly",
-                console: "readonly",
-                setTimeout: "readonly",
-                clearTimeout: "readonly",
-                window: "readonly",
-                fetch: "readonly",
-                AbortSignal: "readonly",
+                ...globals.node,
+                ...globals.browser,
             },
         },
     },
