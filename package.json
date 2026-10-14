@@ -7,13 +7,13 @@
   },
   "scripts": {
     "build": "turbo build",
-    "compile": "turbo compile",
+    "compile": "tsc --noEmit -p scripts/tsconfig.json && turbo compile",
     "depcheck": "pnpm outdated -r --include-github-actions",
     "dev": "pnpm --filter @avesd/desktop dev",
     "iud": "node scripts/dependencies/maintenance.mjs iud",
-    "lint": "eslint scripts test eslint.config.mjs && turbo lint && pnpm validate-repository-boundaries && pnpm check:workflows",
+    "lint": "eslint scripts test eslint.config.mjs && turbo lint && pnpm validate-repository-boundaries && pnpm check:workflows && pnpm version-dry-run",
     "self-update": "pnpm update-self",
-    "test": "node --test test/unit/scripts/*/*.test.mjs && turbo test",
+    "test": "node --test test/unit/scripts/*/*.test.mjs test/unit/scripts/release/*.test.ts && turbo test",
     "test:electron": "pnpm build && pnpm --filter @avesd/desktop test:electron",
     "ud": "node scripts/dependencies/maintenance.mjs ud",
     "update-all": "node scripts/dependencies/maintenance.mjs update-all",
@@ -25,14 +25,20 @@
     "sort-dependencies": "node scripts/dependencies/maintenance.mjs sort-dependencies",
     "sort-workspace": "node scripts/dependencies/maintenance.mjs sort-workspace",
     "sort-all": "node scripts/dependencies/maintenance.mjs sort-all",
-    "lint:fix": "eslint scripts test eslint.config.mjs --fix && pnpm -r --if-present lint:fix && pnpm validate-repository-boundaries && pnpm check:workflows",
-    "check:workflows": "node scripts/validation/workflows.mjs"
+    "lint:fix": "eslint scripts test eslint.config.mjs --fix && pnpm -r --if-present lint:fix && pnpm validate-repository-boundaries && pnpm check:workflows && pnpm version-dry-run",
+    "check:workflows": "node scripts/validation/workflows.mjs",
+    "changeset": "node scripts/release/release-changesets.ts add",
+    "version-dry-run": "node scripts/release/release-changesets.ts plan",
+    "version-packages": "node scripts/release/release-changesets.ts apply"
   },
   "devDependencies": {
+    "@clack/prompts": "catalog:",
+    "@types/node": "catalog:",
     "eslint": "catalog:",
     "turbo": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "yaml": "catalog:"
-  }
+  },
+  "type": "module"
 }

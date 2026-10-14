@@ -265,7 +265,7 @@ it("applies live model selections and clears the old conversation on provider ch
         const harness = page.getByRole("button", { name: "ACP harness" });
         const model = page.getByRole("button", { name: "Agent model" });
         const effort = page.getByRole("button", { name: "Reasoning effort" });
-        await expect.element(effort).toHaveTextContent("Medium");
+        await expect.element(effort).toMatchTextContent("Medium");
         await effort.click();
         await expect.poll(() => {
 
@@ -280,9 +280,9 @@ it("applies live model selections and clears the old conversation on provider ch
         }).click();
         expect(service.selectEffort).toHaveBeenCalledWith("high");
         expect(service.selectModel).not.toHaveBeenCalled();
-        await expect.element(effort).toHaveTextContent("High");
-        await expect.element(model).toHaveTextContent("Fast");
-        await expect.element(harness).toHaveTextContent("Codex");
+        await expect.element(effort).toMatchTextContent("High");
+        await expect.element(model).toMatchTextContent("Fast");
+        await expect.element(harness).toMatchTextContent("Codex");
         await harness.click();
         await expect.element(page.getByRole("menuitemradio", { name: "OpenCode Not installed" })).toHaveAttribute("aria-disabled", "true");
         await expect.element(page.getByRole("menuitemradio", {
@@ -305,7 +305,7 @@ it("applies live model selections and clears the old conversation on provider ch
             exact: true,
         }).click();
         expect(service.selectModel).toHaveBeenCalledWith("deep");
-        await expect.element(model).toHaveTextContent("Deep");
+        await expect.element(model).toMatchTextContent("Deep");
         await model.click();
         await expect.poll(() => {
 
@@ -337,8 +337,8 @@ it("applies live model selections and clears the old conversation on provider ch
             name: "Fast",
             exact: true,
         }).click();
-        await expect.element(page.getByRole("alert")).toHaveTextContent("Model change failed.");
-        await expect.element(model).toHaveTextContent("Deep");
+        await expect.element(page.getByRole("alert")).toMatchTextContent("Model change failed.");
+        await expect.element(model).toMatchTextContent("Deep");
         await expect.element(page.getByRole("button", {
             name: "Retry",
             exact: true,
@@ -359,7 +359,7 @@ it("applies live model selections and clears the old conversation on provider ch
         await expect.element(harness).toBeDisabled();
         finishModelChange();
         await expect.element(model).toBeEnabled();
-        await expect.element(model).toHaveTextContent("Fast");
+        await expect.element(model).toMatchTextContent("Fast");
 
         await page.getByRole("textbox", { name: "Message agent" }).fill("Synthetic prompt");
         await page.getByRole("button", { name: "Send message" }).click();
@@ -379,8 +379,8 @@ it("applies live model selections and clears the old conversation on provider ch
         }).click();
         expect(service.selectProvider).toHaveBeenCalledWith("claude");
         await expect.element(page.getByText("Synthetic response")).not.toBeInTheDocument();
-        await expect.element(model).toHaveTextContent("Fast");
-        await expect.element(harness).toHaveTextContent("Claude Code");
+        await expect.element(model).toMatchTextContent("Fast");
+        await expect.element(harness).toMatchTextContent("Claude Code");
         await page.viewport(360, 640);
         await model.click();
         await expect.element(page.getByRole("menu", { name: "Agent model" })).toBeVisible();

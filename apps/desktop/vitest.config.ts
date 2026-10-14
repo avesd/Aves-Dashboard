@@ -10,8 +10,10 @@ import { playwright } from "@vitest/browser-playwright";
 
 export default createVitestConfig({
     test: {
+        // Keep explicit test groups independent of Vitest 5 root-config inheritance.
         projects: [
             {
+                extends: false,
                 test: {
                     environment: "node",
                     exclude: ["test/**/*.browser.test.{ts,tsx}"],
@@ -20,6 +22,7 @@ export default createVitestConfig({
                 },
             },
             {
+                extends: false,
                 test: {
                     environment: "node",
                     include: ["test/integration/**/*.test.{ts,tsx}"],
@@ -27,6 +30,7 @@ export default createVitestConfig({
                 },
             },
             {
+                extends: false,
                 test: {
                     browser: {
                         enabled: true,

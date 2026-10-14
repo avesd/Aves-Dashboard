@@ -1,0 +1,11 @@
+{
+  "extends": "../packages/configuration/typescript/tsconfig.node.json",
+  "compilerOptions": {
+    "composite": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "release/**/*.ts",
+    "../test/unit/scripts/release/**/*.ts"
+  ]
+}

@@ -50,6 +50,10 @@ External dependency versions belong in the root catalog; internal dependencies
 use `workspace:*`. Maintenance commands preserve the workspace release-age
 policy. `update-self` selects a stable pnpm version old enough to satisfy
 `minimumReleaseAge`, rather than immediately installing the latest release.
+TypeScript stays at `6.0.3` and is excluded from automated dependency upgrades
+through `updateConfig.ignoreDependencies`: ESLint and repository validators need
+the TypeScript 6 programmatic API. Revisit this exclusion when the adopted tools
+support TypeScript 7.
 
 - `pnpm depcheck` reports outdated packages and GitHub Actions.
 - `pnpm ud` updates within declared ranges and deduplicates the lockfile.
@@ -58,8 +62,12 @@ policy. `update-self` selects a stable pnpm version old enough to satisfy
 - `pnpm update-actions` updates referenced GitHub Actions separately.
 - `pnpm update-all` updates packages and Actions, then deduplicates the lockfile.
 - `pnpm update-self` updates pnpm; `pnpm self-update` remains an alias.
-- `pnpm sort-dependencies`, `pnpm sort-workspace`, and `pnpm sort-all` sort
-  dependency declarations and workspace catalog entries without changing versions.
+- `pnpm sort-dependencies` sorts dependency declarations only in package manifests.
+- `pnpm sort-all` sorts both package manifests and the workspace configuration,
+  without changing dependency versions.
+- `pnpm sort-workspace` sorts only `pnpm-workspace.yaml`. Dependency keys beginning
+  with `@` use double quotes; other dependency keys use plain YAML syntax. Comments
+  and version values are preserved.
 
 All maintenance commands above except `depcheck` support `--dry-run`. Previews
 make no repository writes or installations. Update previews may query the
@@ -79,7 +87,7 @@ previews, failure propagation, sorting, and workflow policy; they run as part of
 `pnpm test`. Equivalent Make targets remain thin wrappers around pnpm scripts;
 running plain `make` (or `make help`) displays the available targets. The root
 Makefile includes `make/development.mk`, `make/checks.mk`,
-`make/maintenance.mk`, and `make/help.mk`. Use `make install` for a frozen
+`make/maintenance.mk`, `make/release.mk`, and `make/help.mk`. Use `make install` for a frozen
 lockfile installation, and `make test-electron ARGS="storage resources"` to
 select native scenarios. `make default` remains an alias for help.
 
@@ -100,3 +108,12 @@ read-only permissions, SHA-pinned Actions, and checkout without persisted
 credentials. `pnpm check:workflows` enforces these workflow conventions as part
 of lint. Dependabot proposes weekly Actions updates. CI needs no cloud account
 or application credentials; local development remains independent of CI.
+
+## Release preparation
+
+The desktop release version starts at `0.1.0` in `apps/desktop/version.json`.
+Use `make changeset` to record a change, `make version-dry-run` to preview pending
+versions, and `make version-packages` to prepare manifests, changelogs, and history.
+These commands do not publish or operate on Git. See
+[Release versioning](release-versioning.md) for interactive and noninteractive
+usage, target selection, version skip rules, and consumption history.

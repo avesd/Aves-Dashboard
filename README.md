@@ -148,6 +148,7 @@ and plugin infrastructure.
 
 ## Documentation
 
+- [Release versioning](docs/release-versioning.md) — changesets, version previews, and release history.
 - [Development](docs/development.md) — validation, tests, and dependency tasks.
 - [Canvas architecture](docs/canvas.md) — canvas data, interaction, and Agent tools.
 - [Runtime architecture](docs/runtime-architecture.md) — process boundaries,

@@ -8,7 +8,7 @@
 import { repositoryRoot } from "./process.mjs";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { isMap, isSeq, parseDocument } from "yaml";
+import { isMap, isScalar, isSeq, parseDocument, Scalar } from "yaml";
 
 const dependencyFields = [
     "dependencies",
@@ -45,6 +45,11 @@ export const sortWorkspace = (raw) => {
     ]) {
         const node = document.get(key, true);
         if (isMap(node)) {
+            for (const item of node.items) {
+                if (isScalar(item.key) && typeof item.key.value === "string") {
+                    item.key.type = item.key.value.startsWith("@") ? Scalar.QUOTE_DOUBLE : Scalar.PLAIN;
+                }
+            }
             node.items.sort((a, b) => {
 
                 return String(a.key.value).localeCompare(String(b.key.value), "en");
@@ -61,29 +66,30 @@ export const sortWorkspace = (raw) => {
     return String(document);
 };
 
-export const sortFiles = (mode, dryRun) => {
+export const sortFiles = (mode, dryRun, root = repositoryRoot) => {
 
-    let files = [join(repositoryRoot, "pnpm-workspace.yaml")];
+    const workspacePath = join(root, "pnpm-workspace.yaml");
+    let files = [workspacePath];
     if (mode === "sort-dependencies") {
-        files = [join(repositoryRoot, "package.json")];
+        files = [join(root, "package.json")];
         files.push(...[
             "apps",
             "packages",
         ].flatMap((parent) => {
 
-            return readdirSync(join(repositoryRoot, parent), { withFileTypes: true }).filter((entry) => {
+            return readdirSync(join(root, parent), { withFileTypes: true }).filter((entry) => {
 
                 return entry.isDirectory();
             })
                 .map((entry) => {
 
-                    return join(repositoryRoot, parent, entry.name, "package.json");
+                    return join(root, parent, entry.name, "package.json");
                 });
         }));
     }
     for (const file of files) {
         const raw = readFileSync(file, "utf8");
-        const sorted = mode === "sort-dependencies" ? sortManifest(raw) : sortWorkspace(raw);
+        const sorted = file === workspacePath ? sortWorkspace(raw) : sortManifest(raw);
         if (raw === sorted) {
             continue;
         }

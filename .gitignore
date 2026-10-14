@@ -9,7 +9,8 @@ release/
 *.tsbuildinfo
 
 # Temp
-apps/desktop/.vitest-attachments
+.vitest-attachments
+.vitest
 
 # Test and tool output
 coverage/

@@ -12,7 +12,8 @@ import { sortFiles, sortManifest, sortWorkspace } from "../../../../scripts/depe
 import { parseOutdated, selectUpdates } from "../../../../scripts/dependencies/updates.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { parse, parseDocument } from "yaml";
@@ -255,4 +256,66 @@ test("sorting dry-run leaves manifests and workspace policy unchanged", () => {
 
         return readFileSync(join(repositoryRoot, file), "utf8");
     }), before);
+});
+
+test("workspace dependency keys use scoped double quotes and unscoped plain syntax", () => {
+
+    const original = `catalog:
+  "zod": 4.6.5 # retain this comment
+  '@types/node': 26.6.5
+  'react': "19.3.0"
+allowBuilds:
+  "esbuild": true
+  '@scope/native': false
+`;
+    const sorted = sortWorkspace(original);
+    assert.deepEqual(parse(sorted), parse(original));
+    assert.match(sorted, /^ {2}"@types\/node": 26\.6\.5$/m);
+    assert.match(sorted, /^ {2}"@scope\/native": false$/m);
+    assert.match(sorted, /^ {2}react: "19\.3\.0"$/m);
+    assert.match(sorted, /^ {2}zod: 4\.6\.5 # retain this comment$/m);
+    assert.match(sorted, /^ {2}esbuild: true$/m);
+    assert.equal(sortWorkspace(sorted), sorted);
+});
+
+test("sort-dependencies only sorts manifests while sort-all also sorts workspace policy", async (context) => {
+
+    const root = mkdtempSync(join(tmpdir(), "avesd-sorting-"));
+    context.after(() => {
+
+        rmSync(root, {
+            recursive: true,
+            force: true,
+        });
+    });
+    mkdirSync(join(root, "apps/desktop"), { recursive: true });
+    mkdirSync(join(root, "packages"));
+    const manifest = '{"dependencies":{"zod":"catalog:","react":"catalog:"}}\n';
+    const workspace = 'packages:\n  - packages/*\n  - apps/*\ncatalog:\n  "zod": 4.6.5\n  "react": 19.3.0\n';
+    for (const path of [
+        "package.json",
+        "apps/desktop/package.json",
+    ]) {
+        writeFileSync(join(root, path), manifest);
+    }
+    writeFileSync(join(root, "pnpm-workspace.yaml"), workspace);
+    sortFiles("sort-dependencies", true, root);
+    assert.equal(readFileSync(join(root, "pnpm-workspace.yaml"), "utf8"), workspace);
+    assert.equal(readFileSync(join(root, "package.json"), "utf8"), manifest);
+    assert.equal(readFileSync(join(root, "apps/desktop/package.json"), "utf8"), manifest);
+    sortFiles("sort-dependencies", false, root);
+    assert.equal(readFileSync(join(root, "pnpm-workspace.yaml"), "utf8"), workspace);
+    await main("sort-all", false, {
+        sortFiles: (mode, dryRun) => {
+
+            sortFiles(mode, dryRun, root);
+        },
+    });
+    assert.equal(readFileSync(join(root, "pnpm-workspace.yaml"), "utf8"), sortWorkspace(workspace));
+    for (const path of [
+        "package.json",
+        "apps/desktop/package.json",
+    ]) {
+        assert.equal(readFileSync(join(root, path), "utf8"), sortManifest(manifest));
+    }
 });

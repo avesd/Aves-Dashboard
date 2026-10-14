@@ -109,7 +109,7 @@ it("loads ACP choices, resets effort on model change, tests only on request, and
             name: "Test Flagship connection",
             exact: true,
         }).click();
-        await expect.element(page.getByRole("alert")).toHaveTextContent("Synthetic provider rejected");
+        await expect.element(page.getByRole("alert")).toMatchTextContent("Synthetic provider rejected");
         fail = false;
         await page.getByRole("button", {
             name: "Test Flagship connection",
@@ -199,13 +199,13 @@ it("retries discovery and lets a removed effort fall back to the ACP default", a
             name: "Flagship",
             exact: true,
         });
-        await expect.element(group.getByRole("alert")).toHaveTextContent("ACP unavailable");
+        await expect.element(group.getByRole("alert")).toMatchTextContent("ACP unavailable");
         offline = false;
         await page.getByRole("button", {
             name: "Refresh Flagship models",
             exact: true,
         }).click();
-        await expect.element(group.getByRole("alert")).toHaveTextContent("saved effort is unavailable");
+        await expect.element(group.getByRole("alert")).toMatchTextContent("saved effort is unavailable");
         await expect.element(page.getByRole("button", {
             name: "Save agent tiers",
             exact: true,
