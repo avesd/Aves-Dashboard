@@ -144,7 +144,7 @@ export async function createDesktopHarness(name) {
         tool,
         native,
         guestIds,
-        async launch() {
+        async launch(readySelector = ".dashboard-grid") {
 
             assert.ok(!app, "Close the current desktop before restarting");
             app = await electron.launch({
@@ -162,7 +162,7 @@ export async function createDesktopHarness(name) {
 
                 return errors.push(error.message);
             });
-            await page.locator(".dashboard-grid").waitFor();
+            await page.locator(readySelector).waitFor();
 
             return {
                 app,

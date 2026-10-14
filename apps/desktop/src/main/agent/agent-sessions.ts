@@ -45,7 +45,7 @@ export class AgentSessions {
     constructor(
         readonly preferences: AgentPreferences,
         private readonly origin: () => Promise<SessionOrigin>,
-        private readonly factory: (origin: SessionOrigin, route: AgentTierRoute) => Promise<{
+        private readonly factory: (origin: SessionOrigin, route: AgentTierRoute, sessionId: string) => Promise<{
             host: SessionHost;
             release(): void;
         }>,
@@ -327,7 +327,7 @@ export class AgentSessions {
         if (entry.host) {
             return entry.host;
         }
-        const created = await this.factory(entry.origin, entry.route);
+        const created = await this.factory(entry.origin, entry.route, entry.summary.id);
         if (this.#ended(entry)) {
             created.host.dispose(); created.release(); throw new Error("Agent session has ended.");
         }

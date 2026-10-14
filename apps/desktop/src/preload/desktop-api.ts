@@ -25,6 +25,7 @@ import { workbenchPreferencesChannels } from "../shared/workbench/preferences";
 import { canvasChannels } from "../shared/workspace/canvas";
 import type { WidgetWorkspaceRequest, WidgetWorkspaceResult } from "../shared/workspace/widget-workspace";
 import { workspaceNavigationChannel } from "../shared/workspace/workspace-navigation";
+import { canvases, views } from "./canvas-api";
 import type { AgentTier } from "@avesd/plugin-api";
 import type { AgentEvent, AgentSettings } from "@avesd/plugin-api";
 import type { WidgetInstanceId } from "@avesd/workspace-model";
@@ -33,6 +34,8 @@ import type { WorkspaceNavigationCommand, WorkspaceNavigationState } from "@aves
 import { ipcRenderer } from "electron";
 
 export const desktopApi: DesktopApi = Object.freeze({
+    canvases,
+    views,
     canvas: Object.freeze({
         inspect: (scope: DashboardScope) => {
 

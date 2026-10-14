@@ -24,8 +24,8 @@ and clean up their adapter processes and scratch directories afterward.
 The client negotiates the adapter's structured session-failure extension.
 Terminal failure metadata marks the request as failed even when the ACP stop
 reason is `end_turn`; ordinary assistant text is never parsed as an error.
-Failures show a bounded local message and a Retry action. Retry restores the
-connection so another prompt can be sent in the same session. Model and CLI
+Failures show a bounded local message. Sending another message retries the
+connection in the same session. Model and CLI
 compatibility still depend on the selected local provider installation.
 
 Each new session captures its tier configuration. Changing settings does not
@@ -34,25 +34,23 @@ provider installation paths or model configuration.
 
 ## Session directory
 
-The sidebar's Agent button creates a new user-initiated Flagship session every
-time. Sessions opens the unified directory with User initiated and Background
-filters. Select an entry to view its conversation, or choose a tier and create
-a session. Stop terminates a running session; Remove releases a finished or
-idle session. A stopped session retains its transcript but cannot be resumed.
-
-Drag the Sessions button along the sidebar to change its position, or focus it
-and press Alt+ArrowUp/ArrowDown. Its position is saved locally.
+The controller starts or continues an interactive Flagship conversation when a
+message is sent. Its Sessions panel lists retained conversations and can create a
+new one. Shared settings configure provider routes. Stop terminates a running
+session; Remove terminates and releases a session and its transcript. A stopped session retains its transcript but cannot be resumed.
 
 Closing a panel, switching the selected session, or changing dashboards does
-not cancel a task. Sessions retain their originating workspace and dashboard.
-Workspace tools require that dashboard to be active, so a task cannot silently
-act on a newly selected dashboard. Widget-originated tool calls also recheck
+not cancel a task. Interactive sessions use explicit canvas IDs and are
+independent of the originating dashboard. They discover and operate local canvases through the
+[canvas service](canvas-service.md). Legacy background sessions retain their
+originating workspace and dashboard, and their legacy workspace tools still
+require that dashboard to be active. Widget-originated tool calls also recheck
 the source widget and its current agent capability.
 
 Sessions and conversations currently remain in memory until application exit;
 they are not imported from external ACP clients or resumed after restart.
-Tier settings and sidebar position do persist. The application allows 32
-sessions and eight concurrent prompts, and bounds each retained event stream
+Tier settings persist. Legacy sidebar preferences remain stored for compatibility.
+The application allows 32 sessions and eight concurrent prompts, and bounds each retained event stream
 to approximately 512 KiB of serialized text. Remove old sessions to free slots.
 
 ## Widget API

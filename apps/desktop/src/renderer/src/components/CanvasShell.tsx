@@ -1,39 +1,24 @@
-import type { AgentSessionsApi } from "../../../shared/agent/sessions";
-import type { CanvasApi } from "../../../shared/workspace/canvas";
-import type { Viewport } from "./canvas-geometry";
-import { fitViewport, initialViewport, placeCanvasItem } from "./canvas-geometry";
+import type { CanvasDocument, CanvasServiceApi } from "../../../shared/canvas/contracts";
+import { fitViewport, initialViewport } from "./canvas-geometry";
 import { CanvasWorld } from "./CanvasWorld";
-import { BirdMark } from "@avesd/ui";
-import type { CanvasContent, CanvasItem, CanvasOperation, CanvasState, DashboardScope } from "@avesd/workspace-model";
-import { ArrowRight, Frame, Link2, Maximize2, Plus, RotateCcw, Sparkles, SquareArrowOutUpRight } from "lucide-react";
-import type { PointerEvent, SyntheticEvent, WheelEvent } from "react";
+import { DashboardMenu } from "./DashboardMenu";
+import type { PointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Props {
-    readonly api: CanvasApi;
-    readonly agent: AgentSessionsApi;
-    readonly scope: DashboardScope;
+    readonly api: Pick<CanvasServiceApi, "read" | "subscribe">;
+    readonly canvasId: string;
+    readonly openController: () => void;
 }
 
-export const CanvasShell = ({ api, agent, scope }: Props) => {
+export const CanvasShell = ({ api, canvasId, openController }: Props) => {
 
-    const { workspaceId, dashboardId } = scope;
     const surface = useRef<HTMLDivElement>(null);
     const fitInitialized = useRef(false);
-    const commandInput = useRef<HTMLInputElement>(null);
-    const writeQueue = useRef<Promise<void>>(Promise.resolve());
-    const drag = useRef<{
-        id?: string;
-        x: number;
-        y: number;
-        startX: number;
-        startY: number;
-        viewport: Viewport;
-    } | undefined>(undefined);
     const [
         canvas,
         setCanvas,
-    ] = useState<CanvasState>();
+    ] = useState<CanvasDocument>();
     const [
         viewport,
         setViewport,
@@ -43,33 +28,26 @@ export const CanvasShell = ({ api, agent, scope }: Props) => {
         setSelected,
     ] = useState<string>();
     const [
-        sourceDraft,
-        setSourceDraft,
-    ] = useState<{
-        text: string;
-        url: string;
-        excerpt: string;
-    }>();
-    const [
-        draft,
-        setDraft,
-    ] = useState("");
-    const [
-        busy,
-        setBusy,
-    ] = useState(false);
-    const [
         error,
         setError,
     ] = useState<string>();
     const [
-        preview,
-        setPreview,
-    ] = useState<Record<string, {
+        menu,
+        setMenu,
+    ] = useState<{
         x: number;
         y: number;
-    }>>({});
+    }>();
+    const drag = useRef<{
+        x: number;
+        y: number;
+        startX: number;
+        startY: number;
+    } | undefined>(undefined);
+    const closeMenu = useCallback(() => {
 
+        setMenu(undefined); surface.current?.focus({ preventScroll: true });
+    }, []);
     useEffect(() => {
 
         if (selected && canvas && !canvas.items.some(item => {
@@ -88,13 +66,13 @@ export const CanvasShell = ({ api, agent, scope }: Props) => {
         let active = true;
         const refresh = () => {
 
-            void api.inspect({
-                workspaceId,
-                dashboardId,
-            }).then(value => {
+            void api.read(canvasId).then(value => {
 
                 if (active) {
-                    setCanvas(value); setError(undefined);
+                    setCanvas(previous => {
+
+                        return !previous || value.revision >= previous.revision ? value : previous;
+                    }); setError(undefined);
                     if (!fitInitialized.current) {
                         const rect = surface.current?.getBoundingClientRect();
                         if (rect) {
@@ -107,12 +85,12 @@ export const CanvasShell = ({ api, agent, scope }: Props) => {
                 .catch(cause => {
 
                     if (active) {
-                        setError(cause instanceof Error ? cause.message : "Canvas could not be loaded.");
+                        setError(cause instanceof Error ? cause.message : "Dashboard could not be loaded.");
                     }
                 });
         };
-        refresh();
         const dispose = api.subscribe(refresh);
+        refresh();
 
         return () => {
 
@@ -120,96 +98,26 @@ export const CanvasShell = ({ api, agent, scope }: Props) => {
         };
     }, [
         api,
-        dashboardId,
-        workspaceId,
+        canvasId,
     ]);
 
-    const apply = useCallback((operations: readonly CanvasOperation[]): Promise<void> => {
-
-        const write = writeQueue.current.then(async () => {
-
-            try {
-                const current = await api.inspect({
-                    workspaceId,
-                    dashboardId,
-                });
-                const next = await api.apply({
-                    workspaceId,
-                    dashboardId,
-                }, {
-                    expectedRevision: current.revision,
-                    operations,
-                });
-                setCanvas(next);
-                setError(undefined);
-            } catch (cause) {
-                setError(cause instanceof Error ? cause.message : "Canvas could not be changed.");
-                setCanvas(await api.inspect({
-                    workspaceId,
-                    dashboardId,
-                }));
-            }
-        });
-        writeQueue.current = write.catch(() => {
-
-            return undefined;
-        });
-
-        return write;
-    }, [
-        api,
-        dashboardId,
-        workspaceId,
-    ]);
-
-    const add = (content: CanvasContent) => {
+    const fit = useCallback(() => {
 
         const rect = surface.current?.getBoundingClientRect();
-        const existing = canvas?.items ?? [];
-        const { position, width, height, shouldFit } = placeCanvasItem(content, existing, viewport, rect);
-        const item: CanvasItem = {
-            id: crypto.randomUUID(),
-            content,
-            placement: {
-                ...position,
-                width,
-                height,
-            },
-        };
-        void apply([
-            {
-                type: "add",
-                item,
-            },
-        ]);
-        if (rect && shouldFit) {
-            setViewport(fitViewport([
-                ...existing,
-                item,
-            ], rect.width, rect.height));
+        if (rect && canvas) {
+            setViewport(fitViewport(canvas.items, rect.width, rect.height));
         }
-        setSelected(item.id);
-    };
-
+    }, [canvas]);
     useEffect(() => {
 
         const keyDown = (event: KeyboardEvent) => {
 
-            const target = event.target as HTMLElement;
-            const editing = target.closest("input, textarea, [contenteditable]");
             if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-                event.preventDefault(); commandInput.current?.focus();
-            } else if (!editing && (event.key === "Delete" || event.key === "Backspace") && selected) {
-                event.preventDefault(); void apply([
-                    {
-                        type: "remove",
-                        id: selected,
-                    },
-                ]); setSelected(undefined);
-            } else if (!editing && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
-                event.preventDefault(); void apply([{ type: "undo" }]);
+                event.preventDefault(); openController();
+            } else if ((event.metaKey || event.ctrlKey) && event.key === "0") {
+                event.preventDefault(); fit();
             } else if (event.key === "Escape") {
-                setSelected(undefined); commandInput.current?.blur();
+                setSelected(undefined); setMenu(undefined);
             }
         };
         window.addEventListener("keydown", keyDown);
@@ -219,533 +127,140 @@ export const CanvasShell = ({ api, agent, scope }: Props) => {
             window.removeEventListener("keydown", keyDown);
         };
     }, [
-        apply,
-        selected,
+        fit,
+        openController,
     ]);
+    useEffect(() => {
 
-    const submit = async (event: SyntheticEvent<HTMLFormElement>) => {
-
-        event.preventDefault();
-        const text = draft.trim();
-        if (!text || busy) {
+        const node = surface.current;
+        if (!node) {
             return;
         }
-        setBusy(true); setError(undefined);
-        try {
-            const listing = await agent.list();
-            const active = listing.sessions.find(value => {
+        const wheel = (event: WheelEvent) => {
 
-                return value.id === listing.selectedId
-                && value.workspaceId === scope.workspaceId && value.dashboardId === scope.dashboardId
-                && value.status !== "stopped";
-            });
-            const id = active?.id ?? (await agent.create("flagship")).id;
-            setDraft("");
-            await agent.prompt(id, text);
-        } catch (cause) {
-            setError(cause instanceof Error ? cause.message : "The agent could not respond.");
-        } finally { setBusy(false); }
-    };
+            if ((event.target as HTMLElement).closest("input, textarea, [contenteditable]")) {
+                return;
+            }
+            event.preventDefault();
+            setMenu(undefined);
+            const rect = node.getBoundingClientRect();
+            const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? rect.height : 1);
+            setViewport(current => {
 
-    const onWheel = (event: WheelEvent<HTMLDivElement>) => {
-
-        event.preventDefault();
-        const rect = event.currentTarget.getBoundingClientRect();
-        if (event.ctrlKey || event.metaKey) {
-            const zoom = Math.max(0.2, Math.min(3, viewport.zoom * Math.exp(-event.deltaY * 0.003)));
-            const x = event.clientX - rect.left; const y = event.clientY - rect.top;
-            setViewport({
-                x: x - (x - viewport.x) * zoom / viewport.zoom,
-                y: y - (y - viewport.y) * zoom / viewport.zoom,
-                zoom,
-            });
-        } else {
-            setViewport(value => {
+                const zoom = Math.max(0.2, Math.min(3, current.zoom * Math.exp(-delta * 0.003)));
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
 
                 return {
-                    ...value,
-                    x: value.x - event.deltaX,
-                    y: value.y - event.deltaY,
+                    x: x - (x - current.x) * zoom / current.zoom,
+                    y: y - (y - current.y) * zoom / current.zoom,
+                    zoom,
                 };
             });
-        }
-    };
+        };
+        node.addEventListener("wheel", wheel, { passive: false });
+
+        return () => {
+
+            node.removeEventListener("wheel", wheel);
+        };
+    }, []);
 
     const onSurfaceDown = (event: PointerEvent<HTMLDivElement>) => {
 
-        if (event.target !== event.currentTarget) {
+        if (event.target !== event.currentTarget || event.button !== 0) {
             return;
         }
+        event.currentTarget.focus({ preventScroll: true });
         setSelected(undefined);
         drag.current = {
             x: event.clientX,
             y: event.clientY,
             startX: viewport.x,
             startY: viewport.y,
-            viewport,
         };
         event.currentTarget.setPointerCapture(event.pointerId);
-    };
-
-    const onItemDown = (event: PointerEvent<HTMLElement>, item: CanvasItem) => {
-
-        event.stopPropagation();
-        if (event.shiftKey && selected && selected !== item.id) {
-            const source = canvas?.items.find(value => {
-
-                return value.id === selected;
-            });
-            if (source && source.content.kind !== "group" && item.content.kind === "group") {
-                void apply([
-                    {
-                        type: "group",
-                        id: source.id,
-                        groupId: item.id,
-                    },
-                ]);
-            } else if (source?.content.kind === "result" && item.content.kind !== "group") {
-                if (source.content.evidence.some(entry => {
-
-                    return entry.itemId === item.id;
-                })) {
-                    return;
-                }
-                void apply([
-                    {
-                        type: "updateContent",
-                        id: source.id,
-                        content: {
-                            ...source.content,
-                            evidence: [
-                                ...source.content.evidence,
-                                {
-                                    itemId: item.id,
-                                    label: item.content.text.slice(0, 200),
-                                    ...(item.content.kind === "source" ? {
-                                        url: item.content.url,
-                                        ...(item.content.excerpt ? { excerpt: item.content.excerpt } : {}),
-                                    } : {}),
-                                },
-                            ],
-                        },
-                    },
-                    {
-                        type: "link",
-                        link: {
-                            id: crypto.randomUUID(),
-                            from: selected,
-                            to: item.id,
-                        },
-                    },
-                ]);
-            } else {
-                void apply([
-                    {
-                        type: "link",
-                        link: {
-                            id: crypto.randomUUID(),
-                            from: selected,
-                            to: item.id,
-                        },
-                    },
-                ]);
-            }
-
-            return;
-        }
-        setSelected(item.id);
-        drag.current = {
-            id: item.id,
-            x: event.clientX,
-            y: event.clientY,
-            startX: item.placement.x,
-            startY: item.placement.y,
-            viewport,
-        };
-        event.currentTarget.setPointerCapture(event.pointerId);
-    };
-
-    const onDragMove = (event: PointerEvent<HTMLElement>) => {
-
-        const current = drag.current;
-        if (!current) {
-            return;
-        }
-        const dx = event.clientX - current.x; const dy = event.clientY - current.y;
-        if (current.id) {
-            setPreview({
-                [current.id]: {
-                    x: current.startX + dx / current.viewport.zoom,
-                    y: current.startY + dy / current.viewport.zoom,
-                },
-            });
-        } else {
-            setViewport(value => {
-
-                return {
-                    ...value,
-                    x: current.startX + dx,
-                    y: current.startY + dy,
-                };
-            });
-        }
-    };
-
-    const onDragEnd = (event: PointerEvent<HTMLElement>) => {
-
-        const current = drag.current;
-        drag.current = undefined;
-        if (!current?.id) {
-            return;
-        }
-        const x = Math.round(current.startX + (event.clientX - current.x) / current.viewport.zoom);
-        const y = Math.round(current.startY + (event.clientY - current.y) / current.viewport.zoom);
-        if (x !== current.startX || y !== current.startY) {
-            setPreview({
-                [current.id]: {
-                    x,
-                    y,
-                },
-            });
-            void apply([
-                {
-                    type: "move",
-                    id: current.id,
-                    x,
-                    y,
-                },
-            ]).finally(() => {
-
-                setPreview({});
-            });
-        } else {
-            setPreview({});
-        }
     };
 
     return <section
         className="canvas-shell"
-        aria-label="Spatial canvas"
+        aria-label={canvas?.title ?? "Dashboard"}
     >
-        <div
-            className="canvas-topbar"
-        >
-            <div>
-                <div
-                    className="canvas-brand"
-                >
-                    <BirdMark
-                        detail="compact"
-                        variant="solid"
-                        width={24}
-                        height={24}
-                    />
-                    <span
-                        className="canvas-eyebrow"
-                    >
-                        AVESD / CANVAS
-                    </span>
-                </div>
-                <h1>Think in space.</h1>
-            </div>
-            <div
-                className="canvas-actions"
-            >
-                <button
-                    type="button"
-                    onClick={() => {
-
-                        return void add({
-                            kind: "idea",
-                            version: 1,
-                            text: "New thought",
-                        });
-                    }}
-                >
-                    <Plus
-                        size={16}
-                    />
-                    {" "}
-                    Idea
-                </button>
-                <button
-                    type="button"
-                    onClick={() => {
-
-                        setSourceDraft({
-                            text: "",
-                            url: "",
-                            excerpt: "",
-                        });
-                    }}
-                >
-                    <SquareArrowOutUpRight
-                        size={15}
-                    />
-                    {" "}
-                    Source
-                </button>
-                <button
-                    type="button"
-                    disabled={!selected || !canvas?.items.some(item => {
-
-                        return item.id === selected && item.content.kind !== "group";
-                    })}
-                    onClick={() => {
-
-                        const evidence = canvas?.items.find(item => {
-
-                            return item.id === selected;
-                        });
-                        if (evidence && evidence.content.kind !== "group") {
-                            add({
-                                kind: "result",
-                                version: 1,
-                                text: "New conclusion",
-                                evidence: [
-                                    {
-                                        itemId: evidence.id,
-                                        label: evidence.content.text.slice(0, 200),
-                                        ...(evidence.content.kind === "source" ? {
-                                            url: evidence.content.url,
-                                            ...(evidence.content.excerpt ? { excerpt: evidence.content.excerpt } : {}),
-                                        } : {}),
-                                    },
-                                ],
-                            });
-                        }
-                    }}
-                >
-                    <Sparkles
-                        size={15}
-                    />
-                    {" "}
-                    Conclusion
-                </button>
-                <button
-                    type="button"
-                    onClick={() => {
-
-                        return void add({
-                            kind: "group",
-                            version: 1,
-                            text: "New group",
-                        });
-                    }}
-                >
-                    <Frame
-                        size={16}
-                    />
-                    {" "}
-                    Group
-                </button>
-                <button
-                    type="button"
-                    disabled={!canvas?.history.length}
-                    onClick={() => {
-
-                        void apply([{ type: "undo" }]);
-                    }}
-                >
-                    <RotateCcw
-                        size={16}
-                    />
-                    {" "}
-                    Undo
-                </button>
-                <button
-                    type="button"
-                    title="Fit canvas"
-                    onClick={() => {
-
-                        const rect = surface.current?.getBoundingClientRect();
-                        if (rect && canvas) {
-                            setViewport(fitViewport(canvas.items, rect.width, rect.height));
-                        }
-                    }}
-                >
-                    <Maximize2
-                        size={16}
-                    />
-                    {" "}
-                    Fit
-                </button>
-            </div>
-        </div>
-        {sourceDraft && <form
-            className="canvas-source-form"
-            aria-label="Add source"
-            onSubmit={event => {
-
-                event.preventDefault();
-                const text = sourceDraft.text.trim();
-                const url = sourceDraft.url.trim();
-                if (text && url) {
-                    try {
-                        const address = new URL(url);
-                        if ((address.protocol !== "http:" && address.protocol !== "https:") || address.username || address.password) {
-                            throw new Error("Unsupported protocol.");
-                        }
-                    } catch {
-                        setError("Enter an HTTP or HTTPS source URL without credentials.");
-
-                        return;
-                    }
-                    add({
-                        kind: "source",
-                        version: 1,
-                        text,
-                        url,
-                        ...(sourceDraft.excerpt.trim() ? { excerpt: sourceDraft.excerpt.trim() } : {}),
-                    });
-                    setSourceDraft(undefined);
-                }
-            }}
-        >
-            <strong>Add source</strong>
-            <input
-                autoFocus
-                aria-label="Source title"
-                placeholder="Title"
-                maxLength={8_000}
-                value={sourceDraft.text}
-                onChange={event => {
-
-                    setSourceDraft({
-                        ...sourceDraft,
-                        text: event.target.value,
-                    });
-                }}
-            />
-            <input
-                type="url"
-                aria-label="Source URL"
-                placeholder="https://…"
-                maxLength={2_048}
-                value={sourceDraft.url}
-                onChange={event => {
-
-                    setSourceDraft({
-                        ...sourceDraft,
-                        url: event.target.value,
-                    });
-                }}
-            />
-            <textarea
-                aria-label="Source excerpt"
-                placeholder="Optional excerpt or note"
-                maxLength={4_000}
-                value={sourceDraft.excerpt}
-                onChange={event => {
-
-                    setSourceDraft({
-                        ...sourceDraft,
-                        excerpt: event.target.value,
-                    });
-                }}
-            />
-            <div>
-                <button
-                    type="button"
-                    onClick={() => {
-
-                        setSourceDraft(undefined);
-                    }}
-                >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    disabled={!sourceDraft.text.trim() || !sourceDraft.url.trim()}
-                >
-                    Add
-                </button>
-            </div>
-        </form>}
+        {menu && <DashboardMenu
+            x={menu.x}
+            y={menu.y}
+            close={closeMenu}
+            actions={[
+                {
+                    label: "Show all",
+                    run: fit,
+                },
+                {
+                    label: "Ask agent",
+                    run: openController,
+                },
+            ]}
+        />}
         <div
             className="canvas-surface"
             ref={surface}
-            onWheel={onWheel}
+            tabIndex={0}
+            aria-label="Dashboard surface"
+            onContextMenu={event => {
+
+                event.preventDefault();
+                const card = (event.target as HTMLElement).closest<HTMLElement>("[data-item-id]");
+                setSelected(card?.dataset.itemId);
+                setMenu({
+                    x: event.clientX,
+                    y: event.clientY,
+                });
+            }}
             onPointerDown={onSurfaceDown}
-            onPointerMove={onDragMove}
-            onPointerUp={onDragEnd}
+            onPointerMove={event => {
+
+                const current = drag.current;
+                if (current) {
+                    setViewport(value => {
+
+                        return {
+                            ...value,
+                            x: current.startX + event.clientX - current.x,
+                            y: current.startY + event.clientY - current.y,
+                        };
+                    });
+                }
+            }}
+            onPointerUp={() => {
+
+                drag.current = undefined;
+            }}
+            onPointerCancel={() => {
+
+                drag.current = undefined;
+            }}
+            onLostPointerCapture={() => {
+
+                drag.current = undefined;
+            }}
         >
             <CanvasWorld
                 canvas={canvas}
                 viewport={viewport}
                 setViewport={setViewport}
-                preview={preview}
                 selected={selected}
                 setSelected={setSelected}
                 surface={surface}
-                apply={apply}
-                setError={setError}
-                onItemDown={onItemDown}
-                onDragMove={onDragMove}
-                onDragEnd={onDragEnd}
             />
-            {!canvas?.items.length && !sourceDraft && <div
-                className="canvas-empty"
-            >
-                <Sparkles
-                    size={26}
-                />
-                <strong>A space for your thoughts.</strong>
-                <span>Add an idea or source, or tell the agent what to create.</span>
-            </div>}
             <div
-                className="canvas-zoom"
+                className="dashboard-zoom"
+                key={viewport.zoom}
+                aria-label="Zoom"
             >
                 {Math.round(viewport.zoom * 100)}
                 %
             </div>
         </div>
-        <form
-            className="canvas-composer"
-            onSubmit={event => {
-
-                void submit(event);
-            }}
-        >
-            <span
-                className="canvas-composer-icon"
-            >
-                <Sparkles
-                    size={18}
-                />
-            </span>
-            <input
-                ref={commandInput}
-                value={draft}
-                onChange={event => {
-
-                    return void setDraft(event.target.value);
-                }}
-                placeholder="Ask the agent to build, organize, or connect ideas…"
-                aria-label="Canvas instruction"
-            />
-            <kbd>⌘ K</kbd>
-            <button
-                type="submit"
-                disabled={!draft.trim() || busy}
-                aria-label="Send instruction"
-            >
-                {busy ? <span
-                    className="canvas-spinner"
-                /> : <ArrowRight
-                    size={18}
-                />}
-            </button>
-        </form>
-        {selected && <div
-            className="canvas-selection-hint"
-        >
-            <Link2
-                size={14}
-            />
-            {" "}
-            Drag to move · Shift-click to connect or group · Delete to remove
-        </div>}
         {error && <div
             className="canvas-error"
             role="alert"

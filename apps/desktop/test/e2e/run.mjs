@@ -9,6 +9,7 @@ import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 
 const scenarios = {
+    canvas: "canvas.test.mjs",
     "agent-sessions": "agent-sessions.test.mjs",
     browser: "browser.test.mjs",
     "browser-tasks": "browser-tasks.test.mjs",

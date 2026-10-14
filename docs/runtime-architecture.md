@@ -1,5 +1,10 @@
 # Runtime architecture
 
+The current canvas and controller architecture is described in
+[Canvas service](canvas-service.md) and [Canvas architecture](canvas.md).
+Dashboard navigation, widget hosting, and sidebar sections below document retained
+legacy infrastructure; they are not the startup UI of the current desktop.
+
 > This document describes the retained dashboard and plugin infrastructure.
 > The primary desktop view and Agent dock are composed directly. Legacy plugin
 > contributions initialize after that view renders to support historical widget

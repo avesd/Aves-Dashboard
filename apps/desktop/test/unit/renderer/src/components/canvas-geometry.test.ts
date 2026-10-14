@@ -20,6 +20,7 @@ it("places new cards away from existing cards and fits their bounds", () => {
             },
         },
     ];
+    expect(fitViewport(existing, 560, 368).zoom).toBe(1);
     const viewport = {
         x: 0,
         y: 0,

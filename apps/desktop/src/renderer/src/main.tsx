@@ -8,7 +8,6 @@
 import "@avesd/ui/styles.css";
 import "./styles.css";
 import { App } from "./App";
-import { startWorkbench } from "./workbench/runtime";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -20,20 +19,10 @@ if (!rootElement) {
 
 const render = async (): Promise<void> => {
 
-    await startWorkbench();
-
     createRoot(rootElement).render(<StrictMode>
         <App />
     </StrictMode>);
-    void import("./workbench/legacy-plugin-runtime")
-        .then(module => {
 
-            return module.startLegacyPluginRuntime();
-        })
-        .catch(() => {
-
-            console.error("Legacy plugin compatibility initialization failed.");
-        });
 };
 
 void render();

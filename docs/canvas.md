@@ -1,36 +1,42 @@
-# Canvas architecture
+# Dashboard interaction and canvas architecture
 
-The canvas is Avesd's primary desktop view. It contains idea cards, URL source
+The dashboard is Avesd's primary desktop view. Its canvas is the spatial rendering surface; internal canvas contracts and storage names remain stable. It contains idea cards, URL source
 cards with optional excerpts, conclusions with evidence snapshots, labeled
 groups, and links in world coordinates. Each item stores versioned content
 separately from its placement.
 Older text cards and groups are normalized when read; saved canvas state uses
 schema version 2. The viewport has independent pan and
-zoom state, fits saved content when opened, and offers a Fit control. Canvas
-objects are HTML elements so text remains editable; links
+zoom state and fits saved content when opened. Canvas
+objects are HTML elements for rich content display; links
 are SVG elements. CSS transitions provide movement and arrival
 feedback. The interface respects the operating system's reduced-motion setting.
-The renderer composes the canvas and Agent dock directly after workspace
-navigation starts. Legacy plugin contributions initialize separately and do not
-gate the canvas view or its operations.
+Each canvas has an independent native window. A separate, always-on-top controller
+starts collapsed at the screen edge and expands into Agent conversations, canvas
+browsing, and shared settings. Command/Ctrl+K in a canvas opens the controller.
+There is no target-canvas picker: the Agent discovers relevant canvases, reads
+contents, and supplies explicit IDs to operations. Canvas windows do not contain
+an embedded Agent dock or per-dashboard settings.
 
-The initial keyboard flow uses the canvas composer. Command/Ctrl+K focuses it.
-Submitting text starts or continues an interactive Agent session. The Agent
-inspects the canvas through `avesd_inspect_canvas` and changes it through
-dedicated MCP tools. It does not receive direct file or persistence access.
+Interactive Agents use `avesd_canvases` for resource requests and
+`avesd_open_canvas` to present a result. The service does not require a canvas to
+be active or open. Legacy plugin runtime initialization is not part of the new
+renderer startup. See [Canvas service](canvas-service.md) for contracts,
+authorization, receipts, events, and desktop lifecycle.
 
-Direct interaction supports adding ideas and groups, entering a source title,
-URL, and excerpt, creating a conclusion from a selected card, dragging objects,
-panning,
-zooming, editing card content, Shift-clicking to link items or place a selected
-card into a group, deleting a selected item, and undoing changes. Shift-clicking
-another card while a conclusion is selected adds it as cited evidence. Evidence
-keeps a title, URL, and excerpt snapshot if the original source is later changed
-or removed. The same
-operations are available to the Agent through tools. Both paths reach the
-serialized `AgentWorkbench` canvas service in the Electron main process.
+The dashboard has no permanent toolbar, empty-state instructions, or manual
+content creation and editing. People drag empty space to pan, scroll to zoom
+around the pointer, and click items to select them. Evidence references can
+select and center their source. Right-click offers only Show all and Ask agent;
+Command/Ctrl+0 shows all content. Selection and viewport changes remain local
+to the view and do not write shared content.
 
-Canvas state is stored under the active dashboard's `viewState.canvas` key in
+Agents create dashboards and own content mutations: adding, editing, moving,
+grouping, linking, deleting, and undoing. The controller can open existing
+dashboards but has no manual dashboard creation action. Agent operations reach
+`CanvasService` and its serialized storage transaction in the Electron main
+process. Updates appear in open views through service invalidations.
+
+Canvas state is stored under the corresponding dashboard's `viewState.canvas` key in
 the existing versioned workspace snapshot. The runtime-neutral canvas model
 validates coordinates, text, object references, revisions, and bounded undo
 history. Writes are atomic and reject stale revisions. The existing widget and

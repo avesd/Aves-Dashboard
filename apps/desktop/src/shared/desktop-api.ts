@@ -11,6 +11,8 @@ import type { WidgetAgentApi } from "./agent/widget-agent";
 import type { BrowserControlsApi } from "./browser/browser-controls";
 import type { BrowserTasksApi } from "./browser/browser-tasks";
 import type { WebSurfaceApi } from "./browser/web-surface";
+import type { CanvasServiceApi } from "./canvas/contracts";
+import type { DesktopViewsApi } from "./canvas/views";
 import type { LocalPluginsApi } from "./plugins/local-plugins";
 import type { WorkbenchPreferencesApi } from "./workbench/preferences";
 import type { CanvasApi } from "./workspace/canvas";
@@ -29,6 +31,8 @@ export interface DesktopRuntime {
 }
 
 export interface DesktopApi {
+    readonly canvases: CanvasServiceApi;
+    readonly views: DesktopViewsApi;
     readonly canvas: CanvasApi;
     readonly browserTasks: BrowserTasksApi;
     readonly agentSessions: AgentSessionsApi;

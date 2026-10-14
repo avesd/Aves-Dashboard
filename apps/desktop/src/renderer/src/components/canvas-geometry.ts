@@ -38,7 +38,7 @@ export const fitViewport = (items: readonly CanvasItem[], width: number, height:
 
         return item.placement.y + item.placement.height;
     }));
-    const zoom = Math.max(0.2, Math.min(1, (width - 180) / (right - left), (height - 300) / (bottom - top)));
+    const zoom = Math.max(0.2, Math.min(1, (width - 64) / (right - left), (height - 64) / (bottom - top)));
 
     return {
         x: (width - (right - left) * zoom) / 2 - left * zoom,
@@ -82,8 +82,8 @@ export const placeCanvasItem = (content: CanvasContent, existing: readonly Canva
                 const right = (x + width) * viewport.zoom + viewport.x;
                 const top = y * viewport.zoom + viewport.y;
                 const bottom = (y + height) * viewport.zoom + viewport.y;
-                const overflow = rect ? Math.max(0, 20 - left) + Math.max(0, right - rect.width + 90)
-                        + Math.max(0, 100 - top) + Math.max(0, bottom - rect.height + 110) : 0;
+                const overflow = rect ? Math.max(0, 20 - left) + Math.max(0, right - rect.width + 20)
+                        + Math.max(0, 20 - top) + Math.max(0, bottom - rect.height + 20) : 0;
                 const score = overflow * 1_000 + (Math.abs(dx) + Math.abs(dy)) * 10
                         + Math.abs(dy) * 2 + (dx > 0 ? 1 : 0);
                 if (score < bestScore) {

@@ -1,16 +1,19 @@
 # Avesd Core Monorepo
 
 Avesd is a local-first spatial desktop workspace. Its primary surface is an
-infinite canvas of ideas, URL sources, cited conclusions, groups, and links.
-People can edit the canvas directly
-or type an instruction for an Agent that inspects and changes it through scoped
-tools. Voice input is planned for a later stage. The Electron application keeps
+dashboard: an infinite canvas of ideas, URL sources, cited conclusions, groups,
+and links. Each dashboard opens in its own window without a permanent toolbar.
+Agents create and change dashboard content. People drag empty space to pan,
+scroll to zoom, and select objects to inspect them. A minimal, always-on-top controller
+lets people converse with an Agent that discovers and operates dashboards through
+explicit resource tools. Dashboard windows provide browsing and selection without manual content editing. Voice input is planned for a later stage. The Electron application keeps
 local canvas use independent of an account or cloud service.
 
 The earlier dashboard, widget, and plugin infrastructure remains in the
 repository while existing workspace data and services are migrated. The canvas
 is the current primary view; old widget data is retained in workspace snapshots
-but is not shown there yet. See [Canvas architecture](docs/canvas.md).
+but is not shown there yet. See [Canvas architecture](docs/canvas.md) and
+[Canvas service](docs/canvas-service.md).
 
 ## Prerequisites
 

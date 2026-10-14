@@ -10,6 +10,8 @@ import { agentSessionsChannels, parseAgentRoute, parseAgentTier } from "../share
 import { browserControlsChannel, parseBrowserControls } from "../shared/browser/browser-controls";
 import { browserTaskCommandSchema, browserTasksChanged, browserTasksChannel } from "../shared/browser/browser-tasks";
 import { parseWebCommand, settleWebSurfaceCommand, webSurfaceChannel, webSurfaceEventChannel } from "../shared/browser/web-surface";
+import { canvasServiceChannels } from "../shared/canvas/contracts";
+import { desktopViewChannels, viewRequestSchema } from "../shared/canvas/views";
 import type { AgentWorkbenchContext } from "../shared/desktop-api";
 import { agentIpcChannels,
     parseAgentPrompt,
@@ -33,6 +35,8 @@ import { BrowserBindings } from "./browser/browser-bindings";
 import { BrowserTasks } from "./browser/browser-tasks";
 import { PluginBrowserBridge } from "./browser/plugin-browser-bridge";
 import { WebSurfaceManager } from "./browser/web-surface-manager";
+import { CanvasService } from "./canvas/canvas-service";
+import { invokeCanvasTool } from "./canvas/canvas-tools";
 import { LocalPluginStore } from "./plugins/local-plugin-store";
 import { LocalWidgetRunner } from "./plugins/local-widget-sandbox";
 import { LocalWidgetSurfaces } from "./plugins/local-widget-surfaces";
@@ -40,17 +44,24 @@ import { closePluginStorageProcesses, PluginStorage } from "./storage/plugin-sto
 import { resourceDirectoryFile, SharedResources } from "./storage/shared-resources";
 import { loadStoragePaths } from "./storage/storage-paths";
 import { WorkspaceFile } from "./storage/workspace-file";
+import { DesktopWindows } from "./windows/desktop-windows";
 import { WorkbenchPreferences } from "./workbench/preferences";
 import { AgentWorkbench } from "./workspace/agent-workbench";
 import { WidgetWorkspaceBridge } from "./workspace/widget-workspace-bridge";
 import type { DashboardScope, WidgetInstanceId } from "@avesd/workspace-model";
 import type { WorkspaceSnapshot } from "@avesd/workspace-model";
 import { sameDashboard } from "@avesd/workspace-model";
-import type { IpcMainInvokeEvent } from "electron";
-import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+import type { BrowserWindow, IpcMainInvokeEvent } from "electron";
+import { app, dialog, ipcMain, shell } from "electron";
 import { join } from "node:path";
 
 export function startDesktop() {
+
+    if (!app.requestSingleInstanceLock()) {
+        app.quit();
+
+        return Promise.resolve(undefined);
+    }
 
     let providerInstallations: ProviderInstallations;
     let workbenchPreferences: WorkbenchPreferences;
@@ -58,6 +69,8 @@ export function startDesktop() {
     let agentHost: AgentSessions | undefined;
     let agentModels: AgentModels | undefined;
     let mainWindow: BrowserWindow | undefined;
+    let canvasService: CanvasService | undefined;
+    let windows: DesktopWindows | undefined;
     let workspaceFile: WorkspaceFile | undefined;
     let workbench: AgentWorkbench | undefined;
     let gateway: Awaited<ReturnType<typeof openAgentGateway>> | undefined;
@@ -69,53 +82,13 @@ export function startDesktop() {
     let browserBindings: BrowserBindings | undefined;
     let agentRuntimeRoot: string | undefined;
 
-    const isTrustedExternalUrl = (url: string): boolean => {
-
-        try {
-            const protocol = new URL(url).protocol;
-
-            return protocol === "https:" || protocol === "http:";
-        } catch {
-            return false;
-        }
-    };
-
     const createMainWindow = (): BrowserWindow => {
 
-        const window = new BrowserWindow({
-            height: 760,
-            minHeight: 560,
-            minWidth: 760,
-            show: false,
-            title: "Avesd",
-            webPreferences: {
-                contextIsolation: true,
-                nodeIntegration: false,
-                preload: join(__dirname, "../preload/index.cjs"),
-                sandbox: true,
-            },
-            width: 1120,
-        });
-
-        window.once("ready-to-show", () => {
-
-            return void window.show();
-        });
-
-        window.webContents.setWindowOpenHandler(({ url }) => {
-
-            if (isTrustedExternalUrl(url)) {
-                void shell.openExternal(url);
-            }
-
-            return { action: "deny" };
-        });
-
-        window.webContents.on("will-navigate", (event) => {
-
-            return void event.preventDefault();
-        });
-
+        if (!windows) {
+            throw new Error("Desktop windows are not ready.");
+        }
+        const window = windows.controller();
+        mainWindow = window;
         browserTasks?.attach(new WebSurfaceManager(window, () => {
 
             return workspaceFile!.load();
@@ -126,29 +99,6 @@ export function startDesktop() {
             }
         }));
         resetWindowServices(window);
-        window.on("close", () => {
-
-            browserTasks?.detach(); webSurfaces?.dispose(); localWidgetSurfaces?.dispose();
-        });
-        window.webContents.on("render-process-gone", () => {
-
-            browserTasks?.detach(); webSurfaces?.dispose(); localWidgetSurfaces?.dispose();
-        });
-        window.once("closed", () => {
-
-            if (mainWindow === window) {
-
-                mainWindow = undefined;
-                localWidgetRunner.dispose();
-            }
-        });
-        mainWindow = window;
-
-        if (process.env.ELECTRON_RENDERER_URL) {
-            void window.loadURL(process.env.ELECTRON_RENDERER_URL);
-        } else {
-            void window.loadFile(join(__dirname, "../renderer/index.html"));
-        }
 
         return window;
     };
@@ -206,6 +156,44 @@ export function startDesktop() {
 
         return agentHost;
     };
+
+    ipcMain.handle(canvasServiceChannels.request, (event, input: unknown) => {
+
+        if (!windows || !canvasService) {
+            throw new Error("Canvas service is unavailable.");
+        }
+        const view = windows.inspect(event);
+
+        return canvasService.execute({
+            clientId: "desktop",
+            canvasIds: view.canvasId ? [view.canvasId] : "all",
+        }, input);
+    });
+    ipcMain.handle(desktopViewChannels.request, async (event, input: unknown) => {
+
+        if (!windows) {
+            throw new Error("Desktop windows are unavailable.");
+        }
+        const source = windows.inspect(event);
+        const request = viewRequestSchema.parse(input);
+        if (request.type === "inspect") {
+            return source;
+        }
+        if (request.type === "controller") {
+            windows.expand(request.expanded);
+
+            return;
+        }
+        if (source.canvasId && (request.type !== "close" || request.viewId !== source.viewId)) {
+            throw new Error("This view cannot control other windows.");
+        }
+        switch (request.type) {
+            case "list": return windows.list();
+            case "open": return windows.open(request.canvasId);
+            case "focus": return void windows.focus(request.viewId);
+            case "close": return void windows.close(request.viewId);
+        }
+    });
 
     ipcMain.handle(widgetWorkspaceChannels.renderer, (event, instanceId: unknown, input: unknown) => {
 
@@ -529,6 +517,7 @@ export function startDesktop() {
         workbench = new AgentWorkbench(workspaceFile, new LocalPluginStore(storagePaths.plugins), localWidgetRunner, () => {
 
             widgetWorkspaceBridge.changed();
+            canvasService?.invalidate();
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send(workspaceIpcChannels.changed);
             }
@@ -545,6 +534,39 @@ export function startDesktop() {
             }
         }, privateStorage, resources);
         await workbench.navigate({ type: "inspect" });
+        canvasService = new CanvasService(workspaceFile, () => {
+
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send(workspaceIpcChannels.changed);
+            }
+        });
+        windows = new DesktopWindows(join(__dirname, "../preload/index.cjs"), window => {
+
+            if (process.env.ELECTRON_RENDERER_URL) {
+                void window.loadURL(process.env.ELECTRON_RENDERER_URL);
+            }
+            else {
+                void window.loadFile(join(__dirname, "../renderer/index.html"));
+            }
+        }, async canvasId => {
+
+            const result = await canvasService!.execute({
+                clientId: "desktop",
+                canvasIds: "all",
+            }, {
+                type: "read",
+                canvasId,
+            });
+            if (!result.ok || !result.value || !("title" in result.value)) {
+                throw new Error("Canvas is unavailable.");
+            }
+
+            return result.value.title;
+        });
+        canvasService.subscribe(event => {
+
+            windows!.changed(event);
+        });
         browserTasks = await BrowserTasks.open(join(storagePaths.dataDirectory, "browser-tasks-v1.json"), () => {
 
             return workspaceFile!.load();
@@ -561,6 +583,12 @@ export function startDesktop() {
         gateway = await openAgentGateway((name, input) => {
 
             return workbench!.invoke(name, input);
+        }, {
+            service: canvasService,
+            access: {
+                clientId: "local-host",
+                canvasIds: "all",
+            },
         }).catch(() => {
 
             return undefined;
@@ -581,7 +609,7 @@ export function startDesktop() {
                 kind: "interactive",
                 source: "You",
             };
-        }, async (origin, route) => {
+        }, async (origin, route, sessionId) => {
 
             const providers = createAgentProviders(providerInstallations);
             const provider = providers.find(item => {
@@ -591,18 +619,43 @@ export function startDesktop() {
             if (!provider || provider.availability?.().available === false) {
                 throw new Error("Configured ACP is unavailable. Check Settings → Agents.");
             }
-            const address = await openAgentGateway(async (name, input) => {
+            const address = await openAgentGateway(async (name, input, isActive) => {
 
+                if (origin.kind === "interactive" && !origin.widgetId) {
+                    return invokeCanvasTool(canvasService!, {
+                        clientId: sessionId,
+                        isActive,
+                        canvasIds: "all",
+                    }, id => {
+
+                        return windows!.open(id);
+                    }, name, input);
+                }
                 if (origin.widgetId) {
                     await workbench!.authorizeAgentWidget(origin.widgetId);
                 }
 
                 return workbench!.invoke(name, input, origin);
-            });
+            }, origin.kind === "interactive" && !origin.widgetId
+                ? {
+                    service: canvasService!,
+                    access: {
+                        clientId: sessionId,
+                        canvasIds: "all",
+                    },
+                    tools: true,
+                } : undefined);
             const preferences = new AgentPreferences();
             preferences.providerId = route.providerId;
             const host = new AcpAgentHost(agentRuntimeRoot!, address, join(__dirname, "workspace-mcp.js"), preferences, providers, async () => {
 
+                if (origin.kind === "interactive" && !origin.widgetId) {
+                    return {
+                        canvasController: true,
+                        workspaceName: "Local canvases",
+                        dashboardName: "",
+                    };
+                }
                 const snapshot = await workspaceFile!.load();
                 const workspace = snapshot?.workspaces.find(item => {
 
@@ -651,12 +704,15 @@ export function startDesktop() {
 
         app.on("activate", () => {
 
-            if (BrowserWindow.getAllWindows().length === 0) {
-                createMainWindow();
-            }
+            windows?.expand(true);
         });
 
         return gateway;
+    });
+
+    app.on("second-instance", () => {
+
+        windows?.expand(true);
     });
 
     app.on("window-all-closed", () => {
@@ -668,6 +724,9 @@ export function startDesktop() {
 
     app.on("before-quit", () => {
 
+        windows?.dispose();
+        browserTasks?.detach();
+        webSurfaces?.dispose();
         closePluginStorageProcesses();
         agentHost?.dispose();
         agentModels?.dispose();

@@ -1,13 +1,12 @@
 import "../../../../../src/renderer/src/styles.css";
 import "@avesd/ui/styles.css";
 import { CanvasShell } from "../../../../../src/renderer/src/components/CanvasShell";
-import type { AgentSessionsApi } from "../../../../../src/shared/agent/sessions";
-import type { CanvasApi } from "../../../../../src/shared/workspace/canvas";
+import type { CanvasServiceApi } from "../../../../../src/shared/canvas/contracts";
 import type { Dashboard, DashboardScope } from "@avesd/workspace-model";
 import { applyCanvas, readCanvas } from "@avesd/workspace-model";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { page } from "vitest/browser";
 
 let root: Root | undefined;
@@ -18,7 +17,7 @@ afterEach(() => {
     document.body.replaceChildren();
 });
 
-it("adds and edits a canvas card through the split renderer", async () => {
+it("keeps manual interaction read-only while displaying agent updates", async () => {
 
     await page.viewport(1_200, 800);
     const scope: DashboardScope = {
@@ -34,22 +33,19 @@ it("adds and edits a canvas card through the split renderer", async () => {
     };
     let state = readCanvas(dashboard);
     const listeners = new Set<() => void>();
-    const api: CanvasApi = {
-        inspect: async () => {
+    const api = {
+        read: async () => {
 
-            return state;
+            return {
+                ...state,
+                id: "dashboard",
+                title: "Synthetic canvas",
+                updatedAt: null,
+                canUndo: state.history.length > 0,
+            };
         },
-        apply: async (_scope, command) => {
-
-            state = applyCanvas(state, command);
-            listeners.forEach(listener => {
-
-                listener();
-            });
-
-            return state;
-        },
-        subscribe: listener => {
+        apply: vi.fn(),
+        subscribe: (listener: () => void) => {
 
             listeners.add(listener);
 
@@ -63,22 +59,95 @@ it("adds and edits a canvas card through the split renderer", async () => {
     document.body.append(container);
     root = createRoot(container);
     root.render(<CanvasShell
-        api={api}
-        agent={{} as AgentSessionsApi}
-        scope={scope}
+        api={api as unknown as CanvasServiceApi}
+        canvasId="dashboard"
+        openController={() => {
+        }}
     />);
 
-    await expect.element(page.getByText("A space for your thoughts.")).toBeVisible();
-    await page.getByRole("button", {
-        name: "Idea",
-        exact: true,
-    }).click();
-    await expect.element(page.getByText("New thought")).toBeVisible();
-    await page.getByText("New thought").dblClick();
-    await page.getByRole("textbox", { name: "Edit card text" }).fill("Revised thought");
-    await page.getByRole("button", { name: "Save" }).click();
-    await expect.element(page.getByText("Revised thought")).toBeVisible();
-    expect(state.items[0]?.content.text).toBe("Revised thought");
-    await page.getByRole("button", { name: "Fit" }).click();
-    await expect.element(page.getByText("100%", { exact: false })).toBeVisible();
+    await expect.element(page.getByLabelText("Dashboard surface")).toBeVisible();
+    expect(document.querySelector(".canvas-empty")).toBeNull();
+    await page.getByLabelText("Dashboard surface").dblClick();
+    expect(state.items).toHaveLength(0);
+    state = applyCanvas(state, {
+        expectedRevision: state.revision,
+        operations: [
+            {
+                type: "add",
+                item: {
+                    id: "agent-idea",
+                    content: {
+                        kind: "idea",
+                        version: 1,
+                        text: "Agent finding",
+                    },
+                    placement: {
+                        x: 300,
+                        y: 250,
+                        width: 280,
+                        height: 180,
+                    },
+                },
+            },
+        ],
+    });
+    listeners.forEach(listener => {
+
+        return void listener();
+    });
+    await expect.element(page.getByText("Agent finding")).toBeVisible();
+    await page.getByText("Agent finding").dblClick();
+    expect(document.querySelector(".canvas-item.is-selected")).not.toBeNull();
+    expect(document.querySelector("textarea, input")).toBeNull();
+    for (const key of [
+        "Delete",
+        "Backspace",
+        "z",
+    ]) {
+        window.dispatchEvent(new KeyboardEvent("keydown", {
+            key,
+            ctrlKey: key === "z",
+            bubbles: true,
+        }));
+    }
+    const surface = document.querySelector<HTMLElement>(".canvas-surface")!;
+    surface.dispatchEvent(new WheelEvent("wheel", {
+        bubbles: true,
+        cancelable: true,
+        deltaY: -120,
+        clientX: 400,
+        clientY: 300,
+    }));
+    await expect.poll(() => {
+
+        return document.querySelector(".dashboard-zoom")?.textContent;
+    }).not.toBe("100%");
+    surface.dispatchEvent(new MouseEvent("contextmenu", {
+        bubbles: true,
+        clientX: 30,
+        clientY: 30,
+    }));
+    await expect.element(page.getByRole("menuitem", { name: "Show all" })).toBeVisible();
+    expect(document.querySelectorAll('[role="menuitem"]')).toHaveLength(2);
+    await page.getByRole("menuitem", { name: "Show all" }).click();
+    await expect.poll(() => {
+
+        return document.querySelector(".dashboard-zoom")?.textContent;
+    }).toBe("100%");
+    expect(api.apply).not.toHaveBeenCalled();
+    state = applyCanvas(state, {
+        expectedRevision: state.revision,
+        operations: [
+            {
+                type: "update",
+                id: "agent-idea",
+                text: "Updated by agent",
+            },
+        ],
+    });
+    listeners.forEach(listener => {
+
+        return void listener();
+    });
+    await expect.element(page.getByText("Updated by agent")).toBeVisible();
 });
