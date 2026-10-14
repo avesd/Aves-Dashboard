@@ -47,7 +47,7 @@ it("rejects missing credentials and browser origins and only relays authenticate
             ...request,
             headers,
         })).status).toBe(200);
-        expect(invoke).toHaveBeenCalledWith("avesd_get_widget_sdk", {});
+        expect(invoke).toHaveBeenCalledWith("avesd_get_widget_sdk", {}, expect.any(Function));
     } finally { gateway.close(); }
 });
 

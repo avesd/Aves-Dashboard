@@ -35,7 +35,7 @@ const server = createAgentMcpServer(async (name, input) => {
     }
 
     return await response.json() as AgentToolResult;
-});
+}, process.env.AVESD_CANVAS_TOOLS === "1");
 
 serveStdio(() => {
 

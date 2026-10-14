@@ -6,6 +6,7 @@
  */
 
 import { browserTaskRecipeSchema } from "../../shared/browser/browser-tasks";
+import { canvasToolDefinitions } from "../canvas/canvas-tools";
 import { draftContentSchema, draftIdSchema, revisionSchema } from "../plugins/local-plugin-contract";
 import { McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod";
@@ -278,7 +279,7 @@ export const agentToolDefinitions = {
 
 export const agentToolNames = Object.keys(agentToolDefinitions);
 
-export function createAgentMcpServer(invoke: (name: string, input: unknown) => Promise<AgentToolResult>): McpServer {
+export function createAgentMcpServer(invoke: (name: string, input: unknown) => Promise<AgentToolResult>, canvasTools = false): McpServer {
 
     const server = new McpServer({
         name: "avesd-workspace",
@@ -287,7 +288,7 @@ export function createAgentMcpServer(invoke: (name: string, input: unknown) => P
     for (const [
         name,
         definition,
-    ] of Object.entries(agentToolDefinitions)) {
+    ] of Object.entries(canvasTools ? canvasToolDefinitions : agentToolDefinitions)) {
         server.registerTool(name, {
             description: definition.description,
             inputSchema: definition.schema,

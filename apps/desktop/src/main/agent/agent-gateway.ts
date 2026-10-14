@@ -5,6 +5,8 @@
  * @description Agent Gateway
  */
 
+import { serveCanvasHttp } from "../canvas/canvas-http";
+import type { CanvasAccess, CanvasService } from "../canvas/canvas-service";
 import type { AgentToolResult } from "./agent-tools";
 import { randomBytes } from "node:crypto";
 import { createServer } from "node:http";
@@ -12,18 +14,44 @@ import { createServer } from "node:http";
 export interface AgentGatewayAddress {
     readonly url: string;
     readonly token: string;
+    readonly canvasTools?: boolean;
 }
 
-export async function openAgentGateway(invoke: (name: string, input: unknown) => Promise<AgentToolResult>): Promise<AgentGatewayAddress & {
+export async function openAgentGateway(invoke: (name: string, input: unknown, authorized: () => boolean) => Promise<AgentToolResult>, canvas?: {
+    service: CanvasService;
+    access: CanvasAccess;
+    tools?: boolean;
+}): Promise<AgentGatewayAddress & {
     close(): void;
     rotateToken(): void;
 }> {
 
+    let closed = false;
     let token = randomBytes(32).toString("hex");
     const server = createServer((request, response) => {
 
         void (async () => {
 
+            if (canvas && request.url?.startsWith("/v1/")) {
+                const authorized = () => {
+
+                    return !closed && !request.headers.origin && request.headers.authorization === `Bearer ${token}`;
+                };
+                if (!authorized()) {
+                    response.writeHead(401).end();
+
+                    return;
+                }
+                await serveCanvasHttp(request, response, canvas.service, {
+                    ...canvas.access,
+                    isActive: () => {
+
+                        return authorized() && (canvas.access.isActive?.() ?? true);
+                    },
+                }, authorized);
+
+                return;
+            }
             if (request.method !== "POST" || request.url !== "/invoke" || request.headers.origin
       || request.headers.authorization !== `Bearer ${token}` || request.headers["content-type"] !== "application/json") {
                 response.writeHead(403).end();
@@ -53,7 +81,10 @@ export async function openAgentGateway(invoke: (name: string, input: unknown) =>
                 if (typeof command.name !== "string") {
                     throw new Error("Invalid Avesd request.");
                 }
-                const output = await invoke(command.name, command.input);
+                const output = await invoke(command.name, command.input, () => {
+
+                    return !closed && request.headers.authorization === `Bearer ${token}`;
+                });
                 response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(output));
             } catch (error) {
                 const message = error instanceof Error && error.name !== "ZodError" ? error.message.slice(0, 1024) : "Invalid Avesd tool arguments.";
@@ -84,6 +115,7 @@ export async function openAgentGateway(invoke: (name: string, input: unknown) =>
 
     return {
         url: `http://127.0.0.1:${address.port}/invoke`,
+        canvasTools: canvas?.tools,
         get token() {
 
             return token;
@@ -91,9 +123,11 @@ export async function openAgentGateway(invoke: (name: string, input: unknown) =>
         rotateToken() {
 
             token = randomBytes(32).toString("hex");
+            server.closeAllConnections();
         },
         close() {
 
+            closed = true;
             server.closeAllConnections(); server.close();
         },
     };
