@@ -22,7 +22,7 @@ export interface SessionOrigin extends DashboardScope {
 interface Entry {
     summary: AgentSessionSummary;
     readonly origin: SessionOrigin;
-    readonly route: AgentTierRoute;
+    route: AgentTierRoute;
     readonly events: {
         sequence: number;
         event: AgentEvent;
@@ -35,6 +35,7 @@ interface Entry {
     preparing?: Promise<SessionHost>;
     stopped: boolean;
     ready: boolean;
+    configuring: boolean;
 }
 
 export class AgentSessions {
@@ -92,7 +93,7 @@ export class AgentSessions {
         return this.#entry(id).origin;
     }
 
-    async create(tier: AgentTier = "flagship", origin?: SessionOrigin): Promise<{
+    async create(tier: AgentTier = "flagship", origin?: SessionOrigin, route?: AgentTierRoute): Promise<{
         id: string;
     }> {
 
@@ -103,14 +104,16 @@ export class AgentSessions {
         const id = randomUUID();
         const entry: Entry = {
             origin: resolved,
-            route: { ...this.preferences.routes[tier] },
+            route: { ...(route ?? this.preferences.routes[tier]) },
             events: [],
             sequence: 0,
             bytes: 0,
             stopped: false,
             ready: false,
+            configuring: false,
             summary: {
                 id,
+                route: { ...(route ?? this.preferences.routes[tier]) },
                 tier,
                 kind: resolved.kind,
                 source: resolved.source,
@@ -162,6 +165,9 @@ export class AgentSessions {
     async prompt(text: string, id?: string): Promise<void> {
 
         const entry = await this.#resolve(id);
+        if (entry.configuring) {
+            throw new Error("Wait for the Agent configuration change to finish.");
+        }
         if (entry.stopped || entry.summary.status === "running") {
             throw new Error("This session is stopped or already responding.");
         }
@@ -257,15 +263,74 @@ export class AgentSessions {
     }
     async selectProvider(id: string): Promise<void> {
 
-        await (await this.#host(await this.#resolve())).selectProvider(id);
+        const entry = await this.#resolve();
+        if (entry.route.providerId === id) {
+            return;
+        }
+        const created = await this.create(entry.summary.tier, entry.origin, {
+            providerId: id,
+            modelId: "",
+            effortId: "",
+        });
+        await this.connect(created.id);
     }
     async selectModel(id: string): Promise<void> {
 
-        await (await this.#prepare(await this.#resolve())).selectModel(id);
+        const entry = await this.#resolve();
+        await this.configureSession(entry.summary.id, {
+            ...entry.route,
+            modelId: id,
+        });
     }
     async selectEffort(id: string): Promise<void> {
 
-        await (await this.#prepare(await this.#resolve())).selectEffort(id);
+        const entry = await this.#resolve();
+        await this.configureSession(entry.summary.id, {
+            ...entry.route,
+            effortId: id,
+        });
+    }
+    async configureSession(id: string, route: AgentTierRoute): Promise<void> {
+
+        const entry = this.#entry(id);
+        if (entry.route.providerId !== route.providerId) {
+            throw new Error("A different ACP requires a new conversation.");
+        }
+        if (entry.summary.status === "running" || entry.preparing || entry.configuring || this.#ended(entry)) {
+            throw new Error("Wait for this conversation to become idle before changing its model.");
+        }
+        entry.configuring = true;
+        let host: SessionHost | undefined;
+        try {
+            host = await this.#prepare(entry);
+            const settings = await host.getSettings();
+            if (route.modelId && settings.modelId !== route.modelId) {
+                await host.selectModel(route.modelId);
+            }
+            if (route.effortId && (await host.getSettings()).effortId !== route.effortId) {
+                await host.selectEffort(route.effortId);
+            }
+        } finally {
+            // Retain the actual selection even if a later configuration step fails.
+            try {
+                if (host) {
+                    const actual = await host.getSettings();
+                    entry.route = {
+                        providerId: actual.providerId,
+                        modelId: actual.modelId ?? "",
+                        effortId: actual.effortId ?? "",
+                    };
+                    entry.summary = {
+                        ...entry.summary,
+                        route: entry.route,
+                    };
+                    this.changed({
+                        type: "updated",
+                        id,
+                    });
+                }
+            } finally { entry.configuring = false; }
+        }
     }
     async configureProvider(id: string, save: () => Promise<void>): Promise<void> {
 

@@ -8,10 +8,10 @@
 import type { AgentGatewayAddress } from "./agent-gateway";
 import type { AgentPreferences } from "./agent-preferences";
 import { authorizeAvesdTool, AVESD_MCP_SERVER_NAME } from "./agent-tool-permission";
-import type { AgentProvider } from "./providers";
-import { stopAgentProcess } from "./stop-agent-process";
 import type { AcpRuntimeEvent } from "@avesd/acp-client";
 import { AcpSessionConnection } from "@avesd/acp-client";
+import type { AcpProvider } from "@avesd/acp-management";
+import { createAcpProcessEnvironment, stopAcpProcess } from "@avesd/acp-management/node";
 import type { AgentConnectionStatus, AgentEvent, AgentSettings, Dispose } from "@avesd/plugin-api";
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { spawn } from "node:child_process";
@@ -29,83 +29,6 @@ export interface AvesdAgentContext {
     readonly canvasController?: boolean;
     readonly dashboardName: string;
     readonly workspaceName: string;
-}
-
-const inheritedEnvironmentKeys = new Set([
-    "ALL_PROXY",
-    "APPDATA",
-    "CLAUDE_CONFIG_DIR",
-    "CODEX_HOME",
-    "COLORTERM",
-    "COMSPEC",
-    "FORCE_COLOR",
-    "HOME",
-    "HTTPS_PROXY",
-    "HTTP_PROXY",
-    "LANG",
-    "LC_ALL",
-    "LC_CTYPE",
-    "LOCALAPPDATA",
-    "LOGNAME",
-    "NO_COLOR",
-    "NO_PROXY",
-    "PATH",
-    "PATHEXT",
-    "SHELL",
-    "SSL_CERT_DIR",
-    "SSL_CERT_FILE",
-    "SystemRoot",
-    "TEMP",
-    "TERM",
-    "TMP",
-    "TMPDIR",
-    "USER",
-    "USERNAME",
-    "USERPROFILE",
-    "WINDIR",
-    "XDG_CACHE_HOME",
-    "XDG_CONFIG_HOME",
-    "XDG_DATA_HOME",
-    "XDG_STATE_HOME",
-]);
-const providerEnvironmentPrefixes = [
-    "ANTHROPIC_",
-    "AWS_",
-    "AZURE_OPENAI_",
-    "BEDROCK_",
-    "COHERE_",
-    "DEEPSEEK_",
-    "GEMINI_",
-    "GOOGLE_",
-    "GROQ_",
-    "MISTRAL_",
-    "OPENAI_",
-    "OPENCODE_",
-    "OPENROUTER_",
-    "VERTEX_",
-    "XAI_",
-];
-
-export function createAgentProcessEnvironment(parent: NodeJS.ProcessEnv, overrides: Record<string, string> = {}): NodeJS.ProcessEnv {
-
-    const environment: NodeJS.ProcessEnv = {};
-    for (const [
-        key,
-        value,
-    ] of Object.entries(parent)) {
-        if (value !== undefined && (inheritedEnvironmentKeys.has(key) || providerEnvironmentPrefixes.some(prefix => {
-
-            return key.startsWith(prefix);
-        }))) {
-            environment[key] = value;
-        }
-    }
-
-    return {
-        ...environment,
-        ELECTRON_RUN_AS_NODE: "1",
-        ...overrides,
-    };
 }
 
 export function withAvesdContext(text: string, context: AvesdAgentContext): string {
@@ -153,20 +76,20 @@ export class AcpAgentHost {
     #changing = false;
     #contextSent = false;
     #cwd?: string;
-    #provider: AgentProvider;
+    #provider: AcpProvider;
 
     constructor(
         runtimeRoot: string, gateway: AgentGatewayAddress | undefined, mcpServerPath: string,
-        private readonly preferences: AgentPreferences, private readonly providers: readonly AgentProvider[],
+        private readonly preferences: AgentPreferences, private readonly providers: readonly AcpProvider[],
         private readonly context: () => Promise<AvesdAgentContext>,
     ) {
 
         this.#provider = providers.find(provider => {
 
-            return provider.id === preferences.providerId && provider.availability?.().available !== false;
+            return provider.id === preferences.providerId;
         }) ?? providers.find(provider => {
 
-            return provider.availability?.().available !== false;
+            return provider.availability().available !== false;
         }) ?? providers[0]!;
         this.#runtimeRoot = runtimeRoot;
         this.#gateway = gateway;
@@ -188,7 +111,7 @@ export class AcpAgentHost {
                 return {
                     id,
                     name,
-                    ...availability?.(),
+                    ...availability(),
                 };
             }),
             agentName: this.#session?.agentName ?? this.#provider.name,
@@ -246,7 +169,7 @@ export class AcpAgentHost {
         if (!provider) {
             throw new Error("Unknown agent provider.");
         }
-        if (provider.availability?.().available === false) {
+        if (provider.availability().available === false) {
             throw new Error("This provider is unavailable. Check Settings → Agents.");
         }
         if (provider === this.#provider) {
@@ -477,7 +400,10 @@ export class AcpAgentHost {
         this.#cwd = cwd;
         const child = spawn(launch.command, launch.args, {
             cwd,
-            env: createAgentProcessEnvironment(process.env, launch.env),
+            env: createAcpProcessEnvironment(process.env, {
+                ELECTRON_RUN_AS_NODE: "1",
+                ...launch.env,
+            }),
             stdio: [
                 "pipe",
                 "pipe",
@@ -607,7 +533,7 @@ export class AcpAgentHost {
         void (async () => {
 
             if (child) {
-                await stopAgentProcess(child);
+                await stopAcpProcess(child);
             }
             if (cwd) {
                 await rm(cwd, {

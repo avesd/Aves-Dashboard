@@ -15,6 +15,7 @@
     "@agentclientprotocol/claude-agent-acp": "catalog:",
     "@agentclientprotocol/codex-acp": "catalog:",
     "@avesd/acp-client": "workspace:*",
+    "@avesd/acp-management": "workspace:*",
     "@avesd/kernel": "workspace:*",
     "@avesd/plugin-api": "workspace:*",
     "@avesd/plugin-data": "workspace:*",

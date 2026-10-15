@@ -1,0 +1,5 @@
+{
+  "extends": "@avesd/configuration/typescript/node",
+  "compilerOptions": { "composite": true },
+  "include": ["src/**/*.ts"]
+}

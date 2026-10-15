@@ -1,8 +1,9 @@
-import type { AgentSessionSnapshot, AgentSessionSummary } from "../../../shared/agent/sessions";
+import type { AgentSessionSnapshot, AgentSessionSummary, AgentTierRoute } from "../../../shared/agent/sessions";
 import type { CanvasSummary } from "../../../shared/canvas/contracts";
 import type { TranscriptEntry } from "./agent-transcript";
 import { appendAgentEvent } from "./agent-transcript";
 import { AgentMarkdown } from "./AgentMarkdown";
+import { AgentRuntimePicker } from "./AgentRuntimePicker";
 import { AgentProviderSettings } from "./settings/AgentProviderSettings";
 import { AgentTierSettings } from "./settings/AgentTierSettings";
 import { ArrowUp, ChevronDown, Layers, MessageCircle, Plus, Settings2, Square } from "lucide-react";
@@ -39,6 +40,10 @@ export function Controller({ expanded }: {
     const [
         sending,
         setSending,
+    ] = useState(false);
+    const [
+        changingAgent,
+        setChangingAgent,
     ] = useState(false);
     const composer = useRef<HTMLTextAreaElement>(null);
     const conversation = useRef<HTMLDivElement>(null);
@@ -140,7 +145,7 @@ export function Controller({ expanded }: {
     const send = async () => {
 
         const text = draft.trim();
-        if (!text || busy) {
+        if (!text || busy || changingAgent) {
             return;
         }
         setSending(true); setError(undefined);
@@ -149,6 +154,28 @@ export function Controller({ expanded }: {
             setDraft(""); follow.current = true;
             await window.avesd.agentSessions.prompt(id, text);
         } catch (cause) { fail(cause); } finally { setSending(false); }
+    };
+
+    const applyRuntime = async (route: AgentTierRoute) => {
+
+        setChangingAgent(true); setError(undefined);
+        try {
+            if (session && session.kind === "interactive" && session.status !== "stopped" && session.route.providerId === route.providerId) {
+                await window.avesd.agentSessions.configureSession(session.id, route);
+            } else {
+                const created = await window.avesd.agentSessions.create("flagship", route);
+                await window.avesd.agentSessions.connect(created.id);
+            }
+            const routes = await window.avesd.agentSessions.routes();
+            await window.avesd.agentSessions.configure({
+                ...routes,
+                flagship: route,
+            });
+        } finally { setChangingAgent(false); }
+    };
+    const newConversation = () => {
+
+        void window.avesd.agentSessions.create("flagship").catch(fail);
     };
 
     return <main
@@ -303,6 +330,19 @@ export function Controller({ expanded }: {
                         Working across your dashboards…
                     </p>}
                 </div>
+                <AgentRuntimePicker
+                    api={window.avesd.agentSessions}
+                    providersApi={window.avesd.agentProviders}
+                    session={session}
+                    disabled={busy}
+                    applying={changingAgent}
+                    apply={applyRuntime}
+                    newConversation={newConversation}
+                    manage={() => {
+
+                        setPanel("settings");
+                    }}
+                />
                 <form
                     className="controller-composer"
                     onSubmit={event => {
@@ -312,6 +352,7 @@ export function Controller({ expanded }: {
                 >
                     <textarea
                         ref={composer}
+                        disabled={changingAgent}
                         aria-label="Message your agent"
                         placeholder="Ask anything…"
                         value={draft}
@@ -343,7 +384,7 @@ export function Controller({ expanded }: {
                     </button> : <button
                         type="submit"
                         aria-label="Send message"
-                        disabled={!draft.trim()}
+                        disabled={!draft.trim() || changingAgent}
                     >
                         <ArrowUp
                             size={18}
@@ -424,7 +465,7 @@ export function Controller({ expanded }: {
                                     .catch(fail);
                             }}
                         >
-                            {item.source}
+                            {item.route.providerId}
                             {" "}
                             ·
                             {" "}
@@ -454,6 +495,7 @@ export function Controller({ expanded }: {
                 />
                 <AgentTierSettings
                     api={window.avesd.agentSessions}
+                    providersApi={window.avesd.agentProviders}
                 />
             </section>}
             {error && <div

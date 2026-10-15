@@ -49,6 +49,8 @@ browser test setup, and dependency maintenance.
 - `assets/brand` — source SVGs and usage notes for the Avesd bird mark.
 - `apps/desktop` — Electron main, preload, and React renderer processes.
 - `packages/acp-client` — provider-neutral ACP v1 client boundary.
+- `packages/acp-management` — extensible provider registry, local installation
+  discovery, launch strategies, and model/effort capability management.
 - `packages/configuration` — shared TypeScript and ESLint defaults.
 - `packages/kernel` — legacy Cordis-backed plugin lifecycle adapter and
   contribution registries.

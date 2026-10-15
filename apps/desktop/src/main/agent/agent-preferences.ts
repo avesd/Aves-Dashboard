@@ -7,6 +7,7 @@
 
 import type { AgentTierRoutes } from "../../shared/agent/sessions";
 import { parseAgentRoutes } from "../../shared/agent/sessions";
+import { parseAcpProviderId } from "@avesd/acp-management";
 import { randomUUID } from "node:crypto";
 import { readFile, rename, unlink, writeFile } from "node:fs/promises";
 
@@ -42,22 +43,17 @@ export class AgentPreferences {
                 throw new Error();
             }
             const value = data as Record<string, unknown>;
-            if (![
-                "codex",
-                "claude",
-                "opencode",
-            ].includes(String(value.providerId)) || !value.models || typeof value.models !== "object"
-        || Array.isArray(value.models) || Object.entries(value.models).some(([
-                key,
-                model,
-            ]) => {
+            parseAcpProviderId(value.providerId);
+            if (!value.models || typeof value.models !== "object" || Array.isArray(value.models)
+                || Object.entries(value.models).some(([
+                    key,
+                    model,
+                ]) => {
 
-                return ![
-                    "codex",
-                    "claude",
-                    "opencode",
-                ].includes(key) || typeof model !== "string" || model.length > 512;
-            })) {
+                    parseAcpProviderId(key);
+
+                    return typeof model !== "string" || model.length > 512;
+                })) {
                 throw new Error();
             }
             if (value.routes !== undefined) {

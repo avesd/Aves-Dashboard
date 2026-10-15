@@ -6,7 +6,7 @@
  */
 
 import { agentProvidersChannels } from "../shared/agent/providers";
-import { agentSessionsChannels, parseAgentRoute, parseAgentTier } from "../shared/agent/sessions";
+import { agentSessionsChannels, parseAgentRoute, parseAgentRoutes, parseAgentTier } from "../shared/agent/sessions";
 import { browserControlsChannel, parseBrowserControls } from "../shared/browser/browser-controls";
 import { browserTaskCommandSchema, browserTasksChanged, browserTasksChannel } from "../shared/browser/browser-tasks";
 import { parseWebCommand, settleWebSurfaceCommand, webSurfaceChannel, webSurfaceEventChannel } from "../shared/browser/web-surface";
@@ -23,13 +23,11 @@ import { canvasChannels } from "../shared/workspace/canvas";
 import { parseWidgetWorkspaceRequest, widgetWorkspaceChannels } from "../shared/workspace/widget-workspace";
 import { parseWorkspaceNavigation, workspaceNavigationChannel } from "../shared/workspace/workspace-navigation";
 import { AcpAgentHost } from "./agent/acp-agent-host";
+import { createDesktopAcpRegistry } from "./agent/acp-registry";
 import { openAgentGateway } from "./agent/agent-gateway";
-import { AgentModels } from "./agent/agent-models";
 import { AgentPreferences } from "./agent/agent-preferences";
 import { AgentSessions } from "./agent/agent-sessions";
 import { AgentTaskBridge } from "./agent/agent-task-bridge";
-import { parseProviderId, providerDefinitions, ProviderInstallations } from "./agent/provider-installations";
-import { createAgentProviders } from "./agent/providers";
 import { browserBindingFile } from "./browser/browser-binding-file";
 import { BrowserBindings } from "./browser/browser-bindings";
 import { BrowserTasks } from "./browser/browser-tasks";
@@ -48,6 +46,7 @@ import { DesktopWindows } from "./windows/desktop-windows";
 import { WorkbenchPreferences } from "./workbench/preferences";
 import { AgentWorkbench } from "./workspace/agent-workbench";
 import { WidgetWorkspaceBridge } from "./workspace/widget-workspace-bridge";
+import { AcpModelCatalog, AcpProviderInstallations, createAcpProviders } from "@avesd/acp-management/node";
 import type { DashboardScope, WidgetInstanceId } from "@avesd/workspace-model";
 import type { WorkspaceSnapshot } from "@avesd/workspace-model";
 import { sameDashboard } from "@avesd/workspace-model";
@@ -63,11 +62,12 @@ export function startDesktop() {
         return Promise.resolve(undefined);
     }
 
-    let providerInstallations: ProviderInstallations;
+    const acpRegistry = createDesktopAcpRegistry(process.execPath);
+    let providerInstallations: AcpProviderInstallations;
     let workbenchPreferences: WorkbenchPreferences;
     let agentPreferences = new AgentPreferences();
     let agentHost: AgentSessions | undefined;
-    let agentModels: AgentModels | undefined;
+    let agentModels: AcpModelCatalog | undefined;
     let mainWindow: BrowserWindow | undefined;
     let canvasService: CanvasService | undefined;
     let windows: DesktopWindows | undefined;
@@ -271,7 +271,7 @@ export function startDesktop() {
 
         const host = hostForEvent(event);
 
-        return host.configureProvider(parseProviderId(id), () => {
+        return host.configureProvider(acpRegistry.get(id).id, () => {
 
             return providerInstallations.configure(id, configuration);
         });
@@ -279,12 +279,14 @@ export function startDesktop() {
     ipcMain.handle(agentProvidersChannels.setup, (event, id: unknown) => {
 
         hostForEvent(event);
-        const providerId = parseProviderId(id);
+        const providerId = acpRegistry.get(id).id;
 
-        return shell.openExternal(providerDefinitions.find(provider => {
+        const url = acpRegistry.get(providerId).setupUrl;
+        if (!url) {
+            throw new Error("This ACP has no installation guide.");
+        }
 
-            return provider.id === providerId;
-        })!.setupUrl);
+        return shell.openExternal(url);
     });
 
     ipcMain.handle(agentSessionsChannels.command, async (event, input: unknown) => {
@@ -299,6 +301,7 @@ export function startDesktop() {
                 throw new Error("Invalid model check.");
             }
             const route = parseAgentRoute(request.route);
+            acpRegistry.get(route.providerId);
             await providerInstallations.refresh();
 
             return agentModels.probe(route, request.test);
@@ -307,13 +310,20 @@ export function startDesktop() {
             return sessions.list();
         }
         if (request.type === "create") {
-            return sessions.create(parseAgentTier(request.tier));
+            const route = request.route === undefined ? undefined : parseAgentRoute(request.route);
+            if (route) {
+                acpRegistry.get(route.providerId);
+            }
+
+            return sessions.create(parseAgentTier(request.tier), undefined, route);
         }
         if (request.type === "routes") {
             return agentPreferences.routes;
         }
         if (request.type === "configure") {
-            await agentPreferences.configureRoutes(request.routes);
+            const routes = parseAgentRoutes(request.routes);
+            for (const route of Object.values(routes)) { acpRegistry.get(route.providerId); }
+            await agentPreferences.configureRoutes(routes);
 
             return;
         }
@@ -324,6 +334,12 @@ export function startDesktop() {
             case "read": return sessions.snapshot(request.id);
             case "select": return void sessions.select(request.id);
             case "connect": return sessions.connect(request.id);
+            case "configureSession": {
+                const route = parseAgentRoute(request.route);
+                acpRegistry.get(route.providerId);
+
+                return sessions.configureSession(request.id, route);
+            }
             case "prompt": return sessions.prompt(parseAgentPrompt(request.text), request.id);
             case "cancel": return sessions.cancel(request.id);
             case "remove": return sessions.remove(request.id);
@@ -500,7 +516,7 @@ export function startDesktop() {
 
             return;
         }
-        providerInstallations = await ProviderInstallations.open(join(storagePaths.dataDirectory, "agent-installations.json"));
+        providerInstallations = await AcpProviderInstallations.open(join(storagePaths.dataDirectory, "agent-installations.json"), acpRegistry);
         agentRuntimeRoot = storagePaths.agentRuntime;
         await providerInstallations.refresh();
         workbenchPreferences = await WorkbenchPreferences.open(join(storagePaths.dataDirectory, "workbench-preferences.json"));
@@ -593,10 +609,10 @@ export function startDesktop() {
 
             return undefined;
         });
-        agentModels = new AgentModels(agentRuntimeRoot, () => {
+        agentModels = new AcpModelCatalog(agentRuntimeRoot, () => {
 
-            return createAgentProviders(providerInstallations);
-        });
+            return createAcpProviders(providerInstallations);
+        }, { ELECTRON_RUN_AS_NODE: "1" });
         agentHost = new AgentSessions(agentPreferences, async () => {
 
             const snapshot = await workspaceFile!.load();
@@ -611,12 +627,12 @@ export function startDesktop() {
             };
         }, async (origin, route, sessionId) => {
 
-            const providers = createAgentProviders(providerInstallations);
+            const providers = createAcpProviders(providerInstallations);
             const provider = providers.find(item => {
 
                 return item.id === route.providerId;
             });
-            if (!provider || provider.availability?.().available === false) {
+            if (!provider || provider.availability().available === false) {
                 throw new Error("Configured ACP is unavailable. Check Settings → Agents.");
             }
             const address = await openAgentGateway(async (name, input, isActive) => {

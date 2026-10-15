@@ -4,7 +4,28 @@ Avesd routes agent requests through three tiers: `flagship`, `reasoning`, and
 `action`. Settings maps each tier to an installed ACP provider, model ID, and
 effort ID. Blank IDs use that adapter's default. Explicit IDs must be supported
 by the connected ACP; unsupported values fail before the prompt is sent.
-Provider installation and login remain in the ACP settings section.
+The chat composer exposes one ACP/model/effort picker and a new-conversation
+button. Opening the picker discovers current model choices; changing the model
+reloads its efforts. Apply connects the selected configuration without sending
+an inference request. Check access explicitly sends one short request.
+Installation and enablement remain in Manage ACPs, with runtime source and
+version shown in the picker. Codex uses its adapter-bundled compatible CLI by
+default; explicit custom paths are preserved and can be reset with Use bundled
+runtime.
+
+Choosing another ACP creates a new conversation and retains the previous
+session. Changing the model or effort preserves the live ACP connection and is
+allowed only while idle with no pending canvas question. Background conversations
+are never silently retargeted by the chat picker. Chat choices update the
+Flagship default for future interactive conversations. Session summaries expose
+the pinned route, while connected settings report actual model/effort choices.
+
+Provider registration, installation detection/storage, launch strategy creation,
+process environments, and model discovery live in
+[`@avesd/acp-management`](../packages/acp-management/README.md). The desktop's
+`acp-registry.ts` supplies the built-in adapter registrations and Electron launch
+context. Provider IDs and settings pickers are registry-driven; extending ACP
+support does not require editing provider enums in IPC or renderer code.
 
 Model and effort selectors load their options from a fresh ACP session. Changing
 the model reloads its effort choices and resets the selected effort to the ACP

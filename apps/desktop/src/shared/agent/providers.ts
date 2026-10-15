@@ -5,20 +5,11 @@
  * @description Providers
  */
 
-export type AgentProviderId = "codex" | "claude" | "opencode";
-export interface AgentProviderConfiguration {
-    readonly enabled: boolean;
-    readonly executablePath: string;
-}
-export interface AgentProviderInstallation extends AgentProviderConfiguration {
-    readonly id: AgentProviderId;
-    readonly name: string;
-    readonly status: "checking" | "installed" | "not-found" | "error";
-    readonly resolvedPath?: string;
-    readonly version?: string;
-    readonly message?: string;
-    readonly loginCommand: string;
-}
+import type { AcpProviderConfiguration, AcpProviderId, AcpProviderInstallation } from "@avesd/acp-management";
+
+export type AgentProviderId = AcpProviderId;
+export type AgentProviderConfiguration = AcpProviderConfiguration;
+export type AgentProviderInstallation = AcpProviderInstallation;
 export interface AgentProvidersApi {
     list(refresh?: boolean): Promise<readonly AgentProviderInstallation[]>;
     configure(id: AgentProviderId, configuration: AgentProviderConfiguration): Promise<void>;

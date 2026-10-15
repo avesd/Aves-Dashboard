@@ -456,6 +456,7 @@ export function WorkbenchChrome({ children, preferences, agentProviders, agentSe
                     />}
                     {agentSessions && <AgentTierSettings
                         api={agentSessions}
+                        providersApi={window.avesd.agentProviders}
                     />}
                     <h3>Appearance</h3>
                     <fieldset

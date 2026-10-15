@@ -1,6 +1,6 @@
 /**
  * @author Avesd
- * @package Desktop
+ * @package ACP Management
  * @namespace Root
  * @description Provider Detection
  */

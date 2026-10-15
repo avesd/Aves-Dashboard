@@ -677,3 +677,31 @@ button {
 .dashboard-zoom { position: absolute; right: 18px; bottom: 16px; color: #adc4ce; font-size: 11px; pointer-events: none; animation: dashboard-zoom-fade 1.4s forwards; }
 @keyframes dashboard-zoom-fade { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .canvas-item { transition: none; animation: none; } }
+
+.controller-runtime { position: relative; display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 7px 12px 0; }
+.controller-runtime-trigger { min-width: 0; flex: 1; display: flex; align-items: center; gap: 7px; padding: 8px 9px; border-radius: 8px; font-size: 11px; text-align: left; }
+.controller-runtime-trigger:hover:not(:disabled), .controller-runtime-new:hover:not(:disabled) { background: #e8eee7; }
+.controller-runtime-provider { color: #31594b; font-weight: 650; flex-shrink: 0; }
+.controller-runtime-model { color: #6f7a70; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.controller-runtime-effort { margin-left: auto; padding: 3px 6px; background: #e7ede5; border-radius: 5px; color: #52725f; text-transform: capitalize; }
+.controller-runtime-new { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; }
+.controller-runtime-popover { position: absolute; z-index: 20; left: 0; right: 0; bottom: calc(100% + 8px); max-height: min(480px, calc(100vh - 154px)); overflow: auto; padding: 16px; border: 1px solid #d3ddd3; border-radius: 14px; background: #fafbf8; box-shadow: 0 8px 32px #25382c22; }
+.controller-runtime-popover header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+.controller-runtime-popover header strong { display: block; font-size: 14px; }
+.controller-runtime-popover header span { display: block; margin-top: 4px; color: #849084; font-size: 11px; }
+.controller-runtime-popover header button { width: 24px; height: 24px; display: grid; place-items: center; }
+.controller-runtime-popover fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: 12px; }
+.controller-runtime-popover label { display: grid; gap: 6px; font-size: 11px; color: #607263; }
+.controller-runtime-popover select, .controller-runtime-popover input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 36px; padding: 7px 9px; border: 1px solid #cfdacf; border-radius: 8px; background: #fff; color: #263c30; font: inherit; font-size: 12px; }
+.controller-runtime-popover select:focus-visible, .controller-runtime-popover input:focus-visible { outline: 2px solid #4a8576; outline-offset: 1px; }
+.controller-runtime-popover select:disabled { color: #8b938b; background: #eef1eb; }
+.controller-runtime-status { margin: -5px 0 0; font-size: 11px; color: #7d8a7e; }
+.controller-runtime-note { font-size: 11px; color: #7c887e; line-height: 1.5; margin: 10px 0; }
+.controller-runtime-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; font-size: 11px; color: #436f59; }
+.controller-runtime-tools button { display: flex; align-items: center; gap: 4px; padding: 5px 0; }
+.controller-runtime-tools button:last-child { margin-left: auto; }
+.controller-runtime-popover footer { display: flex; align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid #e1e8de; }
+.controller-runtime-popover footer span { flex: 1; color: #7b887d; font-size: 11px; line-height: 1.5; }
+.controller-runtime-popover .controller-runtime-apply { padding: 9px 16px; border-radius: 8px; background: #426e58; color: #fff; flex-shrink: 0; }
+.controller-runtime-failure { color: #9c4c42; font-size: 12px; overflow-wrap: anywhere; }
+.controller-runtime-success { color: #426c51; font-size: 12px; }

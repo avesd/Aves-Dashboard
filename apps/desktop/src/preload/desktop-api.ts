@@ -96,11 +96,12 @@ export const desktopApi: DesktopApi = Object.freeze({
                 sessions: readonly AgentSessionSummary[];
             }>;
         },
-        create: (tier: AgentTier) => {
+        create: (tier: AgentTier, route?: AgentTierRoute) => {
 
             return ipcRenderer.invoke(agentSessionsChannels.command, {
                 type: "create",
                 tier,
+                ...(route ? { route } : {}),
             }) as Promise<{
                 id: string;
             }>;
@@ -124,6 +125,14 @@ export const desktopApi: DesktopApi = Object.freeze({
             return ipcRenderer.invoke(agentSessionsChannels.command, {
                 type: "connect",
                 id,
+            }) as Promise<void>;
+        },
+        configureSession: (id: string, route: AgentTierRoute) => {
+
+            return ipcRenderer.invoke(agentSessionsChannels.command, {
+                type: "configureSession",
+                id,
+                route,
             }) as Promise<void>;
         },
         prompt: (id: string, text: string) => {

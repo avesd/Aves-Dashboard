@@ -5,6 +5,7 @@
  * @description Provider routes behind the three agent tiers
  */
 
+import type { AgentProviderInstallation, AgentProvidersApi } from "../../../../shared/agent/providers";
 import type { AgentSessionsApi, AgentTierRoute, AgentTierRoutes } from "../../../../shared/agent/sessions";
 import { AGENT_TIERS } from "../../../../shared/agent/sessions";
 import { AgentTierRouteSettings } from "./AgentTierRouteSettings";
@@ -12,10 +13,15 @@ import type { AgentTier } from "@avesd/plugin-api";
 import { Button } from "@avesd/ui";
 import { useCallback, useEffect, useState } from "react";
 
-export function AgentTierSettings({ api }: {
+export function AgentTierSettings({ api, providersApi }: {
     readonly api: Pick<AgentSessionsApi, "routes" | "configure" | "probeRoute">;
+    readonly providersApi: Pick<AgentProvidersApi, "list">;
 }) {
 
+    const [
+        providers,
+        setProviders,
+    ] = useState<readonly AgentProviderInstallation[]>([]);
     const [
         routes,
         setRoutes,
@@ -39,10 +45,16 @@ export function AgentTierSettings({ api }: {
     useEffect(() => {
 
         let active = true;
-        void api.routes().then(value => {
+        void Promise.all([
+            api.routes(),
+            providersApi.list(),
+        ]).then(([
+            value,
+            items,
+        ]) => {
 
             if (active) {
-                setRoutes(value);
+                setRoutes(value); setProviders(items);
             }
         })
             .catch(() => {
@@ -56,7 +68,10 @@ export function AgentTierSettings({ api }: {
 
             active = false;
         };
-    }, [api]);
+    }, [
+        api,
+        providersApi,
+    ]);
     const changeRoute = useCallback((tier: AgentTier, route: AgentTierRoute) => {
 
         setRoutes(current => {
@@ -92,6 +107,7 @@ export function AgentTierSettings({ api }: {
                 key={tier}
                 api={api}
                 tier={tier}
+                providers={providers}
                 route={routes[tier]}
                 saving={saving}
                 onChange={changeRoute}

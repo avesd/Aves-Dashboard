@@ -89,7 +89,7 @@ export function AgentProviderSettings({ api }: {
         <div
             className="settings-section-heading"
         >
-            <h3>Agents</h3>
+            <h3>ACP providers</h3>
             <Button
                 size="small"
                 disabled={busy}
@@ -208,6 +208,9 @@ function ProviderCard({ provider, disabled, configure, openSetup }: {
             >
                 {labels[provider.status]}
             </span>
+            <span>
+                {provider.source === "bundled" ? "Bundled runtime" : provider.source === "custom" ? "Custom runtime" : "System runtime"}
+            </span>
             {provider.version && <span>
                 v
                 {provider.version}
@@ -269,9 +272,22 @@ function ProviderCard({ provider, disabled, configure, openSetup }: {
         <div
             className="provider-setup"
         >
-            <Button
+            {provider.bundledAvailable && provider.source !== "bundled" && <Button
                 size="small"
                 disabled={disabled}
+                onClick={() => {
+
+                    void configure({
+                        enabled: provider.enabled,
+                        executablePath: "",
+                    });
+                }}
+            >
+                Use bundled runtime
+            </Button>}
+            <Button
+                size="small"
+                disabled={disabled || !provider.setupUrl}
                 leading={<ExternalLink
                     size={12}
                 />}

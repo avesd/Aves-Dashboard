@@ -5,16 +5,17 @@
  * @description ACP-sourced model choices and explicit route verification
  */
 
-import type { AgentProviderId } from "../../../../shared/agent/providers";
+import type { AgentProviderInstallation } from "../../../../shared/agent/providers";
 import type { AgentRouteOptions, AgentSessionsApi, AgentTierRoute } from "../../../../shared/agent/sessions";
 import { agentTierLabels } from "../../../../shared/agent/sessions";
 import type { AgentTier } from "@avesd/plugin-api";
 import { Button } from "@avesd/ui";
 import { useEffect, useState } from "react";
 
-export function AgentTierRouteSettings({ api, tier, route, saving, onChange, onBlocked }: {
+export function AgentTierRouteSettings({ api, tier, route, providers, saving, onChange, onBlocked }: {
     readonly api: Pick<AgentSessionsApi, "probeRoute">;
     readonly tier: AgentTier;
+    readonly providers: readonly AgentProviderInstallation[];
     readonly route: AgentTierRoute;
     readonly saving: boolean;
     readonly onChange: (tier: AgentTier, route: AgentTierRoute) => void;
@@ -168,27 +169,33 @@ export function AgentTierRouteSettings({ api, tier, route, saving, onChange, onB
                 onChange={event => {
 
                     onChange(tier, {
-                        providerId: event.target.value as AgentProviderId,
+                        providerId: event.target.value,
                         modelId: "",
                         effortId: "",
                     });
                 }}
             >
-                <option
-                    value="codex"
+                {!providers.some(item => {
+
+                    return item.id === route.providerId;
+                }) && <option
+                    value={route.providerId}
                 >
-                    Codex
-                </option>
-                <option
-                    value="claude"
-                >
-                    Claude
-                </option>
-                <option
-                    value="opencode"
-                >
-                    OpenCode
-                </option>
+                    {route.providerId}
+                    {" "}
+                    · unavailable
+                </option>}
+                {providers.map(provider => {
+
+                    return <option
+                        key={provider.id}
+                        value={provider.id}
+                        disabled={!provider.enabled || provider.status !== "installed"}
+                    >
+                        {provider.name}
+                        {!provider.enabled || provider.status !== "installed" ? " · unavailable" : ""}
+                    </option>;
+                })}
             </select>
         </label>
         <label>

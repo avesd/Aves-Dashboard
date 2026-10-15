@@ -1,13 +1,12 @@
 /**
  * @author Avesd
- * @package Desktop
+ * @package ACP Management
  * @namespace Root
  * @description Isolated ACP model discovery and explicit connection tests
  */
 
-import type { AgentRouteProbeResult, AgentTierRoute } from "../../shared/agent/sessions";
-import { createAgentProcessEnvironment } from "./acp-agent-host";
-import type { AgentProvider } from "./providers";
+import { createAcpProcessEnvironment } from "./process-environment";
+import type { AcpModelProbeResult, AcpProvider, AcpSelection } from "./provider-contract";
 import { AcpSessionConnection } from "@avesd/acp-client";
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { spawn } from "node:child_process";
@@ -15,12 +14,12 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { Readable, Writable } from "node:stream";
 
-export class AgentModels {
+export class AcpModelCatalog {
     private readonly active = new Set<() => void>();
     private disposed = false;
-    constructor(private readonly runtimeRoot: string, private readonly providers: () => readonly AgentProvider[]) {}
+    constructor(private readonly runtimeRoot: string, private readonly providers: () => readonly AcpProvider[], private readonly launchEnvironment: Record<string, string> = {}) {}
 
-    async probe(route: AgentTierRoute, test: boolean): Promise<AgentRouteProbeResult> {
+    async probe(route: AcpSelection, test: boolean): Promise<AcpModelProbeResult> {
 
         if (this.disposed || this.active.size >= 3) {
             return {
@@ -32,7 +31,7 @@ export class AgentModels {
 
             return item.id === route.providerId;
         });
-        if (!provider || provider.availability?.().available === false) {
+        if (!provider || provider.availability().available === false) {
             return {
                 ok: false,
                 message: "This ACP is unavailable. Check its installation and enable it in Settings → Agents.",
@@ -59,7 +58,7 @@ export class AgentModels {
             fail(new Error("Probe stopped"));
         };
         this.active.add(stop);
-        const work = async (): Promise<AgentRouteProbeResult> => {
+        const work = async (): Promise<AcpModelProbeResult> => {
 
             await mkdir(this.runtimeRoot, {
                 recursive: true,
@@ -72,7 +71,10 @@ export class AgentModels {
             }
             child = spawn(launch.command, launch.args, {
                 cwd: directory,
-                env: createAgentProcessEnvironment(process.env, launch.env),
+                env: createAcpProcessEnvironment(process.env, {
+                    ...this.launchEnvironment,
+                    ...launch.env,
+                }),
                 stdio: [
                     "pipe",
                     "pipe",

@@ -5,7 +5,8 @@
  * @description Unified agent session administration and tier routing
  */
 
-import type { AgentProviderId } from "./providers";
+import type { AcpModelOptions, AcpModelProbeResult, AcpSelection } from "@avesd/acp-management";
+import { parseAcpSelection } from "@avesd/acp-management";
 import type { AgentEvent, AgentSettings, AgentTaskRequest, AgentTaskStatus, AgentTier } from "@avesd/plugin-api";
 import type { DashboardScope } from "@avesd/workspace-model";
 
@@ -19,36 +20,13 @@ export const agentTierLabels: Record<AgentTier, string> = {
     reasoning: "Reasoning",
     action: "Action",
 };
-export interface AgentTierRoute {
-    readonly providerId: AgentProviderId;
-    readonly modelId: string;
-    readonly effortId: string;
-}
+export type AgentTierRoute = AcpSelection;
 export type AgentTierRoutes = Readonly<Record<AgentTier, AgentTierRoute>>;
-export interface AgentRouteOptions {
-    readonly models: readonly {
-        readonly id: string;
-        readonly name: string;
-    }[];
-    readonly efforts: readonly {
-        readonly id: string;
-        readonly name: string;
-    }[];
-    readonly defaultModelId?: string;
-    readonly defaultEffortId?: string;
-    readonly modelId?: string;
-    readonly effortId?: string;
-}
-export type AgentRouteProbeResult = {
-    readonly ok: true;
-    readonly options: AgentRouteOptions;
-    readonly tested: boolean;
-}
-    | {
-        readonly ok: false;
-        readonly message: string;
-    };
+export type AgentRouteOptions = AcpModelOptions;
+export type AgentRouteProbeResult = AcpModelProbeResult;
 export interface AgentSessionSummary extends DashboardScope {
+    readonly waitingForAnswer?: boolean;
+    readonly route: AgentTierRoute;
     readonly id: string;
     readonly tier: AgentTier;
     readonly kind: "interactive" | "background";
@@ -72,12 +50,13 @@ export interface AgentSessionsApi {
         readonly selectedId?: string;
         readonly sessions: readonly AgentSessionSummary[];
     }>;
-    create(tier: AgentTier): Promise<{
+    create(tier: AgentTier, route?: AgentTierRoute): Promise<{
         readonly id: string;
     }>;
     select(id: string): Promise<void>;
     read(id: string): Promise<AgentSessionSnapshot | null>;
     connect(id: string): Promise<void>;
+    configureSession(id: string, route: AgentTierRoute): Promise<void>;
     prompt(id: string, text: string): Promise<void>;
     cancel(id: string): Promise<void>;
     remove(id: string): Promise<void>;
@@ -127,20 +106,5 @@ export function parseAgentRoutes(input: unknown): AgentTierRoutes {
 
 export function parseAgentRoute(input: unknown): AgentTierRoute {
 
-    const value = input as Record<string, unknown> | undefined;
-    if (!value || typeof value !== "object" || ![
-        "codex",
-        "claude",
-        "opencode",
-    ].includes(String(value.providerId))
-            || typeof value.modelId !== "string" || value.modelId.length > 512
-            || typeof value.effortId !== "string" || value.effortId.length > 512) {
-        throw new Error("Invalid agent tier route.");
-    }
-
-    return {
-        providerId: value.providerId as AgentProviderId,
-        modelId: value.modelId.trim(),
-        effortId: value.effortId.trim(),
-    };
+    return parseAcpSelection(input);
 }

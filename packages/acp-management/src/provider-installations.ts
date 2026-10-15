@@ -1,51 +1,19 @@
 /**
  * @author Avesd
- * @package Desktop
+ * @package ACP Management
  * @namespace Root
  * @description Provider Installations
  */
 
-import type { AgentProviderConfiguration, AgentProviderId, AgentProviderInstallation } from "../../shared/agent/providers";
+import type { AcpProviderConfiguration, AcpProviderId, AcpProviderInstallation } from "./provider-contract";
 import { probeCli } from "./provider-detection";
+import type { AcpProviderRegistry } from "./provider-registry";
+import { parseAcpProviderId } from "./provider-registry";
 import { randomUUID } from "node:crypto";
 import { readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 
-export const providerDefinitions = [
-    {
-        id: "codex",
-        name: "Codex",
-        command: "codex",
-        loginCommand: "codex login",
-        setupUrl: "https://developers.openai.com/codex/cli/",
-    },
-    {
-        id: "claude",
-        name: "Claude Code",
-        command: "claude",
-        loginCommand: "claude auth login",
-        setupUrl: "https://code.claude.com/docs/en/setup",
-    },
-    {
-        id: "opencode",
-        name: "OpenCode",
-        command: "opencode",
-        loginCommand: "opencode auth login",
-        setupUrl: "https://opencode.ai/docs/",
-    },
-] as const;
-export function parseProviderId(input: unknown): AgentProviderId {
-
-    if (!providerDefinitions.some(provider => {
-
-        return provider.id === input;
-    })) {
-        throw new Error("Unknown agent provider.");
-    }
-
-    return input as AgentProviderId;
-}
-function parseConfiguration(input: unknown): AgentProviderConfiguration {
+function parseConfiguration(input: unknown): AcpProviderConfiguration {
 
     if (!input || typeof input !== "object") {
         throw new Error("Invalid provider configuration.");
@@ -65,16 +33,16 @@ function parseConfiguration(input: unknown): AgentProviderConfiguration {
     };
 }
 
-export class ProviderInstallations {
-    private configurations = new Map<AgentProviderId, AgentProviderConfiguration>();
-    private probes = new Map<AgentProviderId, Awaited<ReturnType<typeof probeCli>>>();
+export class AcpProviderInstallations {
+    private configurations = new Map<AcpProviderId, AcpProviderConfiguration>();
+    private probes = new Map<AcpProviderId, Awaited<ReturnType<typeof probeCli>>>();
     private running?: Promise<void>;
     private saving: Promise<void> = Promise.resolve();
-    constructor(private readonly path: string, private readonly probe = probeCli) {}
+    constructor(private readonly path: string, readonly registry: AcpProviderRegistry, private readonly probe = probeCli) {}
 
-    static async open(path: string): Promise<ProviderInstallations> {
+    static async open(path: string, registry: AcpProviderRegistry): Promise<AcpProviderInstallations> {
 
-        const manager = new ProviderInstallations(path);
+        const manager = new AcpProviderInstallations(path, registry);
         try {
             const data = JSON.parse(await readFile(path, "utf8")) as unknown;
             if (!data || typeof data !== "object" || Array.isArray(data)) {
@@ -83,7 +51,7 @@ export class ProviderInstallations {
             for (const [
                 id,
                 value,
-            ] of Object.entries(data)) {manager.configurations.set(parseProviderId(id), parseConfiguration(value));}
+            ] of Object.entries(data)) {manager.configurations.set(parseAcpProviderId(id), parseConfiguration(value));}
         } catch (error) {
             if (!(error && typeof error === "object" && "code" in error && error.code === "ENOENT")) {
                 throw error;
@@ -93,14 +61,17 @@ export class ProviderInstallations {
         return manager;
     }
 
-    list(): readonly AgentProviderInstallation[] {
+    list(): readonly AcpProviderInstallation[] {
 
-        return providerDefinitions.map(({ id, name, loginCommand }) => {
+        return this.registry.list().map(({ id, name, loginCommand, setupUrl, defaultExecutablePath }) => {
 
             return {
                 id,
                 name,
                 loginCommand,
+                ...(setupUrl ? { setupUrl } : {}),
+                bundledAvailable: !!defaultExecutablePath,
+                source: this.configurations.get(id)?.executablePath ? "custom" : defaultExecutablePath ? "bundled" : "system",
                 ...(this.configurations.get(id) ?? {
                     enabled: true,
                     executablePath: "",
@@ -115,9 +86,9 @@ export class ProviderInstallations {
             return this.running;
         }
         const configurations = new Map(this.configurations);
-        const running = Promise.all(providerDefinitions.map(async definition => {
+        const running = Promise.all(this.registry.list().map(async definition => {
 
-            const result = await this.probe(definition.command, configurations.get(definition.id)?.executablePath ?? "");
+            const result = await this.probe(definition.command, configurations.get(definition.id)?.executablePath || definition.defaultExecutablePath || "");
             if (configurations.get(definition.id) === this.configurations.get(definition.id)) {
                 this.probes.set(definition.id, result);
             }
@@ -135,7 +106,7 @@ export class ProviderInstallations {
     }
     configure(id: unknown, input: unknown): Promise<void> {
 
-        const providerId = parseProviderId(id);
+        const providerId = this.registry.get(id).id;
         const configuration = parseConfiguration(input);
         const save = this.saving.catch(() => {
         }).then(async () => {
@@ -158,8 +129,9 @@ export class ProviderInstallations {
 
         return save;
     }
-    async executable(id: AgentProviderId): Promise<string> {
+    async executable(id: AcpProviderId): Promise<string> {
 
+        this.registry.get(id);
         await this.refresh();
         const provider = this.list().find(item => {
 
