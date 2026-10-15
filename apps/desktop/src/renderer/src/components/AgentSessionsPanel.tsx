@@ -173,7 +173,7 @@ export function AgentSessionsPanel({ api, sessions, selectedId, onSelect, onCrea
                             {" "}
                             ·
                             {" "}
-                            {session.status}
+                            {session.waitingForAnswer && session.status !== "running" ? "Waiting for answer" : session.status}
                         </strong>
                         <span>
                             {session.source}

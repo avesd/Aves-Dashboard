@@ -8,4 +8,7 @@
 import { desktopApi } from "./desktop-api";
 import { contextBridge } from "electron";
 
-contextBridge.exposeInMainWorld("avesd", desktopApi);
+if (process.isMainFrame) {
+
+    contextBridge.exposeInMainWorld("avesd", desktopApi);
+}

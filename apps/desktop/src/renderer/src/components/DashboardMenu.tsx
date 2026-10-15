@@ -46,6 +46,7 @@ export function DashboardMenu({ x, y, actions, close }: {
             const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
             const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
             if (event.key === "Escape" || event.key === "Tab") {
+                event.preventDefault(); event.stopPropagation();
                 close();
 
                 return;

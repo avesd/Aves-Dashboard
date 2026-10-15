@@ -9,10 +9,19 @@ import type { AgentSessionsChange, AgentSessionSnapshot, AgentSessionSummary, Ag
 import type { AcpAgentHost } from "./acp-agent-host";
 import type { AgentPreferences } from "./agent-preferences";
 import type { AgentEvent, AgentSettings, AgentTier } from "@avesd/plugin-api";
-import type { DashboardScope } from "@avesd/workspace-model";
+import type { BlockQuestionOwner, DashboardScope } from "@avesd/workspace-model";
 import { randomUUID } from "node:crypto";
 
-type SessionHost = Pick<AcpAgentHost, "connect" | "prompt" | "cancel" | "getSettings" | "selectProvider" | "selectModel" | "selectEffort" | "publishSettings" | "subscribe" | "dispose">;
+type SessionHost = Pick<AcpAgentHost, "connect" | "prompt" | "continuePrompt" | "continuationToken" | "cancel" | "getSettings" | "selectProvider" | "selectModel" | "selectEffort" | "publishSettings" | "subscribe" | "dispose">;
+export type AnswerContinuationStatus = "queued" | "running" | "completed" | "error" | "unavailable";
+interface AnswerContinuation {
+    readonly id: string;
+    readonly owner: BlockQuestionOwner;
+    readonly text: string;
+    readonly active: () => Promise<boolean>;
+    status: AnswerContinuationStatus;
+    turnId?: string;
+}
 export interface SessionOrigin extends DashboardScope {
     readonly kind: "interactive" | "background";
     readonly source: string;
@@ -36,6 +45,10 @@ interface Entry {
     stopped: boolean;
     ready: boolean;
     configuring: boolean;
+    turnId?: string;
+    waitingQuestion?: string;
+    readonly answers: Map<string, AnswerContinuation>;
+    continuing?: AnswerContinuation;
 }
 
 export class AgentSessions {
@@ -111,6 +124,7 @@ export class AgentSessions {
             stopped: false,
             ready: false,
             configuring: false,
+            answers: new Map(),
             summary: {
                 id,
                 route: { ...(route ?? this.preferences.routes[tier]) },
@@ -168,12 +182,155 @@ export class AgentSessions {
         if (entry.configuring) {
             throw new Error("Wait for the Agent configuration change to finish.");
         }
-        if (entry.stopped || entry.summary.status === "running") {
+        if (entry.continuing || [...entry.answers.values()].some(answer => {
+
+            return answer.status === "queued";
+        })) {
+            throw new Error("Wait for the submitted canvas answer to continue.");
+        }
+
+        return this.#prompt(entry, text);
+    }
+
+    questionOwner(id: string): BlockQuestionOwner | undefined {
+
+        const entry = this.#entries.get(id);
+        const connectionId = entry?.host?.continuationToken();
+
+        return entry && !this.#ended(entry) && entry.summary.kind === "interactive" && entry.summary.status === "running"
+            && entry.turnId && connectionId ? {
+                sessionId: id,
+                connectionId,
+                turnId: entry.turnId,
+            } : undefined;
+    }
+
+    questionActive(owner: BlockQuestionOwner, pending: boolean): boolean {
+
+        const entry = this.#entries.get(owner.sessionId);
+
+        return !!entry && !this.#ended(entry) && entry.host?.continuationToken() === owner.connectionId
+            && (!pending || entry.turnId === owner.turnId);
+    }
+
+    waitForAnswer(owner: BlockQuestionOwner, key: string, waiting: boolean): void {
+
+        const entry = this.#entries.get(owner.sessionId);
+        if (!entry || (waiting ? !this.questionActive(owner, true) : entry.waitingQuestion !== key)) {
+            return;
+        }
+        entry.waitingQuestion = waiting ? key : undefined;
+        entry.summary = {
+            ...entry.summary,
+            waitingForAnswer: waiting,
+        };
+        this.changed({
+            type: "updated",
+            id: owner.sessionId,
+        });
+    }
+
+    continuationStatus(owner: BlockQuestionOwner, id: string): AnswerContinuationStatus {
+
+        if (!this.questionActive(owner, false)) {
+            return "unavailable";
+        }
+
+        const entry = this.#entries.get(owner.sessionId)!;
+        const answer = entry.answers.get(id);
+
+        return answer?.status === "error" && entry.turnId !== answer.turnId ? "unavailable" : answer?.status ?? "unavailable";
+    }
+
+    /** Register after the answer is durably saved; never hold the block action open. */
+    respond(owner: BlockQuestionOwner, id: string, text: string, active: () => Promise<boolean>): AnswerContinuationStatus {
+
+        if (!this.questionActive(owner, false)) {
+            throw new Error("The original ACP conversation has ended.");
+        }
+        const entry = this.#entry(owner.sessionId);
+        const previous = entry.answers.get(id);
+        if (previous && previous.status !== "error") {
+            return previous.status;
+        }
+        if (previous && entry.turnId !== previous.turnId) {
+            throw new Error("This answer has been superseded by another turn.");
+        }
+        if (!previous && !this.questionActive(owner, true)) {
+            throw new Error("The question belongs to an earlier turn.");
+        }
+        if (!previous && entry.answers.size >= 64) {
+            throw new Error("This session has reached its canvas answer limit.");
+        }
+        entry.answers.set(id, {
+            id,
+            owner,
+            text,
+            active,
+            status: "queued",
+        });
+        entry.waitingQuestion = undefined;
+        entry.summary = {
+            ...entry.summary,
+            waitingForAnswer: false,
+        };
+        this.changed({
+            type: "updated",
+            id: owner.sessionId,
+        });
+        void this.#continue(entry);
+
+        return "queued";
+    }
+
+    async #continue(entry: Entry): Promise<void> {
+
+        if (this.#ended(entry) || entry.summary.status === "running" || entry.continuing) {
+            return;
+        }
+        const answer = [...entry.answers.values()].find(candidate => {
+
+            return candidate.status === "queued";
+        });
+        if (!answer) {
+            return;
+        }
+        entry.continuing = answer;
+        try {
+            if (!this.questionActive(answer.owner, false) || !await answer.active()) {
+                answer.status = "unavailable";
+
+                return;
+            }
+            answer.status = "running";
+            await this.#prompt(entry, answer.text, answer);
+            answer.status = "completed";
+        } catch {
+            answer.status = this.questionActive(answer.owner, false) ? "error" : "unavailable";
+        } finally {
+            entry.continuing = undefined;
+            this.changed({
+                type: "updated",
+                id: entry.summary.id,
+            });
+            void this.#continue(entry);
+        }
+    }
+
+    async #prompt(entry: Entry, text: string, continuation?: AnswerContinuation): Promise<void> {
+
+        if (entry.stopped || entry.summary.status === "running" || this.#disposed) {
             throw new Error("This session is stopped or already responding.");
+        }
+        entry.turnId = randomUUID();
+        entry.waitingQuestion = undefined;
+        if (continuation) {
+            continuation.turnId = entry.turnId;
         }
         entry.summary = {
             ...entry.summary,
             status: "running",
+            waitingForAnswer: false,
         };
         this.#record(entry, {
             type: "userMessage",
@@ -187,11 +344,19 @@ export class AgentSessions {
             }).length > 8) {
                 throw new Error("At most eight agent tasks can run concurrently.");
             }
-            const host = await this.#prepare(entry);
+            const host = continuation ? entry.host : await this.#prepare(entry);
             if (this.#ended(entry)) {
                 return;
             }
-            await host.prompt(text);
+            if (!host) {
+                throw new Error("The original ACP conversation has ended.");
+            }
+            if (continuation) {
+                await host.continuePrompt(text, continuation.owner.connectionId);
+            }
+            else {
+                await host.prompt(text);
+            }
             if (!this.#ended(entry)) {
                 entry.summary = {
                     ...entry.summary,
@@ -220,6 +385,9 @@ export class AgentSessions {
                     id: entry.summary.id,
                 });
             }
+            if (!continuation) {
+                void this.#continue(entry);
+            }
         }
     }
     async cancel(id?: string): Promise<void> {
@@ -237,7 +405,9 @@ export class AgentSessions {
         entry.summary = {
             ...entry.summary,
             status: "stopped",
+            waitingForAnswer: false,
         };
+        entry.waitingQuestion = undefined;
         // Termination also covers adapters that never acknowledge ACP cancellation.
         void entry.host?.cancel().catch(() => {
         });
@@ -296,7 +466,7 @@ export class AgentSessions {
         if (entry.route.providerId !== route.providerId) {
             throw new Error("A different ACP requires a new conversation.");
         }
-        if (entry.summary.status === "running" || entry.preparing || entry.configuring || this.#ended(entry)) {
+        if (entry.summary.status === "running" || entry.preparing || entry.configuring || entry.continuing || entry.waitingQuestion || this.#ended(entry)) {
             throw new Error("Wait for this conversation to become idle before changing its model.");
         }
         entry.configuring = true;
@@ -461,6 +631,13 @@ export class AgentSessions {
         }
         if (event.type === "status" && (event.status === "error" || event.status === "disconnected")) {
             entry.ready = false;
+        }
+        if (event.type === "sessionReset" || (event.type === "status" && event.status === "disconnected")) {
+            entry.waitingQuestion = undefined;
+            entry.summary = {
+                ...entry.summary,
+                waitingForAnswer: false,
+            };
         }
         if (event.type === "sessionReset") {
             entry.events.length = 0; entry.bytes = 0;

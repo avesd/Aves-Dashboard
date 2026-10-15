@@ -14,5 +14,8 @@
     "@avesd/configuration": "workspace:*",
     "eslint": "catalog:",
     "typescript": "catalog:"
+  },
+  "dependencies": {
+    "zod": "catalog:"
   }
 }

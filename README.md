@@ -1,19 +1,21 @@
 # Avesd Core Monorepo
 
 Avesd is a local-first spatial desktop workspace. Its primary surface is an
-dashboard: an infinite canvas of ideas, URL sources, cited conclusions, groups,
-and links. Each dashboard opens in its own window without a permanent toolbar.
-Agents create and change dashboard content. People drag empty space to pan,
-scroll to zoom, and select objects to inspect them. A minimal, always-on-top controller
-lets people converse with an Agent that discovers and operates dashboards through
-explicit resource tools. Dashboard windows provide browsing and selection without manual content editing. Voice input is planned for a later stage. The Electron application keeps
-local canvas use independent of an account or cloud service.
+independent canvas window, with a separate always-on-top controller for Agent
+conversations, canvas discovery, and shared settings. Its core local workflow
+requires no account, network connection, or cloud service.
 
-The earlier dashboard, widget, and plugin infrastructure remains in the
-repository while existing workspace data and services are migrated. The canvas
-is the current primary view; old widget data is retained in workspace snapshots
-but is not shown there yet. See [Canvas architecture](docs/canvas.md) and
-[Canvas service](docs/canvas-service.md).
+Agents create independent HTML/CSS/SVG blocks with optional presentation
+JavaScript. Each block can receive live data and invoke registered host actions.
+The canvas manages placement while a sandboxed document renders each block.
+Source, data, and saved interaction state persist locally. See
+[Dashboard blocks](docs/dashboard-blocks.md) for the five Agent tools and runtime
+bridge. The earlier fixed card/source/conclusion/group model has been removed.
+
+The earlier dashboard, widget, and plugin infrastructure remains for
+compatibility. Existing opaque view-state and legacy widget data stay in local
+storage but are not rendered in the canvas. See [Canvas architecture](docs/canvas.md)
+and [Canvas service](docs/canvas-service.md).
 
 ## Prerequisites
 
@@ -121,14 +123,16 @@ autofixable, including the requirement to use braces around conditional bodies.
 
 Avesd keeps a small trusted Electron host. Renderer code reaches privileged
 behavior only through narrow typed preload APIs and explicit IPC contracts.
-Canvas edits from the UI and Agent use the same validated, serialized main-process
-operation path. Canvas objects live in the active dashboard's versioned view
-state, while old widget state remains available for future migration.
+Canvas resource operations from the UI and Agent use the same validated,
+serialized main-process path. Legacy view-state and widgets remain opaque
+stored data while component rendering is redesigned.
 
 Workspaces still own dashboards and shared data sources during this transition.
-The canvas is currently scoped to a dashboard. Agent tools can inspect, add,
-move, update, group, link, remove, and undo canvas content. The renderer never
-writes a workspace snapshot directly.
+Canvas IDs reuse dashboard IDs. Interactive Agents receive five
+`aves_dashboard_` MCP tools for canvas discovery, opening windows, discovering
+capabilities, submitting blocks, and inspecting live output. Source/layout
+changes use canvas revisions and atomic receipts; live data and saved view state
+have independent revisions. The renderer never writes workspace files directly.
 
 The local workflow requires no account or cloud service. Workspace snapshots,
 plugin data, browser grants, and application settings remain on the user's
@@ -143,12 +147,13 @@ and plugin infrastructure.
 
 - [Release versioning](docs/release-versioning.md) — changesets, version previews, and release history.
 - [Development](docs/development.md) — validation, tests, and dependency tasks.
+- [Dashboard blocks](docs/dashboard-blocks.md) — source rendering, live data, host actions, and the five tools.
 - [Canvas architecture](docs/canvas.md) — canvas data, interaction, and Agent tools.
 - [Runtime architecture](docs/runtime-architecture.md) — process boundaries,
   workspace ownership, navigation, persistence, and Agent integration.
 - [Application configuration](docs/application-configuration.md) — local data
   directory configuration and migration.
-- [Local widgets](docs/local-widgets.md) — Agent-authored widgets, private
+- [Local widgets](docs/local-widgets.md) — compatibility widgets, private
   storage, shared resources, testing, and activation.
 - [Agent sessions](docs/agent-sessions.md) — tier routing, widget tasks, and unified session management.
 - [Browser widgets](docs/browser-widgets.md) — embedded pages, script tools, and

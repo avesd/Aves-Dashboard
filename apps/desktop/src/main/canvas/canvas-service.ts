@@ -1,8 +1,8 @@
 import type { CanvasChange, CanvasDocument, CanvasErrorCode, CanvasListing, CanvasReceipt, CanvasRequest, CanvasResponse, CanvasResult } from "../../shared/canvas/contracts";
-import { canvasRequestSchema } from "../../shared/canvas/contracts";
+import { canvasServiceRequestSchema } from "../../shared/canvas/contracts";
 import type { WorkspaceFile } from "../storage/workspace-file";
-import type { Dashboard, DashboardId, WorkspaceSnapshot } from "@avesd/workspace-model";
-import { applyCanvas, parseCanvasCommand, readCanvas, writeCanvasViewState } from "@avesd/workspace-model";
+import type { BlockQuestionOwner, Dashboard, DashboardId, WorkspaceSnapshot } from "@avesd/workspace-model";
+import { changeDashboardBlocks, readCanvasMetadata, readDashboardBlocks, writeCanvasMetadata, writeDashboardBlocks } from "@avesd/workspace-model";
 import { createHash, randomUUID } from "node:crypto";
 import * as z from "zod";
 
@@ -10,6 +10,7 @@ export interface CanvasAccess {
     readonly clientId: string;
     readonly isActive?: () => boolean;
     readonly canvasIds: "all" | readonly string[];
+    readonly questionOwner?: BlockQuestionOwner;
 }
 const receiptSchema = z.object({
     requestId: z.string(),
@@ -17,6 +18,7 @@ const receiptSchema = z.object({
     revision: z.number().int()
         .nonnegative(),
     committedAt: z.number(),
+    blockIds: z.array(z.string()).optional(),
 });
 const metadataSchema = z.object({
     receipts: z.array(z.object({
@@ -26,7 +28,7 @@ const metadataSchema = z.object({
     })).default([]),
     updated: z.record(z.string(), z.number()).default({}),
 });
-class CanvasServiceError extends Error {
+export class CanvasServiceError extends Error {
     constructor(readonly code: CanvasErrorCode, message: string, readonly currentRevision?: number) {
 
         super(message);
@@ -53,7 +55,7 @@ function summary(dashboard: Dashboard, updated: Record<string, number>) {
     return {
         id: dashboard.id,
         title: dashboard.name,
-        revision: readCanvas(dashboard).revision,
+        revision: readCanvasMetadata(dashboard).revision,
         updatedAt: updated[dashboard.id] ?? null,
     };
 }
@@ -85,9 +87,9 @@ export class CanvasService {
     }
     invalidate(): void {
 
-        this.#publish({ type: "reset" });
+        this.publish({ type: "reset" });
     }
-    #publish(event: Omit<CanvasChange, "epoch" | "sequence">): void {
+    publish(event: Omit<CanvasChange, "epoch" | "sequence">): void {
 
         const change = {
             ...event,
@@ -102,7 +104,7 @@ export class CanvasService {
 
         try {
             this.#authorize(access);
-            const parsed = canvasRequestSchema.safeParse(input);
+            const parsed = canvasServiceRequestSchema.safeParse(input);
             if (!parsed.success) {
                 throw new CanvasServiceError("INVALID_ARGUMENT", "Invalid canvas request.");
             }
@@ -155,12 +157,10 @@ export class CanvasService {
             }
             if (request.type === "read") {
                 const dashboard = findCanvas(snapshot, access, request.canvasId);
-                const { history: _history, ...state } = readCanvas(dashboard);
 
                 return {
                     ...summary(dashboard, metadata.updated),
-                    ...state,
-                    canUndo: _history.length > 0,
+                    blocks: readDashboardBlocks(dashboard),
                 } satisfies CanvasDocument;
             }
             const limit = request.limit ?? 50;
@@ -238,39 +238,65 @@ export class CanvasService {
                 };
             } else {
                 dashboard = findCanvas(snapshot, access, request.canvasId);
-                const state = readCanvas(dashboard);
+                const state = readCanvasMetadata(dashboard);
                 if (state.revision !== request.expectedRevision) {
                     throw new CanvasServiceError("REVISION_CONFLICT", "Canvas changed. Read it again before making a new command.", state.revision);
                 }
-                if (request.type === "rename") {
-                    if (!Number.isSafeInteger(state.revision + 1)) {
-                        throw new CanvasServiceError("INVALID_ARGUMENT", "Canvas revision is exhausted.");
+                if (!Number.isSafeInteger(state.revision + 1)) {
+                    throw new CanvasServiceError("INVALID_ARGUMENT", "Canvas revision is exhausted.");
+                }
+                if (request.type === "render") {
+                    try {
+                        const blocks = changeDashboardBlocks(readDashboardBlocks(dashboard), request.changes, access.questionOwner);
+                        if (access.questionOwner) {
+                            const pending = [
+                                ...blocks,
+                                ...snapshot.dashboards.filter(item => {
+
+                                    return item.id !== dashboard.id;
+                                }).flatMap(readDashboardBlocks),
+                            ]
+                                .filter(block => {
+
+                                    return block.question && !block.question.submission
+                                    && block.question.owner.sessionId === access.questionOwner!.sessionId
+                                    && block.question.owner.turnId === access.questionOwner!.turnId;
+                                });
+                            if (pending.length > 1) {
+                                throw new Error("Only one pending question per session turn is allowed.");
+                            }
+                        }
+                        const next = {
+                            ...dashboard,
+                            viewState: writeDashboardBlocks(dashboard, blocks),
+                        };
+                        readDashboardBlocks(next);
+                        dashboard = {
+                            ...next,
+                            viewState: writeCanvasMetadata(next, { revision: state.revision + 1 }),
+                        };
+                    } catch {
+                        throw new CanvasServiceError("INVALID_ARGUMENT", "Invalid block change, binding, or data revision. Inspect the blocks and retry.");
                     }
+                } else {
                     dashboard = {
                         ...dashboard,
                         name: request.title,
-                        viewState: writeCanvasViewState(dashboard, {
-                            ...state,
-                            revision: state.revision + 1,
-                        }),
+                        viewState: writeCanvasMetadata(dashboard, { revision: state.revision + 1 }),
                     };
-                } else {
-                    try {
-                        const next = applyCanvas(state, parseCanvasCommand(request));
-                        dashboard = {
-                            ...dashboard,
-                            viewState: writeCanvasViewState(dashboard, next),
-                        };
-                    } catch {
-                        throw new CanvasServiceError("INVALID_ARGUMENT", "Invalid canvas operation. Read the canvas and check the command.");
-                    }
                 }
             }
             const receipt: CanvasReceipt = {
                 requestId: request.requestId,
                 canvasId: dashboard.id,
-                revision: readCanvas(dashboard).revision,
+                revision: readCanvasMetadata(dashboard).revision,
                 committedAt: Date.now(),
+                ...(request.type === "render" ? {
+                    blockIds: request.changes.map(change => {
+
+                        return change.id;
+                    }),
+                } : {}),
             };
             metadata.updated[dashboard.id] = receipt.committedAt;
             metadata.receipts.push({
@@ -299,8 +325,8 @@ export class CanvasService {
             };
         });
         if (!committed.duplicate) {
-            this.#publish({
-                type: request.type === "create" ? "canvas.created" : request.type === "rename" ? "canvas.renamed" : "canvas.changed",
+            this.publish({
+                type: request.type === "create" ? "canvas.created" : request.type === "render" ? "canvas.changed" : "canvas.renamed",
                 ...committed.receipt,
             });
             this.changed();

@@ -55,6 +55,13 @@ provider installation paths or model configuration.
 
 ## Session directory
 
+Canvas questions attach to the calling interactive session and its live ACP
+connection. After a question turn completes, the session can show Waiting for
+answer. Submitted answers are saved locally and queued for the original session;
+a continuation sends another prompt to the same ACP session ID. It never creates
+a replacement session. Early answers wait for the running turn to finish.
+See [canvas questions](dashboard-blocks.md#canvas-questions-and-original-session-continuations).
+
 The controller starts or continues an interactive Flagship conversation when a
 message is sent. Its Sessions panel lists retained conversations and can create a
 new one. Shared settings configure provider routes. Stop terminates a running
@@ -63,10 +70,10 @@ session; Remove terminates and releases a session and its transcript. A stopped 
 Closing a panel, switching the selected session, or changing dashboards does
 not cancel a task. Interactive sessions use explicit canvas IDs and are
 independent of the originating dashboard. They discover and operate local canvases through the
-[canvas service](canvas-service.md). Legacy background sessions retain their
-originating workspace and dashboard, and their legacy workspace tools still
-require that dashboard to be active. Widget-originated tool calls also recheck
-the source widget and its current agent capability.
+[canvas service](canvas-service.md). Widget background sessions retain their originating workspace and dashboard
+metadata but receive no Avesd MCP server or product-operation tools. They work
+from content supplied in their prompts. Widget API calls still recheck source
+identity and the declared agent capability.
 
 Sessions and conversations currently remain in memory until application exit;
 they are not imported from external ACP clients or resumed after restart.
@@ -82,7 +89,7 @@ Declare `"agent"` in the widget manifest's `capabilities`, then use the optional
 ```js
 const { id } = await context.agent.start({
     tier: "reasoning",
-    prompt: "Summarize the synthetic task list in this dashboard.",
+    prompt: "Summarize this supplied task list: review the draft and prepare the meeting.",
 });
 const result = await context.agent.read(id);
 // { id, tier, status, answer }
@@ -98,6 +105,21 @@ application exit through the widget's declared storage services.
 
 These tasks appear in Sessions under Background. Unmounting the widget does
 not stop its agent, but removes its live service access. The `agent` capability
-delegates Avesd's agent toolset in the originating scope; it is not an isolated
-text-completion API. Draft previews cannot launch agents or inspect live
-sessions. All native regression tests use synthetic local ACP processes.
+allows background text tasks without access to Avesd product state. Draft previews cannot launch agents or inspect live
+sessions.
+
+## ACP tool permission identity
+
+Interactive ACP permission requests remain limited to the five registered
+Avesd dashboard tools. Wrapper-style input identifies the `avesd` server
+and exact tool name. OpenCode uses the qualified identifier
+`avesd_<registered-tool-name>` in its tool name or title and direct tool
+arguments. Its identifier must match exactly with the `other` tool kind. OpenCode can
+request permission before emitting arguments, using an empty input object.
+That phase authorizes only the registered tool identity; when arguments are
+already present they must pass its input schema. The gateway validates every
+actual call before executing it. A partial ACP
+tool update retains the previous name/title/kind and arguments for the
+permission request. Displayed titles do not change the actual MCP tool names
+or add aliases. The authenticated gateway still validates arguments, caller
+access, mutation revisions, and question ownership before any operation.

@@ -36,12 +36,6 @@ Document-start hooks, worker/subframe automation, network interception,
 and Agent script execution are not implemented. Website login and popup compatibility are not universal. Ordinary
 local widgets remain usable without network access.
 
-Run `pnpm test:electron` for the native integration test. It builds the desktop,
-opens an isolated temporary profile, serves a synthetic loopback page, and
-checks sandbox settings, JavaScript/CSS execution, temporary binding, navigation
-races, and teardown. It does not use the user's browser profile or connect an
-Agent. Native visual QA remains a separate check on an unlocked desktop.
-
 ## Browser control bindings
 
 Add **Browser controls** to operate a separate **Web page** widget. In **Edit
@@ -162,11 +156,9 @@ services retain their previous lifecycle; they are not silently migrated.
 
 A recipe contains a name, HTTPS URL (loopback HTTP is supported), 1–16 named CSS
 text selectors, and a refresh interval in minutes. Zero means manual refresh.
-`avesd_browser_task` lets an Agent list, save, refresh, open, close, pause,
-resume, or explicitly remove these tasks. It returns recipe/status metadata,
-not collected values. The Agent must already know or help establish selectors;
-automatic page exploration and arbitrary Agent browser scripts are not exposed.
-The panel also allows users to create and edit recipes directly.
+The legacy panel allows users to create and edit recipes directly. The former
+Agent collection tool has been removed; current canvas tools cannot manage
+browser tasks or read collected values.
 
 A refresh loads the configured URL, waits up to twenty seconds for each selector
 to match exactly one element, and reads bounded text at that URL's origin.
@@ -194,12 +186,8 @@ tick. Invalid task storage disables this service without overwriting the file
 or preventing the local dashboard from opening.
 
 The built-in **Collection result** widget (`avesd.builtin.collections/result`)
-selects a task in its workspace, or receives `configuration: { taskId }` through
-`avesd_add_widget`. It subscribes to the task's persistent result and status.
+selects a task in its workspace or receives `configuration: { taskId }`
+through the legacy widget configuration. It subscribes to the task's persistent result and status.
 This is a read-only task result source, separate from the existing generic
 widget input/data-source binding contract. Local authored widgets still do not
 receive generic data-source bindings or direct task management privileges.
-
-`pnpm test:electron browser-tasks browser browser-auth` covers native collection,
-private session persistence, cancellation, presentation, dashboard-independent
-ownership, workspace isolation, and the existing browser lifecycle boundaries.

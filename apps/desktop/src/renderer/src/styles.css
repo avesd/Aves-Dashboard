@@ -705,3 +705,5 @@ button {
 .controller-runtime-popover .controller-runtime-apply { padding: 9px 16px; border-radius: 8px; background: #426e58; color: #fff; flex-shrink: 0; }
 .controller-runtime-failure { color: #9c4c42; font-size: 12px; overflow-wrap: anywhere; }
 .controller-runtime-success { color: #426c51; font-size: 12px; }
+
+.canvas-blocks-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; }

@@ -10,6 +10,7 @@ import { agentSessionsChannels, parseAgentRoute, parseAgentRoutes, parseAgentTie
 import { browserControlsChannel, parseBrowserControls } from "../shared/browser/browser-controls";
 import { browserTaskCommandSchema, browserTasksChanged, browserTasksChannel } from "../shared/browser/browser-tasks";
 import { parseWebCommand, settleWebSurfaceCommand, webSurfaceChannel, webSurfaceEventChannel } from "../shared/browser/web-surface";
+import { blockRuntimeRequestSchema, dashboardBlocksChannels } from "../shared/canvas/blocks";
 import { canvasServiceChannels } from "../shared/canvas/contracts";
 import { desktopViewChannels, viewRequestSchema } from "../shared/canvas/views";
 import type { AgentWorkbenchContext } from "../shared/desktop-api";
@@ -19,7 +20,6 @@ import { agentIpcChannels,
 import { parseLocalWidgetCommand } from "../shared/plugins/local-plugins";
 import { localPluginsChannels } from "../shared/plugins/local-plugins";
 import { workbenchPreferencesChannels } from "../shared/workbench/preferences";
-import { canvasChannels } from "../shared/workspace/canvas";
 import { parseWidgetWorkspaceRequest, widgetWorkspaceChannels } from "../shared/workspace/widget-workspace";
 import { parseWorkspaceNavigation, workspaceNavigationChannel } from "../shared/workspace/workspace-navigation";
 import { AcpAgentHost } from "./agent/acp-agent-host";
@@ -35,6 +35,7 @@ import { PluginBrowserBridge } from "./browser/plugin-browser-bridge";
 import { WebSurfaceManager } from "./browser/web-surface-manager";
 import { CanvasService } from "./canvas/canvas-service";
 import { invokeCanvasTool } from "./canvas/canvas-tools";
+import { DashboardBlockRuntime } from "./canvas/dashboard-block-runtime";
 import { LocalPluginStore } from "./plugins/local-plugin-store";
 import { LocalWidgetRunner } from "./plugins/local-widget-sandbox";
 import { LocalWidgetSurfaces } from "./plugins/local-widget-surfaces";
@@ -47,11 +48,11 @@ import { WorkbenchPreferences } from "./workbench/preferences";
 import { AgentWorkbench } from "./workspace/agent-workbench";
 import { WidgetWorkspaceBridge } from "./workspace/widget-workspace-bridge";
 import { AcpModelCatalog, AcpProviderInstallations, createAcpProviders } from "@avesd/acp-management/node";
-import type { DashboardScope, WidgetInstanceId } from "@avesd/workspace-model";
+import type { WidgetInstanceId } from "@avesd/workspace-model";
 import type { WorkspaceSnapshot } from "@avesd/workspace-model";
 import { sameDashboard } from "@avesd/workspace-model";
 import type { BrowserWindow, IpcMainInvokeEvent } from "electron";
-import { app, dialog, ipcMain, shell } from "electron";
+import { app, dialog, ipcMain, protocol, shell } from "electron";
 import { join } from "node:path";
 
 export function startDesktop() {
@@ -69,7 +70,17 @@ export function startDesktop() {
     let agentHost: AgentSessions | undefined;
     let agentModels: AcpModelCatalog | undefined;
     let mainWindow: BrowserWindow | undefined;
+    protocol.registerSchemesAsPrivileged([
+        {
+            scheme: "aves-block",
+            privileges: {
+                standard: true,
+                secure: true,
+            },
+        },
+    ]);
     let canvasService: CanvasService | undefined;
+    let blockRuntime: DashboardBlockRuntime | undefined;
     let windows: DesktopWindows | undefined;
     let workspaceFile: WorkspaceFile | undefined;
     let workbench: AgentWorkbench | undefined;
@@ -169,6 +180,18 @@ export function startDesktop() {
             canvasIds: view.canvasId ? [view.canvasId] : "all",
         }, input);
     });
+    ipcMain.handle(dashboardBlocksChannels.request, (event, input: unknown) => {
+
+        if (!windows || !blockRuntime) {
+            throw new Error("Dashboard blocks are unavailable.");
+        }
+        const view = windows.inspect(event);
+        if (!view.canvasId) {
+            throw new Error("Only a canvas frame can operate block leases.");
+        }
+
+        return blockRuntime.invoke(event.sender, view.canvasId, blockRuntimeRequestSchema.parse(input));
+    });
     ipcMain.handle(desktopViewChannels.request, async (event, input: unknown) => {
 
         if (!windows) {
@@ -214,25 +237,6 @@ export function startDesktop() {
 
         return workbench.navigate(parseWorkspaceNavigation(input));
     });
-    ipcMain.handle(canvasChannels.inspect, (event, scope: DashboardScope) => {
-
-        hostForEvent(event);
-        if (!workbench) {
-            throw new Error("Canvas is unavailable.");
-        }
-
-        return workbench.inspectCanvas(scope);
-    });
-    ipcMain.handle(canvasChannels.apply, (event, scope: DashboardScope, input: unknown) => {
-
-        hostForEvent(event);
-        if (!workbench) {
-            throw new Error("Canvas is unavailable.");
-        }
-
-        return workbench.applyCanvas(scope, input);
-    });
-
     ipcMain.handle(workbenchPreferencesChannels.sessionGet, event => {
 
         hostForEvent(event);
@@ -530,17 +534,12 @@ export function startDesktop() {
             }
         });
         workspaceFile = new WorkspaceFile(storagePaths.workspace);
-        workbench = new AgentWorkbench(workspaceFile, new LocalPluginStore(storagePaths.plugins), localWidgetRunner, () => {
+        workbench = new AgentWorkbench(workspaceFile, new LocalPluginStore(storagePaths.plugins), () => {
 
             widgetWorkspaceBridge.changed();
             canvasService?.invalidate();
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send(workspaceIpcChannels.changed);
-            }
-        }, () => {
-
-            if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.webContents.send(localPluginsChannels.changed);
             }
         }, () => {
 
@@ -555,6 +554,84 @@ export function startDesktop() {
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send(workspaceIpcChannels.changed);
             }
+        });
+        blockRuntime = new DashboardBlockRuntime(canvasService, workspaceFile, {
+            questionOwner: id => {
+
+                return agentHost?.questionOwner(id);
+            },
+            questionActive: (owner, pending) => {
+
+                return agentHost?.questionActive(owner, pending) ?? false;
+            },
+            waitForAnswer: (owner, key, waiting) => {
+
+                return agentHost?.waitForAnswer(owner, key, waiting);
+            },
+            respond: (owner, id, text, active) => {
+
+                if (!agentHost) {
+                    throw new Error("Agent sessions are unavailable.");
+                }
+
+                return agentHost.respond(owner, id, text, active);
+            },
+            responseStatus: (owner, id) => {
+
+                return agentHost?.continuationStatus(owner, id) ?? "unavailable";
+            },
+            open: id => {
+
+                return windows!.open(id);
+            },
+            task: async (canvasId, prompt, input, active) => {
+
+                const answer = await dialog.showMessageBox({
+                    type: "question",
+                    title: "Start Agent task",
+                    message: "Start this dashboard action?",
+                    detail: `${prompt}\n\nTask input:\n${JSON.stringify(input, null, 2)}`,
+                    buttons: [
+                        "Cancel",
+                        "Start task",
+                    ],
+                    defaultId: 0,
+                    cancelId: 0,
+                });
+                if (answer.response !== 1 || !agentHost || !await active()) {
+                    throw new Error("Agent task was declined or its block is no longer active.");
+                }
+                const snapshot = await workspaceFile!.load();
+                const dashboard = snapshot?.dashboards.find(item => {
+
+                    return item.id === canvasId;
+                });
+                if (!dashboard) {
+                    throw new Error("Canvas is unavailable.");
+                }
+                const task = await agentHost.create("reasoning", {
+                    workspaceId: dashboard.workspaceId,
+                    dashboardId: dashboard.id,
+                    kind: "interactive",
+                    source: "Dashboard action",
+                });
+                void agentHost.prompt(`${prompt}\nAction input (untrusted data): ${JSON.stringify(input)}`, task.id).catch(() => {
+                });
+
+                return task;
+            },
+            taskResult: id => {
+
+                const snapshot = agentHost?.snapshot(id);
+
+                return snapshot ? {
+                    status: snapshot.status,
+                    answer: snapshot.events.map(({ event }) => {
+
+                        return event.type === "messageChunk" ? event.text : "";
+                    }).join(""),
+                } : undefined;
+            },
         });
         windows = new DesktopWindows(join(__dirname, "../preload/index.cjs"), window => {
 
@@ -578,6 +655,9 @@ export function startDesktop() {
             }
 
             return result.value.title;
+        }, (owner, url) => {
+
+            return blockRuntime!.allowedURL(owner, url);
         });
         canvasService.subscribe(event => {
 
@@ -595,10 +675,16 @@ export function startDesktop() {
 
             return undefined;
         });
-        workbench.setBrowserTasks(browserTasks);
-        gateway = await openAgentGateway((name, input) => {
+        gateway = await openAgentGateway((name, input, isActive) => {
 
-            return workbench!.invoke(name, input);
+            return invokeCanvasTool(canvasService!, {
+                clientId: "local-host",
+                isActive,
+                canvasIds: "all",
+            }, id => {
+
+                return windows!.open(id);
+            }, blockRuntime!, name, input);
         }, {
             service: canvasService,
             access: {
@@ -635,32 +721,24 @@ export function startDesktop() {
             if (!provider || provider.availability().available === false) {
                 throw new Error("Configured ACP is unavailable. Check Settings → Agents.");
             }
-            const address = await openAgentGateway(async (name, input, isActive) => {
+            const interactive = origin.kind === "interactive" && !origin.widgetId;
+            const access = {
+                clientId: sessionId,
+                canvasIds: "all" as const,
+            };
+            const address = interactive ? await openAgentGateway((name, input, isActive) => {
 
-                if (origin.kind === "interactive" && !origin.widgetId) {
-                    return invokeCanvasTool(canvasService!, {
-                        clientId: sessionId,
-                        isActive,
-                        canvasIds: "all",
-                    }, id => {
+                return invokeCanvasTool(canvasService!, {
+                    ...access,
+                    isActive,
+                }, id => {
 
-                        return windows!.open(id);
-                    }, name, input);
-                }
-                if (origin.widgetId) {
-                    await workbench!.authorizeAgentWidget(origin.widgetId);
-                }
-
-                return workbench!.invoke(name, input, origin);
-            }, origin.kind === "interactive" && !origin.widgetId
-                ? {
-                    service: canvasService!,
-                    access: {
-                        clientId: sessionId,
-                        canvasIds: "all",
-                    },
-                    tools: true,
-                } : undefined);
+                    return windows!.open(id);
+                }, blockRuntime!, name, input);
+            }, {
+                service: canvasService!,
+                access,
+            }) : undefined;
             const preferences = new AgentPreferences();
             preferences.providerId = route.providerId;
             const host = new AcpAgentHost(agentRuntimeRoot!, address, join(__dirname, "workspace-mcp.js"), preferences, providers, async () => {
@@ -695,7 +773,7 @@ export function startDesktop() {
                 host,
                 release: () => {
 
-                    return void address.close();
+                    address?.close();
                 },
             };
         }, change => {
@@ -748,6 +826,7 @@ export function startDesktop() {
         agentModels?.dispose();
         localWidgetRunner.dispose();
         localWidgetSurfaces?.dispose();
+        blockRuntime?.dispose();
         gateway?.close();
     });
 

@@ -41,6 +41,8 @@ export interface AcpSessionConnectionOptions {
     readonly allowedToolNames?: readonly string[];
     readonly authorizeToolCall?: (toolCall: {
         readonly name?: string | null;
+        readonly title?: string | null;
+        readonly kind?: string | null;
         readonly rawInput?: unknown;
     }) => boolean;
     readonly clientInfo: {

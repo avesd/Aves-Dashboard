@@ -52,6 +52,7 @@ export const App = () => {
         {view?.canvasId ? <CanvasShell
             key={view.canvasId}
             api={window.avesd.canvases}
+            blocksApi={window.avesd.blocks}
             canvasId={view.canvasId}
             openController={openController}
         /> : view ? <Controller

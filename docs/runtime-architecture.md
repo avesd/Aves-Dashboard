@@ -196,23 +196,20 @@ directory. The Agent process receives a bounded environment containing runtime,
 network, and provider-authentication variables rather than the desktop's entire
 environment. The first prompt identifies Avesd and the active workspace and
 dashboard names; those names are explicitly marked as untrusted user-created
-labels. The session receives a dedicated local MCP
-server exposing the same inspected, revisioned dashboard and data-source
-operations used by layout editing, plus the local widget authoring lifecycle.
-Permission requests are correlated with their streamed tool-call metadata; only
-exact registered tools from the `avesd` MCP server are allowed once
-automatically. Missing metadata and unrelated permission requests remain denied.
-The harness stays read-only for its own file tools: draft writes use scoped Avesd
-tools.
+labels. Interactive sessions receive a dedicated local MCP server with five
+`aves_dashboard_` tools for canvas resources, presentation, capabilities, block
+submission, and live inspection. See [Dashboard blocks](dashboard-blocks.md). Widget background sessions receive no Avesd MCP server.
+Permission requests are correlated with streamed tool-call metadata; only the
+exact registered tools from the `avesd` MCP server are allowed once automatically.
+Missing metadata and unrelated permission requests remain denied. The harness
+stays read-only for its own file tools.
 
-The MCP process is an authenticated loopback relay to the desktop's tool
-dispatcher; it does not read or write workspace files directly. The host
-serializes tool mutations and renderer saves, rejects stale renderer snapshots,
-and broadcasts workspace/catalog changes immediately. Native tests and previews
-use a separate serial execution queue, so they do not block workspace or draft
-writes. Execution checks the draft revision before starting and again before
-returning results; stale tests cannot authorize activation. Newly installed
-types can be inspected and added in the same Agent turn.
+The MCP process is an authenticated loopback relay to the desktop's canvas
+service; it does not read or write workspace files directly. Canvas metadata changes
+use the service's validated, revisioned transaction boundary. Block documents, data,
+and action bindings use the new rendering contract; the fixed business content
+model remains removed. Legacy widget and
+plugin APIs remain host services for compatibility, without Agent dispatch.
 
 The gateway token stays in main and the ACP-provided MCP environment, never in
 the renderer. Failure to start the gateway disables Agent tools without

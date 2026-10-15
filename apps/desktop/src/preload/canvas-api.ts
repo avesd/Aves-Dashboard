@@ -1,3 +1,5 @@
+import type { BlockRuntimeResponse, DashboardBlocksApi } from "../shared/canvas/blocks";
+import { dashboardBlocksChannels } from "../shared/canvas/blocks";
 import type { CanvasChange, CanvasDocument, CanvasListing, CanvasReceipt, CanvasResult, CanvasServiceApi } from "../shared/canvas/contracts";
 import { canvasServiceChannels, unwrapCanvasResult } from "../shared/canvas/contracts";
 import type { DesktopView, DesktopViewsApi } from "../shared/canvas/views";
@@ -39,16 +41,6 @@ export const canvases: CanvasServiceApi = {
             canvasId,
             expectedRevision,
             title,
-        }) as Promise<CanvasReceipt>;
-    },
-    apply: (requestId, canvasId, expectedRevision, operations) => {
-
-        return request({
-            type: "apply",
-            requestId,
-            canvasId,
-            expectedRevision,
-            operations,
         }) as Promise<CanvasReceipt>;
     },
     receipt: requestId => {
@@ -120,6 +112,26 @@ export const views: DesktopViewsApi = {
         return () => {
 
             ipcRenderer.off(desktopViewChannels.changed, handler);
+        };
+    },
+};
+
+export const blocks: DashboardBlocksApi = {
+    invoke: input => {
+
+        return ipcRenderer.invoke(dashboardBlocksChannels.request, input) as Promise<BlockRuntimeResponse>;
+    },
+    subscribe: listener => {
+
+        const handler = () => {
+
+            listener();
+        };
+        ipcRenderer.on(dashboardBlocksChannels.changed, handler);
+
+        return () => {
+
+            ipcRenderer.off(dashboardBlocksChannels.changed, handler);
         };
     },
 };

@@ -5,8 +5,10 @@
  * @description Workspace Model exports
  */
 
-export type { CanvasCommand, CanvasContent, CanvasEvidence, CanvasItem, CanvasLink, CanvasOperation, CanvasPlacement, CanvasState } from "./canvas";
-export { applyCanvas, parseCanvasCommand, readCanvas, writeCanvasViewState } from "./canvas";
+export type { CanvasMetadata } from "./canvas-metadata";
+export { readCanvasMetadata, writeCanvasMetadata } from "./canvas-metadata";
+export type { BlockAction, BlockChange, BlockData, BlockQuestion, BlockQuestionOwner, BlockSource, DashboardBlock } from "./dashboard-blocks";
+export { blockActionSchema, blockBindingSchema, blockBoundsSchema, blockChangeSchema, blockDataSchema, blockIdSchema, blockQuestionInputSchema, blockQuestionSchema, blockRevisionSchema, blockSourceSchema, changeDashboardBlocks, dashboardBlockSchema, questionAnswers, readDashboardBlocks, writeDashboardBlocks } from "./dashboard-blocks";
 export type {
     ApplyDashboardLayout,
     DashboardLayoutErrorCode,

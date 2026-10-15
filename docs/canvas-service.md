@@ -16,21 +16,23 @@ adapter. Trusted renderer requests reach the same service through typed preload
 IPC; renderers receive neither bearer credentials nor filesystem access.
 
 Canvas IDs reuse stable dashboard IDs. Storage retains existing dashboard
-ownership and `viewState.canvas` data, so this change does not move or discard
+ownership and opaque view-state data, so this change does not move or discard
 legacy widgets, sources, or plugin state. New canvases are created in the first
 local workspace without changing selection. A single-instance desktop lock
 prevents two application instances from writing the same local profile.
 
-A summary contains `id`, `title`, `revision`, and `updatedAt` (null for an existing
-canvas with no service mutation timestamp). A read adds `schemaVersion`, `items`,
-`links`, and `canUndo`. Undo snapshots remain private. Renaming increments the
-canvas revision; undo creates another revision and restores content, not titles.
+A summary contains `id`, `title`, `revision`, and `updatedAt`. The trusted
+renderer's read also contains source/data block documents; the canvas MCP read
+returns only block summaries. Renaming and source/layout block changes increment
+the canvas revision. Data and saved view-state changes have independent revisions.
+Existing legacy view-state remains stored alongside the new `blocks` array.
+
 
 The controller can access all local canvases. A canvas renderer can access only
 its assigned canvas and can request that the controller open. Interactive Agent
-sessions receive their own client identity and all-local-canvas access. Legacy
-widget sessions retain their original active-scope and capability checks; they
-are not given the new controller tools or HTTP resource adapter.
+sessions receive their own client identity and all-local-canvas access. Widget
+background sessions receive no Avesd MCP server or product tools. Their API
+continues to enforce widget identity and the declared agent capability.
 
 ## Executable contract
 
@@ -44,7 +46,6 @@ requests, responses, events, and the preload interface. HTTP responses use
 | `GET /v1/canvases/:id` | Canvas ID | Canvas read |
 | `POST /v1/canvases` | `requestId`, `title` | Mutation receipt |
 | `POST /v1/canvases/:id/rename` | `requestId`, `expectedRevision`, `title` | Mutation receipt |
-| `POST /v1/canvases/:id/commands` | `requestId`, `expectedRevision`, `operations` | Mutation receipt |
 | `GET /v1/requests/:requestId` | Request ID scoped to authenticated client | Receipt or null |
 | `GET /v1/events` | Authenticated live connection | Server-sent invalidations |
 
@@ -56,9 +57,8 @@ address for resource requests. `/invoke` remains the MCP relay transport.
 
 List searches titles case-insensitively. Pagination orders by canvas ID and uses
 the last ID as its cursor; it is not a catalog snapshot transaction. The default
-page size is 50, capped at 100. Apply accepts up to 50 existing canvas operations.
-Batches are atomic within one canvas. Changes to several canvases are separate
-commits and can partially complete.
+page size is 50, capped at 100. Changes to several canvas resources are separate commits and can partially
+complete. Block mutations are submitted through the authenticated MCP relay.
 
 Errors distinguish invalid arguments (400), unauthenticated access (401),
 forbidden operations (403), unavailable resources (404), revision conflicts and
@@ -85,8 +85,7 @@ An absent receipt is not proof that the request failed: it may still be running.
 After a revision conflict, reread and reconsider the edit before issuing a new
 command. Canvas and Agent data are not logged by this service.
 
-After successful persistence the service publishes `canvas.created`,
-`canvas.changed`, or `canvas.renamed` with the canvas ID, revision, and request ID.
+After successful persistence the service publishes `canvas.created`, `canvas.changed`, or `canvas.renamed` with the canvas ID, revision, and request ID.
 The HTTP stream starts with `reset`; register a subscription before the initial
 read. Events have a process epoch and stream sequence. They invalidate reads,
 not replace them. Reconnect or a sequence gap requires rereading; no durable event
@@ -95,11 +94,11 @@ Slow HTTP subscribers are disconnected to bound buffered output.
 
 ## Agent and desktop capabilities
 
-Interactive sessions expose `avesd_canvases` with a `request` containing one of
-`list`, `read`, `create`, `rename`, `apply`, or `receipt`. Its schema and description
-explain explicit targets, operation shapes, revisions, and retry behavior.
-`avesd_open_canvas` presents a result in a native window. Legacy plugin tools
-remain on the separate legacy toolset.
+Interactive sessions expose five `aves_dashboard_` tools, documented in
+[Dashboard blocks](dashboard-blocks.md). `aves_dashboard_canvases` handles resource
+requests, `aves_dashboard_open_canvas` presents windows, and the capabilities,
+render, and inspect tools handle block creation and runtime observation. Legacy
+workspace/widget tool dispatch remains removed.
 
 The desktop preload has `views.inspect`, `list`, `open`, `focus`, `close`, and
 `controller`. Opening an existing view focuses it. Closing a canvas view neither
@@ -118,17 +117,15 @@ those configurations. Drag-to-edge placement and persisted window positions are
 not implemented.
 
 The controller includes dashboard browsing, independent conversations, and shared
-Agent settings. Dashboard windows provide read-only navigation and selection; Command/Ctrl+K
-opens the controller. The controller has no target-canvas selector.
+Agent settings. Canvas windows provide the spatial field, sandboxed block documents, pan, zoom,
+and a contextual menu; Command/Ctrl+K opens the controller. The controller has no target-canvas selector.
 
 ## Verification and future hosting
 
-`pnpm test` covers service persistence, atomic batches, stale revisions, denied
-access, duplicate requests, receipt recovery, authenticated HTTP, events, and
-renderer editing. After `pnpm build`, run
-`pnpm --filter @avesd/desktop test:electron canvas` for the isolated native scenario.
-It uses temporary synthetic data and a synthetic ACP provider. Set
-`AVESD_CANVAS_SCREENSHOTS` to a temporary directory to capture its UI states.
+The previous synthetic canvas scenario and automated service tests have been
+removed. `pnpm validate` checks lint, types, and the production build; it does
+not establish live provider access. Resource operations, native block rendering,
+data bindings, host actions, and source replacement need targeted verification.
 
 The current service runs inside the desktop process. A future headless server can
 reuse its contract and operation rules but needs its own process entry point,

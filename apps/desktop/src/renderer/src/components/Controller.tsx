@@ -469,7 +469,7 @@ export function Controller({ expanded }: {
                             {" "}
                             ·
                             {" "}
-                            {item.status}
+                            {item.waitingForAnswer && item.status !== "running" ? "Waiting for answer" : item.status}
                             <small>
                                 {new Date(item.createdAt).toLocaleTimeString()}
                             </small>

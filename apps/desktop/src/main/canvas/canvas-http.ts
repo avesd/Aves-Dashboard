@@ -103,10 +103,10 @@ export async function serveCanvasHttp(request: IncomingMessage, response: Server
                 type: "read",
                 canvasId: parts[1],
             };
-        } else if (parts[0] === "canvases" && parts.length === 3 && request.method === "POST" && (parts[2] === "rename" || parts[2] === "commands")) {
+        } else if (parts[0] === "canvases" && parts.length === 3 && request.method === "POST" && parts[2] === "rename") {
             command = {
                 ...input,
-                type: parts[2] === "rename" ? "rename" : "apply",
+                type: "rename",
                 canvasId: parts[1],
             };
         } else if (parts[0] === "requests" && parts.length === 2 && request.method === "GET") {

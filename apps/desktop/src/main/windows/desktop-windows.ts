@@ -2,7 +2,7 @@ import type { CanvasChange } from "../../shared/canvas/contracts";
 import { canvasServiceChannels } from "../../shared/canvas/contracts";
 import type { DesktopView } from "../../shared/canvas/views";
 import { desktopViewChannels } from "../../shared/canvas/views";
-import type { IpcMainInvokeEvent } from "electron";
+import type { IpcMainInvokeEvent, WebContents } from "electron";
 import { BrowserWindow, screen } from "electron";
 
 export class DesktopWindows {
@@ -10,7 +10,7 @@ export class DesktopWindows {
     #controller?: BrowserWindow;
     #expanded = false;
     #quitting = false;
-    constructor(private readonly preload: string, private readonly load: (window: BrowserWindow) => void, private readonly readTitle: (id: string) => Promise<string>) {
+    constructor(private readonly preload: string, private readonly load: (window: BrowserWindow) => void, private readonly readTitle: (id: string) => Promise<string>, private readonly allowBlockURL: (owner: WebContents, url: string) => boolean) {
 
         screen.on("display-metrics-changed", this.#position);
         screen.on("display-removed", this.#position);
@@ -215,6 +215,10 @@ export class DesktopWindows {
             preload: this.preload,
             contextIsolation: true,
             nodeIntegration: false,
+            nodeIntegrationInSubFrames: false,
+            webviewTag: false,
+            navigateOnDragDrop: false,
+            disableDialogs: true,
             sandbox: true,
         };
     }
@@ -228,6 +232,16 @@ export class DesktopWindows {
         window.webContents.setWindowOpenHandler(() => {
 
             return { action: "deny" };
+        });
+        window.webContents.on("will-frame-navigate", event => {
+
+            if (event.isMainFrame || event.initiator !== window.webContents.mainFrame || !this.allowBlockURL(window.webContents, event.url)) {
+                event.preventDefault();
+            }
+        });
+        window.webContents.on("will-redirect", event => {
+
+            event.preventDefault();
         });
         window.webContents.on("will-navigate", event => {
 

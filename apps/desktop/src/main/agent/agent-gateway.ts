@@ -14,13 +14,11 @@ import { createServer } from "node:http";
 export interface AgentGatewayAddress {
     readonly url: string;
     readonly token: string;
-    readonly canvasTools?: boolean;
 }
 
 export async function openAgentGateway(invoke: (name: string, input: unknown, authorized: () => boolean) => Promise<AgentToolResult>, canvas?: {
     service: CanvasService;
     access: CanvasAccess;
-    tools?: boolean;
 }): Promise<AgentGatewayAddress & {
     close(): void;
     rotateToken(): void;
@@ -115,7 +113,6 @@ export async function openAgentGateway(invoke: (name: string, input: unknown, au
 
     return {
         url: `http://127.0.0.1:${address.port}/invoke`,
-        canvasTools: canvas?.tools,
         get token() {
 
             return token;

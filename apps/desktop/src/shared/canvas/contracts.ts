@@ -1,4 +1,5 @@
-import type { CanvasOperation, CanvasState } from "@avesd/workspace-model";
+import { renderBlocksSchema } from "./blocks";
+import type { DashboardBlock } from "@avesd/workspace-model";
 import * as z from "zod";
 
 const identifier = z.string().min(1)
@@ -35,20 +36,15 @@ export const canvasRequestSchema = z.discriminatedUnion("type", [
         title,
     }),
     z.strictObject({
-        type: z.literal("apply"),
-        requestId: identifier,
-        canvasId: identifier,
-        expectedRevision: z.number().int()
-            .nonnegative(),
-        operations: z.array(z.record(z.string(), z.unknown())).min(1)
-            .max(50),
-    }),
-    z.strictObject({
         type: z.literal("receipt"),
         requestId: identifier,
     }),
 ]);
-export type CanvasRequest = z.infer<typeof canvasRequestSchema>;
+export const canvasServiceRequestSchema = z.union([
+    canvasRequestSchema,
+    renderBlocksSchema.extend({ type: z.literal("render") }),
+]);
+export type CanvasRequest = z.infer<typeof canvasServiceRequestSchema>;
 export interface CanvasSummary {
     readonly id: string;
     readonly title: string;
@@ -56,10 +52,7 @@ export interface CanvasSummary {
     readonly updatedAt: number | null;
 }
 export interface CanvasDocument extends CanvasSummary {
-    readonly canUndo: boolean;
-    readonly schemaVersion: CanvasState["schemaVersion"];
-    readonly items: CanvasState["items"];
-    readonly links: CanvasState["links"];
+    readonly blocks: readonly DashboardBlock[];
 }
 export interface CanvasListing {
     readonly canvases: readonly CanvasSummary[];
@@ -70,6 +63,7 @@ export interface CanvasReceipt {
     readonly canvasId: string;
     readonly revision: number;
     readonly committedAt: number;
+    readonly blockIds?: string[];
 }
 export type CanvasResponse = CanvasListing | CanvasDocument | CanvasReceipt | null;
 export type CanvasErrorCode = "INVALID_ARGUMENT" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "REVISION_CONFLICT" | "REQUEST_ID_REUSED" | "UNAVAILABLE";
@@ -85,7 +79,7 @@ export type CanvasResult = {
     };
 };
 export interface CanvasChange {
-    readonly type: "canvas.created" | "canvas.changed" | "canvas.renamed" | "reset";
+    readonly type: "canvas.created" | "canvas.renamed" | "canvas.changed" | "reset";
     readonly epoch: string;
     readonly sequence: number;
     readonly canvasId?: string;
@@ -101,7 +95,6 @@ export interface CanvasServiceApi {
     read(canvasId: string): Promise<CanvasDocument>;
     create(requestId: string, title: string): Promise<CanvasReceipt>;
     rename(requestId: string, canvasId: string, expectedRevision: number, title: string): Promise<CanvasReceipt>;
-    apply(requestId: string, canvasId: string, expectedRevision: number, operations: readonly CanvasOperation[]): Promise<CanvasReceipt>;
     receipt(requestId: string): Promise<CanvasReceipt | null>;
     subscribe(listener: (event: CanvasChange) => void): () => void;
 }

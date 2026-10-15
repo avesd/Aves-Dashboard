@@ -43,6 +43,8 @@ export class AcpSessionConnection {
         let activeSessionId: string | undefined;
         const toolCalls = new Map<string, {
             name?: string | null;
+            title?: string | null;
+            kind?: string | null;
             rawInput?: unknown;
         }>();
         const stream = acp.ndJsonStream(
@@ -95,6 +97,8 @@ export class AcpSessionConnection {
                         const previous = toolCalls.get(key);
                         toolCalls.set(key, {
                             name: update.name ?? previous?.name,
+                            title: update.title ?? previous?.title,
+                            kind: update.kind ?? previous?.kind,
                             rawInput: update.rawInput ?? previous?.rawInput,
                         });
                     }

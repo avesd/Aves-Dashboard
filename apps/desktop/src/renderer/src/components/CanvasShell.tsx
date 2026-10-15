@@ -1,6 +1,6 @@
+import type { CanvasSandboxInteraction, DashboardBlocksApi } from "../../../shared/canvas/blocks";
 import type { CanvasDocument, CanvasServiceApi } from "../../../shared/canvas/contracts";
-import { fitViewport, initialViewport } from "./canvas-geometry";
-import { CanvasWorld } from "./CanvasWorld";
+import { CanvasBlocks } from "./CanvasBlocks";
 import { DashboardMenu } from "./DashboardMenu";
 import type { PointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -8,13 +8,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 interface Props {
     readonly api: Pick<CanvasServiceApi, "read" | "subscribe">;
     readonly canvasId: string;
+    readonly blocksApi: DashboardBlocksApi;
     readonly openController: () => void;
 }
 
-export const CanvasShell = ({ api, canvasId, openController }: Props) => {
+export const CanvasShell = ({ api, canvasId, blocksApi, openController }: Props) => {
 
     const surface = useRef<HTMLDivElement>(null);
-    const fitInitialized = useRef(false);
+    const menuOrigin = useRef<HTMLElement | null>(null);
     const [
         canvas,
         setCanvas,
@@ -22,11 +23,11 @@ export const CanvasShell = ({ api, canvasId, openController }: Props) => {
     const [
         viewport,
         setViewport,
-    ] = useState(initialViewport);
-    const [
-        selected,
-        setSelected,
-    ] = useState<string>();
+    ] = useState({
+        x: 0,
+        y: 0,
+        zoom: 1,
+    });
     const [
         error,
         setError,
@@ -46,50 +47,47 @@ export const CanvasShell = ({ api, canvasId, openController }: Props) => {
     } | undefined>(undefined);
     const closeMenu = useCallback(() => {
 
-        setMenu(undefined); surface.current?.focus({ preventScroll: true });
+        setMenu(undefined);
+        const origin = menuOrigin.current;
+        (origin?.isConnected ? origin : surface.current)?.focus({ preventScroll: true });
+    }, []);
+    const resetView = useCallback(() => {
+
+        setViewport({
+            x: 0,
+            y: 0,
+            zoom: 1,
+        });
     }, []);
     useEffect(() => {
 
-        if (selected && canvas && !canvas.items.some(item => {
-
-            return item.id === selected;
-        })) {
-            setSelected(undefined);
-        }
-    }, [
-        canvas,
-        selected,
-    ]);
-
-    useEffect(() => {
-
         let active = true;
+        let generation = 0;
         const refresh = () => {
 
+            const current = ++generation;
             void api.read(canvasId).then(value => {
 
-                if (active) {
+                if (active && current === generation) {
                     setCanvas(previous => {
 
                         return !previous || value.revision >= previous.revision ? value : previous;
                     }); setError(undefined);
-                    if (!fitInitialized.current) {
-                        const rect = surface.current?.getBoundingClientRect();
-                        if (rect) {
-                            setViewport(fitViewport(value.items, rect.width, rect.height));
-                        }
-                        fitInitialized.current = true;
-                    }
                 }
             })
                 .catch(cause => {
 
-                    if (active) {
+                    if (active && current === generation) {
                         setError(cause instanceof Error ? cause.message : "Dashboard could not be loaded.");
                     }
                 });
         };
-        const dispose = api.subscribe(refresh);
+        const dispose = api.subscribe(change => {
+
+            if (!change.canvasId || change.canvasId === canvasId) {
+                refresh();
+            }
+        });
         refresh();
 
         return () => {
@@ -100,14 +98,6 @@ export const CanvasShell = ({ api, canvasId, openController }: Props) => {
         api,
         canvasId,
     ]);
-
-    const fit = useCallback(() => {
-
-        const rect = surface.current?.getBoundingClientRect();
-        if (rect && canvas) {
-            setViewport(fitViewport(canvas.items, rect.width, rect.height));
-        }
-    }, [canvas]);
     useEffect(() => {
 
         const keyDown = (event: KeyboardEvent) => {
@@ -115,9 +105,9 @@ export const CanvasShell = ({ api, canvasId, openController }: Props) => {
             if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
                 event.preventDefault(); openController();
             } else if ((event.metaKey || event.ctrlKey) && event.key === "0") {
-                event.preventDefault(); fit();
+                event.preventDefault(); resetView();
             } else if (event.key === "Escape") {
-                setSelected(undefined); setMenu(undefined);
+                closeMenu();
             }
         };
         window.addEventListener("keydown", keyDown);
@@ -127,8 +117,9 @@ export const CanvasShell = ({ api, canvasId, openController }: Props) => {
             window.removeEventListener("keydown", keyDown);
         };
     }, [
-        fit,
+        closeMenu,
         openController,
+        resetView,
     ]);
     useEffect(() => {
 
@@ -138,9 +129,6 @@ export const CanvasShell = ({ api, canvasId, openController }: Props) => {
         }
         const wheel = (event: WheelEvent) => {
 
-            if ((event.target as HTMLElement).closest("input, textarea, [contenteditable]")) {
-                return;
-            }
             event.preventDefault();
             setMenu(undefined);
             const rect = node.getBoundingClientRect();
@@ -166,13 +154,51 @@ export const CanvasShell = ({ api, canvasId, openController }: Props) => {
         };
     }, []);
 
+    const interact = (event: CanvasSandboxInteraction) => {
+
+        if (event.kind === "pan") {
+            setMenu(undefined);
+            setViewport(value => {
+
+                return {
+                    ...value,
+                    x: value.x + event.dx,
+                    y: value.y + event.dy,
+                };
+            });
+        } else if (event.kind === "wheel") {
+            setMenu(undefined);
+            setViewport(value => {
+
+                const zoom = Math.max(0.2, Math.min(3, value.zoom * Math.exp(-event.delta * 0.003)));
+
+                return {
+                    x: event.x - (event.x - value.x) * zoom / value.zoom,
+                    y: event.y - (event.y - value.y) * zoom / value.zoom,
+                    zoom,
+                };
+            });
+        } else if (event.kind === "menu") {
+            menuOrigin.current = surface.current;
+            setMenu({
+                x: event.x,
+                y: event.y,
+            });
+        } else if (event.command === "controller") {
+            openController();
+        } else if (event.command === "reset") {
+            resetView();
+        } else {
+            closeMenu();
+        }
+    };
     const onSurfaceDown = (event: PointerEvent<HTMLDivElement>) => {
 
         if (event.target !== event.currentTarget || event.button !== 0) {
             return;
         }
         event.currentTarget.focus({ preventScroll: true });
-        setSelected(undefined);
+        setMenu(undefined);
         drag.current = {
             x: event.clientX,
             y: event.clientY,
@@ -192,8 +218,8 @@ export const CanvasShell = ({ api, canvasId, openController }: Props) => {
             close={closeMenu}
             actions={[
                 {
-                    label: "Show all",
-                    run: fit,
+                    label: "Reset view",
+                    run: resetView,
                 },
                 {
                     label: "Ask agent",
@@ -206,11 +232,22 @@ export const CanvasShell = ({ api, canvasId, openController }: Props) => {
             ref={surface}
             tabIndex={0}
             aria-label="Dashboard surface"
+            onKeyDown={event => {
+
+                if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+                    event.preventDefault();
+                    menuOrigin.current = surface.current;
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    setMenu({
+                        x: rect.left + Math.min(rect.width / 2, 160),
+                        y: rect.top + Math.min(rect.height / 2, 120),
+                    });
+                }
+            }}
             onContextMenu={event => {
 
                 event.preventDefault();
-                const card = (event.target as HTMLElement).closest<HTMLElement>("[data-item-id]");
-                setSelected(card?.dataset.itemId);
+                menuOrigin.current = surface.current;
                 setMenu({
                     x: event.clientX,
                     y: event.clientY,
@@ -244,14 +281,13 @@ export const CanvasShell = ({ api, canvasId, openController }: Props) => {
                 drag.current = undefined;
             }}
         >
-            <CanvasWorld
-                canvas={canvas}
+            {canvas && <CanvasBlocks
+                canvasId={canvasId}
+                blocks={canvas.blocks}
+                api={blocksApi}
                 viewport={viewport}
-                setViewport={setViewport}
-                selected={selected}
-                setSelected={setSelected}
-                surface={surface}
-            />
+                interact={interact}
+            />}
             <div
                 className="dashboard-zoom"
                 key={viewport.zoom}
