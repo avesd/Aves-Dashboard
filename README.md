@@ -145,6 +145,8 @@ and plugin infrastructure.
 
 ## Documentation
 
+- [Design language](docs/design-language.md) — approved visual direction: content
+  in space, light-field atmosphere, and precise presentation; initial dashboard adoption.
 - [Release versioning](docs/release-versioning.md) — changesets, version previews, and release history.
 - [Development](docs/development.md) — validation, tests, and dependency tasks.
 - [Dashboard blocks](docs/dashboard-blocks.md) — source rendering, live data, host actions, and the five tools.
