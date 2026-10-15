@@ -5,6 +5,12 @@ surfaces. It owns shared design tokens and accessible visual primitives. Product
 features keep their data loading, state, and domain behavior in the consuming
 application.
 
+The [Avesd design language](../../docs/design-language.md) owns the approved
+visual direction and presentation rules. Shared `--avesd-field-*` tokens supply
+the dashboard's light and dark content field, readable foregrounds, and local
+emphasis. Other components are not yet a complete implementation of that
+specification.
+
 Import `@avesd/ui/styles.css` once at the renderer entry point, then import
 components from `@avesd/ui`. Prefer semantic variants and CSS variables over
 feature-specific color values. Extend the library when the same visual pattern
@@ -13,6 +19,37 @@ belongs with the component.
 
 This package is separate from `@avesd/plugin-ui`. The latter is a framework-neutral
 plugin contract and does not expose host React components to sandboxed plugins.
+
+## Selection indicator
+
+`SelectionIndicator` supplies four open corner marks and a restrained radial
+glow. Render it inside a positioned, isolated host (`position: relative` and
+`isolation: isolate`, or an already-positioned canvas object):
+
+```tsx
+<article className="selectable-object" aria-current={selected ? "true" : undefined}>
+    <SelectionIndicator active={selected} />
+    {content}
+</article>
+```
+
+The host owns selection, focus, hit testing, and accessible state. The indicator
+is decorative, ignores pointer events, and renders nothing when inactive. Its
+negative stacking level keeps the glow behind content within the isolated host.
+Keep the host's padding clear of the corner marks; avoid clipping the indicator.
+It accepts native span props and refs, while `aria-hidden` is always true.
+
+`--avesd-selection-color` defaults to the field emphasis color;
+`--avesd-selection-corner-size` defaults to 18px, capped at 25% of each axis;
+`--avesd-selection-glow` supplies the light/dark radial fill. The default stroke
+is 1px. These sizes scale with the host's transform. There is no animation or
+blur dependency; forced-colors mode retains the corner geometry with Highlight.
+
+## Framed detail layouts
+
+See [Framed detail layouts](docs/layout-grid.md) for Frame, FrameSection, Grid,
+GridCell, DetailLayout, and DetailDialog. These shared components provide
+continuous square borders for focused inspection while the canvas stays unframed.
 
 ## Bird mark
 
@@ -74,7 +111,3 @@ Radix placement/collision props and adds `margin` (`none`, `small`, `medium`,
 `sideOffset`. Items expose `variant="destructive"` and `isUseCursorPointer`;
 labels expose `fontWeight`; radio items can hide indicator padding while their
 group has no selection. Motion respects reduced-motion preferences.
-
-Browser integration tests live in the desktop renderer's existing Vitest browser
-project and load this package's production stylesheet. They use synthetic data
-and do not require Electron preload services.

@@ -1,0 +1,25 @@
+.avesd-selection-indicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  user-select: none;
+  color: var(--avesd-selection-color, var(--avesd-field-emphasis));
+  background: radial-gradient(ellipse at center, var(--avesd-selection-glow), transparent 74%);
+}
+.avesd-selection-corner {
+  position: absolute;
+  box-sizing: border-box;
+  width: min(var(--avesd-selection-corner-size, 18px), 25%);
+  height: min(var(--avesd-selection-corner-size, 18px), 25%);
+  border-color: currentColor;
+  border-style: solid;
+  border-width: 0;
+}
+.avesd-selection-corner.is-top-start { top: 0; left: 0; border-top-width: 1px; border-left-width: 1px; }
+.avesd-selection-corner.is-top-end { top: 0; right: 0; border-top-width: 1px; border-right-width: 1px; }
+.avesd-selection-corner.is-bottom-start { bottom: 0; left: 0; border-bottom-width: 1px; border-left-width: 1px; }
+.avesd-selection-corner.is-bottom-end { bottom: 0; right: 0; border-bottom-width: 1px; border-right-width: 1px; }
+@media (forced-colors: active) {
+  .avesd-selection-indicator { color: Highlight; background: none; }
+}
