@@ -1,7 +1,0 @@
-{
-  "extends": "./typescript/tsconfig.node.json",
-  "compilerOptions": {
-    "composite": true
-  },
-  "include": ["vitest/**/*.ts"]
-}

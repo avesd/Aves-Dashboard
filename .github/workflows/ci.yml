@@ -34,5 +34,4 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @avesd/desktop exec playwright install --with-deps chromium
       - run: pnpm validate

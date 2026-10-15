@@ -48,6 +48,6 @@
 
 ## Verification
 
-- Targeted checks: Use the owning workspace's `lint`, `compile`, `test`, or `build` script, selected with `pnpm --filter <workspace>` when appropriate.
-- Broad checks: Use `pnpm lint`, `pnpm compile`, `pnpm test`, and `pnpm build` for cross-cutting changes; `pnpm validate` combines all four.
+- Targeted checks: Use the owning workspace's `lint`, `compile`, or `build` script, selected with `pnpm --filter <workspace>` when appropriate.
+- Broad checks: Use `pnpm lint`, `pnpm compile`, and `pnpm build` for cross-cutting changes; `pnpm validate` combines all three.
 - Report validation: Use repository-relative Markdown links with GitHub-style anchors. Check added links, trailing whitespace, and final newlines; run `git diff --check` only when Git work is separately authorized.

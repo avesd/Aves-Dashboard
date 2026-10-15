@@ -5,7 +5,6 @@
     "allowImportingTsExtensions": true
   },
   "include": [
-    "release/**/*.ts",
-    "../test/unit/scripts/release/**/*.ts"
+    "release/**/*.ts"
   ]
 }

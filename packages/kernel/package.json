@@ -5,7 +5,6 @@
   "scripts": {
     "compile": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
-    "test": "vitest run",
     "lint:fix": "eslint . --fix"
   },
   "exports": {
@@ -18,7 +17,6 @@
   "devDependencies": {
     "@avesd/configuration": "workspace:*",
     "eslint": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "catalog:"
   }
 }

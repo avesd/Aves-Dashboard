@@ -39,7 +39,7 @@ add subtree-specific constraints.
 - Dependency versions belong in the `pnpm-workspace.yaml` catalog; workspace
   manifests reference them with `catalog:`.
 - Use root scripts for normal verification: `pnpm lint`, `pnpm compile`,
-  `pnpm test`, `pnpm build`, and `pnpm validate`.
+  `pnpm build`, and `pnpm validate`.
 - `README.md` currently owns product orientation and repository onboarding.
 - `working/` contains non-authoritative audits, plans, and temporary notes.
 - Tests live under each workspace's `test/`, never beside production source.

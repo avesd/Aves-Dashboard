@@ -1,6 +1,6 @@
-.PHONY: compile lint test build validate lint-fix check-workflows validate-repository-boundaries test-electron
+.PHONY: compile lint build validate lint-fix check-workflows validate-repository-boundaries
 
-compile lint test build validate:
+compile lint build validate:
 	pnpm $@
 
 lint-fix:
@@ -11,6 +11,3 @@ check-workflows:
 
 validate-repository-boundaries:
 	pnpm run validate-repository-boundaries
-
-test-electron:
-	pnpm run test:electron $(ARGS)

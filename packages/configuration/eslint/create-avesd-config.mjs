@@ -310,9 +310,7 @@ export const createAvesdConfig = (tsconfigRootDir = import.meta.dirname) => {
             ignores: ["**/*.d.ts"],
             languageOptions: {
                 parserOptions: {
-                    projectService: {
-                        allowDefaultProject: ["vitest.config.ts"],
-                    },
+                    projectService: true,
                     tsconfigRootDir,
                 },
             },

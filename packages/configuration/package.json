@@ -3,17 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "compile": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
-    "test": "node --test test/unit/eslint/*.test.mjs test/unit/eslint/rules/*.test.mjs",
     "lint:fix": "eslint . --fix"
   },
   "exports": {
     "./eslint": "./eslint/create-avesd-config.mjs",
     "./typescript/base": "./typescript/tsconfig.base.json",
     "./typescript/node": "./typescript/tsconfig.node.json",
-    "./typescript/react": "./typescript/tsconfig.react.json",
-    "./vitest": "./vitest/create-vitest-config.ts"
+    "./typescript/react": "./typescript/tsconfig.react.json"
   },
   "dependencies": {
     "@eslint/js": "catalog:",
@@ -21,8 +18,7 @@
     "eslint-plugin-react-hooks": "catalog:",
     "eslint-plugin-simple-import-sort": "catalog:",
     "globals": "catalog:",
-    "typescript-eslint": "catalog:",
-    "vitest": "catalog:"
+    "typescript-eslint": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

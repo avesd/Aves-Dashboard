@@ -97,7 +97,6 @@ for (const packageJsonPath of packageJsonPaths.slice(1)) {
     for (const subtree of [
         "src",
         "eslint",
-        "vitest",
         "tests",
     ]) {
         const root = join(directory, subtree);

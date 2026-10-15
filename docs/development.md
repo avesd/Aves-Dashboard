@@ -4,45 +4,25 @@ The root pnpm scripts are the source of truth for repository tasks.
 
 ## Validation
 
-Choose verification by the affected boundary:
+`pnpm validate` runs lint, type checks, and the production build. The previous
+unit, integration, browser, and native Electron suites have been removed while
+the first real usage scenario is prepared. There are currently no automated
+repository test commands or synthetic scenario harnesses.
 
-- `pnpm validate` runs lint, type checks, service/component tests, and the build.
-- `pnpm test:electron browser plugins` checks web and local native widget surfaces.
-- `pnpm test:electron workspace` checks dashboard/workspace transitions.
-- `pnpm test:electron storage resources` checks scoped persistence and sharing.
-- `pnpm test:electron` runs all five native scenarios for cross-cutting changes
-  and release checks. Each selected scenario runs once, with its own temporary
-  profile and bounded application cleanup; an unknown scenario fails explicitly.
+Use visual QA for rendered changes and native Electron checks for privileged
+APIs, input, windows, and persistence. The first real scenario should establish
+its own acceptance criteria before new automated coverage is introduced.
 
-A cosmetic change normally needs the relevant component checks and visual QA,
-plus a native scenario only when native views or input are affected. Detailed
-validation rules belong in service tests; native tests exercise real preload,
-IPC, process isolation, and persistence wiring. See
-[Electron test responsibilities](../apps/desktop/test/e2e/README.md) before
-adding another end-to-end assertion.
-
-`pnpm lint:fix` applies ESLint fixes to root scripts, tooling tests, and every
-workspace before checking repository and workflow boundaries. JavaScript uses
-ESLint recommended correctness checks with explicit Node/browser globals;
-TypeScript retains type-aware checks for source and tests. React source also
-checks Hook call order and effect dependencies. Editor indentation matches
-ESLint: four spaces for JavaScript/TypeScript and two for JSON/YAML.
+`pnpm lint:fix` applies ESLint fixes to root scripts and every workspace before
+checking repository and workflow boundaries. JavaScript uses ESLint recommended
+correctness checks with explicit Node/browser globals; TypeScript retains
+type-aware source checks. React source also checks Hook call order and effect
+dependencies. Editor indentation matches ESLint: four spaces for
+JavaScript/TypeScript and two for JSON/YAML.
 
 `pnpm lint` also validates repository boundaries, including catalog and
 workspace dependency declarations, renderer privilege isolation, and the
 runtime neutrality of public plugin and ACP contracts.
-
-`pnpm test` runs Node.js unit and integration tests and headless Chromium browser tests.
-Tests live under each workspace's `test/unit/` or `test/integration/`, mirroring
-the source subtree. Desktop Vitest projects separate `unit`, `integration`, and
-`browser` execution; `test/e2e/` is run separately by `pnpm test:electron`.
-Browser tests use the `*.browser.test.ts` suffix and cover renderer plugin DOM
-behavior; they do not replace Electron main/preload integration testing.
-Before the first browser test run, install Chromium with:
-
-```sh
-pnpm --filter @avesd/desktop exec playwright install chromium
-```
 
 ## Dependency maintenance
 
@@ -82,26 +62,17 @@ pnpm sort-all --dry-run
 make update-all ARGS=--dry-run
 ```
 
-Run `pnpm validate` after applying updates. Root tooling tests cover maintenance
-previews, failure propagation, sorting, and workflow policy; they run as part of
-`pnpm test`. Equivalent Make targets remain thin wrappers around pnpm scripts;
-running plain `make` (or `make help`) displays the available targets. The root
-Makefile includes `make/development.mk`, `make/checks.mk`,
-`make/maintenance.mk`, `make/release.mk`, and `make/help.mk`. Use `make install` for a frozen
-lockfile installation, and `make test-electron ARGS="storage resources"` to
-select native scenarios. `make default` remains an alias for help.
+Run `pnpm validate` after applying updates. Equivalent Make targets remain
+thin wrappers around pnpm scripts; running plain `make` (or `make help`)
+displays the available targets. The root Makefile includes
+`make/development.mk`, `make/checks.mk`, `make/maintenance.mk`,
+`make/release.mk`, and `make/help.mk`. Use `make install` for a frozen lockfile
+installation. `make default` remains an alias for help.
 
 ## Continuous integration
 
 GitHub Actions runs on pushes, pull requests, and manual dispatch. Linux and
-macOS validation jobs install with `--frozen-lockfile`, install Chromium and its
-system dependencies, and run `pnpm validate`.
-
-The separate `pnpm test:electron` suite is not an automatic CI gate yet: its
-shared launch helper still waits for the former `.dashboard-grid`, and widget
-scenarios assume the legacy dashboard UI. Migrate those assertions to the
-current Canvas product contract before enabling the suite in CI. Do not bypass
-its assertions or restore the old UI solely to make validation pass.
+macOS validation jobs install with `--frozen-lockfile` and run `pnpm validate`.
 
 Both jobs use the Node version in `.nvmrc`, the pnpm version in `package.json`,
 read-only permissions, SHA-pinned Actions, and checkout without persisted

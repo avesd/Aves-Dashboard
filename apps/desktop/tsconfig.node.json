@@ -2,15 +2,15 @@
   "extends": "@avesd/configuration/typescript/node",
   "compilerOptions": {
     "composite": true,
-    "types": ["node", "electron"]
+    "types": [
+      "node",
+      "electron"
+    ]
   },
   "include": [
     "electron.vite.config.ts",
     "src/main/**/*.ts",
     "src/preload/**/*.ts",
-    "src/shared/**/*.ts",
-    "test/*/main/**/*.ts",
-    "test/*/preload/**/*.ts",
-    "test/*/shared/**/*.ts"
+    "src/shared/**/*.ts"
   ]
 }

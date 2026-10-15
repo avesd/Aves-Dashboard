@@ -9,8 +9,6 @@
     "dev": "electron-vite dev",
     "lint": "eslint .",
     "preview": "electron-vite preview",
-    "test": "vitest run",
-    "test:electron": "node test/e2e/run.mjs",
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
@@ -37,13 +35,11 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
-    "@vitest/browser-playwright": "catalog:",
     "electron": "catalog:",
     "electron-vite": "catalog:",
     "eslint": "catalog:",
     "globals": "catalog:",
     "typescript": "catalog:",
-    "vite": "catalog:",
-    "vitest": "catalog:"
+    "vite": "catalog:"
   }
 }

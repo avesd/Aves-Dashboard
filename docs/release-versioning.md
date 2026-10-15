@@ -108,6 +108,5 @@ planned notes, and selected versions and fail if those inputs changed.
 
 `pnpm lint` includes a read-only release plan check, so CI rejects invalid pending
 notes or histories without applying them. `pnpm compile` type-checks release
-scripts and their tests. `pnpm test` exercises discovery, version rules, previews,
-application, partial consumption, year rollover, and stale-input rejection using
-temporary repositories. `pnpm validate` includes all these checks.
+scripts. `pnpm validate` combines lint, type checks, and the production build.
+The previous automated release-script tests have been removed.

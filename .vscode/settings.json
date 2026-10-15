@@ -13,9 +13,8 @@
     "esbuild",
     "lucide",
     "modelcontextprotocol",
+    "nvmrc",
     "opencode",
-    "vitejs",
-    "vitest"
+    "vitejs"
   ]
 }
-

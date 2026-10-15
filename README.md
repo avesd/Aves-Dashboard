@@ -34,7 +34,6 @@ Use the root pnpm scripts for repository tasks:
 pnpm lint
 pnpm lint:fix
 pnpm compile
-pnpm test
 pnpm build
 pnpm validate
 ```
@@ -50,7 +49,7 @@ browser test setup, and dependency maintenance.
 - `assets/brand` — source SVGs and usage notes for the Avesd bird mark.
 - `apps/desktop` — Electron main, preload, and React renderer processes.
 - `packages/acp-client` — provider-neutral ACP v1 client boundary.
-- `packages/configuration` — shared TypeScript, ESLint, and Vitest defaults.
+- `packages/configuration` — shared TypeScript and ESLint defaults.
 - `packages/kernel` — legacy Cordis-backed plugin lifecycle adapter and
   contribution registries.
 - `packages/plugin-api` — stable contracts implemented by plugins.
@@ -93,34 +92,23 @@ apps/desktop/
       components/           # Dashboard shell and widget hosting
       workbench/            # Renderer orchestration
       plugins/              # One directory per built-in plugin/adapter
-  test/
-    unit/                   # Mirrors src/, including renderer browser tests
-    integration/            # Real listeners, processes, and multi-owner storage
-    e2e/
-      support/              # Shared isolated desktop lifecycle and helpers
-      *.test.mjs            # Independently runnable native scenarios
-      run.mjs               # Explicit scenario selection
 ```
 
-Keep tests in each workspace's `test/` directory, not beside production code.
-Unit and component tests mirror `src/` under `test/unit/` and import the covered
-implementation directly. Integration tests mirror the owning source path under
-`test/integration/`; native Electron scenarios live under `test/e2e/`.
-Configuration rule tests mirror `eslint/` under `test/unit/eslint/`.
-Root maintenance and workflow tests mirror `scripts/` under `test/unit/scripts/`.
-Path correspondence does not require a test for every source file. TypeScript
-tests remain included in compile and type-aware lint checks.
+The previous automated test suites and synthetic scenarios have been removed.
+`pnpm validate` currently runs lint, type checks, and the production build.
+The first real usage scenario has not been defined yet. Future tests belong in
+each workspace's `test/` directory and must be included in compile and lint checks.
 Add a feature folder when several related files need a home; avoid generic
 `utils` folders, internal barrel files, or new packages solely to shorten paths.
 
 Package-level `src/index.ts` files define the public export surface and contain
 only re-exports. Put declarations, factories, and behavior in files named for
-their responsibilities. Configuration factories use explicit filenames such as
-`create-vitest-config.ts`; package export specifiers remain stable. Executable
+their responsibilities. Configuration factories use explicit filenames; package export specifiers remain
+stable. Executable
 entry points use names such as `main.ts` and `preload.ts` and keep startup wiring
 small. Build outputs remain `out/main/index.js` and `out/preload/index.cjs`.
 
-Shared ESLint rules apply to workspace source, configuration, tests, and root
+Shared ESLint rules apply to workspace source, configuration, and root
 scripts. `pnpm lint` checks `scripts/` and the root ESLint configuration before
 running workspace checks. Nonempty function and enum bodies start with one blank
 line after `{`; a `return` preceded by another statement in its block also has a
