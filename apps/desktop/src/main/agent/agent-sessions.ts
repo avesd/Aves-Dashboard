@@ -2,17 +2,16 @@
  * @author Avesd
  * @package Desktop
  * @namespace Root
- * @description In-memory lifecycle and transcripts for independent ACP sessions
+ * @description In-memory lifecycle and transcripts for independent Agent sessions
  */
 
 import type { AgentSessionsChange, AgentSessionSnapshot, AgentSessionSummary, AgentTierRoute } from "../../shared/agent/sessions";
-import type { AcpAgentHost } from "./acp-agent-host";
 import type { AgentPreferences } from "./agent-preferences";
+import type { SessionHost } from "./session-host";
 import type { AgentEvent, AgentSettings, AgentTier } from "@avesd/plugin-api";
 import type { BlockQuestionOwner, DashboardScope } from "@avesd/workspace-model";
 import { randomUUID } from "node:crypto";
 
-type SessionHost = Pick<AcpAgentHost, "connect" | "prompt" | "continuePrompt" | "continuationToken" | "cancel" | "getSettings" | "selectProvider" | "selectModel" | "selectEffort" | "publishSettings" | "subscribe" | "dispose">;
 export type AnswerContinuationStatus = "queued" | "running" | "completed" | "error" | "unavailable";
 interface AnswerContinuation {
     readonly id: string;
@@ -27,6 +26,16 @@ export interface SessionOrigin extends DashboardScope {
     readonly source: string;
     readonly widgetId?: string;
     readonly pluginId?: string;
+}
+interface Execution {
+    readonly id: string;
+    active: boolean;
+    cancelled: boolean;
+    readonly finished: Promise<void>;
+    finish(): void;
+    readonly aborted: Promise<void>;
+    abort(): void;
+    cancellation?: Promise<void>;
 }
 interface Entry {
     summary: AgentSessionSummary;
@@ -43,6 +52,12 @@ interface Entry {
     release?: () => void;
     preparing?: Promise<SessionHost>;
     stopped: boolean;
+    generation: number;
+    execution?: Execution;
+    readonly queue: {
+        id: string;
+        text: string;
+    }[];
     ready: boolean;
     configuring: boolean;
     turnId?: string;
@@ -64,6 +79,7 @@ export class AgentSessions {
             release(): void;
         }>,
         private readonly changed: (change: AgentSessionsChange) => void,
+        private readonly cancellationTimeoutMs = 5000,
     ) {}
 
     list(): {
@@ -98,6 +114,10 @@ export class AgentSessions {
         return {
             ...entry.summary,
             events: entry.events,
+            queuedPrompts: entry.queue.map(item => {
+
+                return { ...item };
+            }),
             settings: entry.settings,
         };
     }
@@ -122,6 +142,8 @@ export class AgentSessions {
             sequence: 0,
             bytes: 0,
             stopped: false,
+            generation: 0,
+            queue: [],
             ready: false,
             configuring: false,
             answers: new Map(),
@@ -179,7 +201,7 @@ export class AgentSessions {
     async prompt(text: string, id?: string): Promise<void> {
 
         const entry = await this.#resolve(id);
-        if (entry.configuring) {
+        if (entry.configuring || entry.queue.length > 0) {
             throw new Error("Wait for the Agent configuration change to finish.");
         }
         if (entry.continuing || [...entry.answers.values()].some(answer => {
@@ -192,13 +214,161 @@ export class AgentSessions {
         return this.#prompt(entry, text);
     }
 
+    /** Capture the submitted execution ID; never relabel a late call as the current run. */
+    authorizeExecution(id: string, executionId: string): () => boolean {
+
+        const entry = this.#entries.get(id);
+        const execution = entry?.execution;
+
+        return () => {
+
+            return !!entry && this.#entries.get(id) === entry && !this.#ended(entry)
+            && !!execution && execution.id === executionId && execution.active && entry.execution === execution;
+        };
+    }
+
+    enqueue(text: string, id: string): {
+        id: string;
+    } {
+
+        const entry = this.#entry(id);
+        if (!text.trim() || text.length > 32000 || this.#ended(entry) || entry.configuring
+            || entry.execution?.cancelled || entry.queue.length >= 16) {
+            throw new Error("Cannot queue this supplemental request.");
+        }
+        const item = {
+            id: randomUUID(),
+            text: text.trim(),
+        };
+        entry.queue.push(item);
+        this.changed({
+            type: "updated",
+            id,
+        });
+        this.#drain(entry);
+
+        return { id: item.id };
+    }
+
+    #drain(entry: Entry): void {
+
+        if (this.#ended(entry) || entry.execution || entry.continuing || entry.waitingQuestion || entry.configuring
+            || [...entry.answers.values()].some(answer => {
+
+                return answer.status === "queued";
+            })) {
+            return;
+        }
+        const next = entry.queue.shift();
+        if (next) {
+            void this.#prompt(entry, next.text).catch(() => {
+            });
+        }
+    }
+
+    cancelTurn(id: string): Promise<void> {
+
+        const entry = this.#entry(id);
+        entry.queue.length = 0;
+        for (const answer of entry.answers.values()) {
+            if (answer.status === "queued" || answer.status === "running") {
+                answer.status = "unavailable";
+            }
+        }
+        entry.waitingQuestion = undefined;
+        entry.continuing = undefined;
+        entry.summary = {
+            ...entry.summary,
+            waitingForAnswer: false,
+        };
+        const execution = entry.execution;
+        if (!execution) {
+            entry.turnId = undefined;
+            this.changed({
+                type: "updated",
+                id,
+            });
+
+            return Promise.resolve();
+        }
+        if (execution.cancellation) {
+            return execution.cancellation;
+        }
+        execution.active = false;
+        execution.cancelled = true;
+        entry.turnId = undefined;
+        entry.summary = {
+            ...entry.summary,
+            execution: {
+                id: execution.id,
+                status: "cancelling",
+            },
+        };
+        this.changed({
+            type: "updated",
+            id,
+        });
+        execution.cancellation = this.#cancelExecution(entry, execution);
+
+        return execution.cancellation;
+    }
+
+    async #cancelExecution(entry: Entry, execution: Execution): Promise<void> {
+
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+            void entry.host?.cancel().catch(() => {
+            });
+            const settled = await Promise.race([
+                execution.finished.then(() => {
+
+                    return true;
+                }),
+                new Promise<boolean>(resolve => {
+
+                    timer = setTimeout(() => {
+
+                        return void resolve(false);
+                    }, this.cancellationTimeoutMs);
+                }),
+            ]);
+            if (!settled && entry.execution === execution) {
+                this.#detach(entry);
+                entry.summary = {
+                    ...entry.summary,
+                    connectionReset: true,
+                };
+                this.#record(entry, {
+                    type: "status",
+                    status: "disconnected",
+                    message: "The Agent did not finish cancelling in time. Its connection was released; the next request starts a new Agent conversation. Completed changes are retained.",
+                });
+                execution.abort();
+                await execution.finished;
+            }
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    #detach(entry: Entry): void {
+
+        entry.generation++;
+        const host = entry.host;
+        entry.host = undefined;
+        host?.dispose();
+        entry.release?.(); entry.release = undefined;
+        entry.ready = false;
+        entry.preparing = undefined;
+    }
+
     questionOwner(id: string): BlockQuestionOwner | undefined {
 
         const entry = this.#entries.get(id);
         const connectionId = entry?.host?.continuationToken();
 
         return entry && !this.#ended(entry) && entry.summary.kind === "interactive" && entry.summary.status === "running"
-            && entry.turnId && connectionId ? {
+            && entry.execution?.active && entry.turnId && connectionId ? {
                 sessionId: id,
                 connectionId,
                 turnId: entry.turnId,
@@ -246,7 +416,7 @@ export class AgentSessions {
     respond(owner: BlockQuestionOwner, id: string, text: string, active: () => Promise<boolean>): AnswerContinuationStatus {
 
         if (!this.questionActive(owner, false)) {
-            throw new Error("The original ACP conversation has ended.");
+            throw new Error("The original Agent conversation has ended.");
         }
         const entry = this.#entry(owner.sessionId);
         const previous = entry.answers.get(id);
@@ -293,27 +463,36 @@ export class AgentSessions {
             return candidate.status === "queued";
         });
         if (!answer) {
+            this.#drain(entry);
+
             return;
         }
         entry.continuing = answer;
         try {
-            if (!this.questionActive(answer.owner, false) || !await answer.active()) {
+            if (!this.questionActive(answer.owner, false) || !await answer.active()
+                || answer.status !== "queued" || !this.questionActive(answer.owner, false)) {
                 answer.status = "unavailable";
 
                 return;
             }
             answer.status = "running";
             await this.#prompt(entry, answer.text, answer);
-            answer.status = "completed";
+            // Cancellation may invalidate the answer while its prompt is pending.
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            if (answer.status === "running") {
+                answer.status = "completed";
+            }
         } catch {
             answer.status = this.questionActive(answer.owner, false) ? "error" : "unavailable";
         } finally {
-            entry.continuing = undefined;
-            this.changed({
-                type: "updated",
-                id: entry.summary.id,
-            });
-            void this.#continue(entry);
+            if (entry.continuing === answer) {
+                entry.continuing = undefined;
+                this.changed({
+                    type: "updated",
+                    id: entry.summary.id,
+                });
+                void this.#continue(entry);
+            }
         }
     }
 
@@ -322,7 +501,27 @@ export class AgentSessions {
         if (entry.stopped || entry.summary.status === "running" || this.#disposed) {
             throw new Error("This session is stopped or already responding.");
         }
-        entry.turnId = randomUUID();
+        let finish!: () => void;
+        let abort!: () => void;
+        const finished = new Promise<void>(resolve => {
+
+            finish = resolve;
+        });
+        const aborted = new Promise<void>(resolve => {
+
+            abort = resolve;
+        });
+        const execution: Execution = {
+            id: randomUUID(),
+            active: false,
+            cancelled: false,
+            finished,
+            finish,
+            aborted,
+            abort,
+        };
+        entry.execution = execution;
+        entry.turnId = execution.id;
         entry.waitingQuestion = undefined;
         if (continuation) {
             continuation.turnId = entry.turnId;
@@ -330,6 +529,10 @@ export class AgentSessions {
         entry.summary = {
             ...entry.summary,
             status: "running",
+            execution: {
+                id: execution.id,
+                status: "running",
+            },
             waitingForAnswer: false,
         };
         this.#record(entry, {
@@ -344,41 +547,77 @@ export class AgentSessions {
             }).length > 8) {
                 throw new Error("At most eight agent tasks can run concurrently.");
             }
-            const host = continuation ? entry.host : await this.#prepare(entry);
-            if (this.#ended(entry)) {
-                return;
-            }
-            if (!host) {
-                throw new Error("The original ACP conversation has ended.");
-            }
-            if (continuation) {
-                await host.continuePrompt(text, continuation.owner.connectionId);
-            }
-            else {
-                await host.prompt(text);
-            }
-            if (!this.#ended(entry)) {
+            const work = async () => {
+
+                const host = continuation ? entry.host : await this.#prepare(entry);
+                if (this.#ended(entry) || execution.cancelled || entry.execution !== execution) {
+                    return;
+                }
+                if (!host) {
+                    throw new Error("The original Agent conversation has ended.");
+                }
+                execution.active = true;
+                const request = entry.origin.kind === "interactive"
+                    ? `Avesd execution ID: ${execution.id}. Include this exact executionId in every Avesd tool call. Never reuse an earlier execution ID.\n${text}`
+                    : text;
+                if (continuation) {
+                    await host.continuePrompt(request, continuation.owner.connectionId, execution.id);
+                } else {
+                    await host.prompt(request, execution.id);
+                }
+            };
+            await Promise.race([
+                work(),
+                execution.aborted,
+            ]);
+            if (!this.#ended(entry) && !execution.cancelled) {
                 entry.summary = {
                     ...entry.summary,
                     status: "completed",
+                    execution: {
+                        id: execution.id,
+                        status: "completed",
+                    },
                 };
             }
         } catch {
-            if (!this.#ended(entry)) {
+            if (!this.#ended(entry) && !execution.cancelled) {
+                entry.queue.length = 0;
                 entry.summary = {
                     ...entry.summary,
                     status: "error",
+                    execution: {
+                        id: execution.id,
+                        status: "error",
+                    },
                 };
                 if (entry.settings?.status !== "error") {
                     this.#record(entry, {
                         type: "status",
                         status: "error",
-                        message: "Agent task failed. Check the configured ACP, model, effort and local login.",
+                        message: "Agent task failed. Check the configured Agent, model, effort and local login.",
                     });
                 }
             }
-            throw new Error("Agent task failed.");
+            if (!execution.cancelled) {
+                throw new Error("Agent task failed.");
+            }
         } finally {
+            execution.active = false;
+            if (entry.execution === execution) {
+                entry.execution = undefined;
+                if (execution.cancelled && !this.#ended(entry)) {
+                    entry.summary = {
+                        ...entry.summary,
+                        status: "idle",
+                        execution: {
+                            id: execution.id,
+                            status: "cancelled",
+                        },
+                    };
+                }
+            }
+            execution.finish();
             if (this.#entries.has(entry.summary.id)) {
                 this.changed({
                     type: "updated",
@@ -402,16 +641,22 @@ export class AgentSessions {
     #stop(entry: Entry): void {
 
         entry.stopped = true;
+        entry.queue.length = 0;
+        if (entry.execution) {
+            entry.execution.active = false;
+            entry.execution.cancelled = true;
+            entry.execution.abort();
+        }
         entry.summary = {
             ...entry.summary,
             status: "stopped",
             waitingForAnswer: false,
         };
         entry.waitingQuestion = undefined;
-        // Termination also covers adapters that never acknowledge ACP cancellation.
+        // Termination also covers adapters that never acknowledge Agent cancellation.
         void entry.host?.cancel().catch(() => {
         });
-        entry.host?.dispose(); entry.release?.(); entry.host = undefined; entry.release = undefined;
+        this.#detach(entry);
     }
     async remove(id: string): Promise<void> {
 
@@ -464,9 +709,9 @@ export class AgentSessions {
 
         const entry = this.#entry(id);
         if (entry.route.providerId !== route.providerId) {
-            throw new Error("A different ACP requires a new conversation.");
+            throw new Error("A different Agent requires a new conversation.");
         }
-        if (entry.summary.status === "running" || entry.preparing || entry.configuring || entry.continuing || entry.waitingQuestion || this.#ended(entry)) {
+        if (entry.summary.status === "running" || entry.preparing || entry.configuring || entry.continuing || entry.queue.length > 0 || entry.waitingQuestion || this.#ended(entry)) {
             throw new Error("Wait for this conversation to become idle before changing its model.");
         }
         entry.configuring = true;
@@ -508,7 +753,7 @@ export class AgentSessions {
 
             return entry.route.providerId === id && (entry.summary.status === "running" || !!entry.preparing);
         })) {
-            throw new Error("Stop sessions using this ACP before changing its installation.");
+            throw new Error("Stop sessions using this Agent before changing its installation.");
         }
         await save();
         for (const entry of this.#entries.values()) {
@@ -534,7 +779,7 @@ export class AgentSessions {
     dispose(): void {
 
         this.#disposed = true;
-        for (const entry of this.#entries.values()) { entry.stopped = true; entry.host?.dispose(); entry.release?.(); }
+        for (const entry of this.#entries.values()) { this.#stop(entry); }
         this.#entries.clear(); this.#listeners.clear();
     }
     #ended(entry: Entry): boolean {
@@ -562,8 +807,9 @@ export class AgentSessions {
         if (entry.host) {
             return entry.host;
         }
+        const generation = entry.generation;
         const created = await this.factory(entry.origin, entry.route, entry.summary.id);
-        if (this.#ended(entry)) {
+        if (this.#ended(entry) || entry.generation !== generation) {
             created.host.dispose(); created.release(); throw new Error("Agent session has ended.");
         }
         // A simultaneous settings query may have created the host first.
@@ -576,7 +822,7 @@ export class AgentSessions {
         entry.host = created.host; entry.release = created.release;
         created.host.subscribe(event => {
 
-            if (!this.#ended(entry)) {
+            if (!this.#ended(entry) && entry.host === created.host && !entry.execution?.cancelled) {
                 this.#record(entry, event);
             }
         });
@@ -589,6 +835,7 @@ export class AgentSessions {
             return Promise.resolve(entry.host);
         }
         if (!entry.preparing) {
+            const generation = entry.generation;
             entry.preparing = (async () => {
 
                 const host = await this.#host(entry);
@@ -600,12 +847,17 @@ export class AgentSessions {
                 if (entry.route.effortId && (await host.getSettings()).effortId !== entry.route.effortId) {
                     await host.selectEffort(entry.route.effortId);
                 }
+                if (entry.generation !== generation || this.#ended(entry)) {
+                    throw new Error("Agent connection was released.");
+                }
                 entry.ready = true;
 
                 return host;
             })().finally(() => {
 
-                entry.preparing = undefined;
+                if (entry.generation === generation) {
+                    entry.preparing = undefined;
+                }
             });
         }
 

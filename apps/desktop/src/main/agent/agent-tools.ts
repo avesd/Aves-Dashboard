@@ -7,6 +7,7 @@
 
 import { canvasToolDefinitions } from "../canvas/canvas-tools";
 import { McpServer } from "@modelcontextprotocol/server";
+import * as z from "zod";
 
 export interface AgentToolResult {
     readonly content: ({
@@ -22,7 +23,7 @@ export interface AgentToolResult {
 
 export const agentToolNames = Object.keys(canvasToolDefinitions);
 
-export function createAgentMcpServer(invoke: (name: string, input: unknown) => Promise<AgentToolResult>): McpServer {
+export function createAgentMcpServer(invoke: (name: string, input: unknown, executionId?: string) => Promise<AgentToolResult>): McpServer {
 
     const server = new McpServer({
         name: "avesd-workspace",
@@ -34,10 +35,16 @@ export function createAgentMcpServer(invoke: (name: string, input: unknown) => P
     ] of Object.entries(canvasToolDefinitions)) {
         server.registerTool(name, {
             description: definition.description,
-            inputSchema: definition.schema,
+            inputSchema: definition.schema.extend({
+                executionId: z.uuid()
+                    .optional()
+                    .describe("The exact Avesd execution ID supplied with the current request. Required for interactive agents."),
+            }),
         }, async (input: unknown) => {
 
-            return { ...await invoke(name, input) };
+            const { executionId, ...arguments_ } = input as Record<string, unknown>;
+
+            return { ...await invoke(name, arguments_, executionId as string | undefined) };
         });
     }
 

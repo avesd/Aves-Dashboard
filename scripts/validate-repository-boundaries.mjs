@@ -182,15 +182,6 @@ validateImports(
     "plugin-api cannot depend on an implementation runtime",
 );
 
-validateImports(
-    join(repositoryRoot, "packages/acp-client/src"),
-    (specifier) => {
-
-        return publicContractRuntimeImports.has(specifier) || nodeBuiltins.has(specifier);
-    },
-    "acp-client must remain provider and runtime neutral",
-);
-
 if (violations.length > 0) {
     for (const violation of violations.sort()) {
         console.error(violation);

@@ -19,7 +19,7 @@ export interface AgentGatewayAddress {
 export async function openAgentGateway(invoke: (name: string, input: unknown, authorized: () => boolean) => Promise<AgentToolResult>, canvas?: {
     service: CanvasService;
     access: CanvasAccess;
-}): Promise<AgentGatewayAddress & {
+}, executionAccess?: (executionId: string) => () => boolean): Promise<AgentGatewayAddress & {
     close(): void;
     rotateToken(): void;
 }> {
@@ -31,9 +31,11 @@ export async function openAgentGateway(invoke: (name: string, input: unknown, au
         void (async () => {
 
             if (canvas && request.url?.startsWith("/v1/")) {
+                const executionId = request.headers["x-avesd-execution-id"];
+                const runActive = executionAccess?.(typeof executionId === "string" ? executionId : "");
                 const authorized = () => {
 
-                    return !closed && !request.headers.origin && request.headers.authorization === `Bearer ${token}`;
+                    return !closed && !request.headers.origin && request.headers.authorization === `Bearer ${token}` && (runActive?.() ?? true);
                 };
                 if (!authorized()) {
                     response.writeHead(401).end();
@@ -75,13 +77,20 @@ export async function openAgentGateway(invoke: (name: string, input: unknown, au
                 const command = JSON.parse(body) as {
                     name?: unknown;
                     input?: unknown;
+                    executionId?: unknown;
                 };
                 if (typeof command.name !== "string") {
                     throw new Error("Invalid Avesd request.");
                 }
+                const runActive = executionAccess?.(typeof command.executionId === "string" ? command.executionId : "");
+                if (runActive && !runActive()) {
+                    response.writeHead(403).end();
+
+                    return;
+                }
                 const output = await invoke(command.name, command.input, () => {
 
-                    return !closed && request.headers.authorization === `Bearer ${token}`;
+                    return !closed && request.headers.authorization === `Bearer ${token}` && (runActive?.() ?? true);
                 });
                 response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(output));
             } catch (error) {

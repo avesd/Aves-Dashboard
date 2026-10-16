@@ -138,7 +138,7 @@ export function AgentSessionsPanel({ api, sessions, selectedId, onSelect, onCrea
                     New session
                 </Button>
             </div>
-            <p>All ACP sessions in this app. Viewing or closing a panel does not stop a task. Conversation history stays in memory until you quit.</p>
+            <p>All Agent sessions in this app. Viewing or closing a panel does not stop a task. Conversation history stays in memory until you quit.</p>
         </div>
         <div
             className="session-list"

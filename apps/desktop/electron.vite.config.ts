@@ -13,8 +13,6 @@ export default defineConfig({
         build: {
             externalizeDeps: {
                 exclude: [
-                    "@avesd/acp-client",
-                    "@avesd/acp-management",
                     "@avesd/workspace-model",
                     "@modelcontextprotocol/server",
                 ],

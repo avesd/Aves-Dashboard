@@ -503,7 +503,7 @@ export const AgentDock = ({ service, label, managed = false }: {
                                 asChild
                             >
                                 <Button
-                                    aria-label="ACP harness"
+                                    aria-label="Agent harness"
                                     className="agent-model-trigger"
                                     variant="ghost"
                                     size="small"
@@ -526,7 +526,7 @@ export const AgentDock = ({ service, label, managed = false }: {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
-                                aria-label="ACP harness"
+                                aria-label="Agent harness"
                                 className="agent-selection-menu"
                                 side="top"
                                 align="start"
@@ -537,7 +537,7 @@ export const AgentDock = ({ service, label, managed = false }: {
                                 <DropdownMenuLabel
                                     description="Changing harness starts a new conversation."
                                 >
-                                    ACP harness
+                                    Agent harness
                                 </DropdownMenuLabel>
                                 <DropdownMenuRadioGroup
                                     value={settings?.providerId}

@@ -50,6 +50,10 @@ export async function invokeCanvasTool(service: CanvasService, access: CanvasAcc
         const parsed = canvasToolDefinitions.aves_dashboard_open_canvas.schema.parse(input);
         await runtime.document(access, parsed.canvasId);
 
+        if (access.isActive && !access.isActive()) {
+            throw new Error("Client access has ended.");
+        }
+
         return output(await present(parsed.canvasId));
     }
     if (name === "aves_dashboard_capabilities") {

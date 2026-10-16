@@ -50,9 +50,6 @@ browser test setup, and dependency maintenance.
 
 - `assets/brand` — source SVGs and usage notes for the Avesd bird mark.
 - `apps/desktop` — Electron main, preload, and React renderer processes.
-- `packages/acp-client` — provider-neutral ACP v1 client boundary.
-- `packages/acp-management` — extensible provider registry, local installation
-  discovery, launch strategies, and model/effort capability management.
 - `packages/configuration` — shared TypeScript and ESLint defaults.
 - `packages/kernel` — legacy Cordis-backed plugin lifecycle adapter and
   contribution registries.
@@ -160,3 +157,12 @@ and plugin infrastructure.
 - [Agent sessions](docs/agent-sessions.md) — tier routing, widget tasks, and unified session management.
 - [Browser widgets](docs/browser-widgets.md) — embedded pages, script tools, and
   browser control bindings.
+
+
+### Agent API configuration
+
+The desktop Agent calls DeepSeek directly. Copy `env/.env.local.example` to `env/.env.development.local`, fill
+`DEEPSEEK_API_KEY`, then restart the app.
+Local environment files are ignored. Process variables override file values.
+See [Agent sessions](docs/agent-sessions.md) for production paths, cancellation,
+tool authorization, and validation details.

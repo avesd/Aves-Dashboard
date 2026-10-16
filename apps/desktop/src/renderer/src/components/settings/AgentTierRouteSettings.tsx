@@ -2,7 +2,7 @@
  * @author Avesd
  * @package Desktop
  * @namespace Root
- * @description ACP-sourced model choices and explicit route verification
+ * @description Agent-sourced model choices and explicit route verification
  */
 
 import type { AgentProviderInstallation } from "../../../../shared/agent/providers";
@@ -88,7 +88,7 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
             .catch(() => {
 
                 if (active) {
-                    setError("Model options could not be loaded. Check this ACP and refresh.");
+                    setError("Model options could not be loaded. Check this Agent and refresh.");
                 }
             })
             .finally(() => {
@@ -133,14 +133,14 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
                     ? `Test passed · ${response.options.models.find(item => {
 
                         return item.id === response.options.modelId;
-                    })?.name ?? response.options.modelId ?? "ACP default model"}`
+                    })?.name ?? response.options.modelId ?? "Agent default model"}`
                     : response.message,
             });
         } catch {
             setResult({
                 key,
                 failed: true,
-                message: "The connection test could not run. Check this ACP and retry.",
+                message: "The connection test could not run. Check this Agent and retry.",
             });
         }
         finally { setTesting(false); }
@@ -162,9 +162,9 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
             {label}
         </legend>
         <label>
-            ACP
+            Agent
             <select
-                aria-label={`${label} ACP`}
+                aria-label={`${label} Agent`}
                 value={route.providerId}
                 onChange={event => {
 
@@ -216,7 +216,7 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
                 <option
                     value=""
                 >
-                    Use ACP default
+                    Use Agent default
                     {defaultModel ? ` (${defaultModel})` : ""}
                 </option>
                 {route.modelId && !options?.models.some(item => {
@@ -229,7 +229,7 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
                     {route.modelId}
                     {" "}
                     ·
-                    {options ? "Not offered by ACP" : "Saved selection"}
+                    {options ? "Not offered by Agent" : "Saved selection"}
                 </option>}
                 {options?.models.map(item => {
 
@@ -259,7 +259,7 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
                 <option
                     value=""
                 >
-                    Use ACP default
+                    Use Agent default
                     {defaultEffort ? ` (${defaultEffort})` : ""}
                 </option>
                 {route.effortId && !options?.efforts.some(item => {
@@ -272,7 +272,7 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
                     {route.effortId}
                     {" "}
                     ·
-                    {options ? "Not offered by ACP" : "Saved selection"}
+                    {options ? "Not offered by Agent" : "Saved selection"}
                 </option>}
                 {options?.efforts.map(item => {
 
@@ -316,7 +316,7 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
         {loading && <p
             role="status"
         >
-            Loading ACP options…
+            Loading Agent options…
         </p>}
         {error && <p
             role="alert"
@@ -326,14 +326,14 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
         {missingModel && <p
             role="alert"
         >
-            The saved model is no longer offered. Choose another model or use the ACP default.
+            The saved model is no longer offered. Choose another model or use the Agent default.
         </p>}
         {missingEffort && !missingModel && <p
             role="alert"
         >
             The saved effort is unavailable for this model. Choose another effort or its default.
         </p>}
-        {options && !loading && !options.models.length && <p>This ACP did not report model options. You can still test its default.</p>}
+        {options && !loading && !options.models.length && <p>This Agent did not report model options. You can still test its default.</p>}
         {result?.key === key && <p
             role={result.failed ? "alert" : "status"}
         >

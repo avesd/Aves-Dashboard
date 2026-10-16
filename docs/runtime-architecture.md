@@ -152,68 +152,18 @@ interrupted when the turn ends or the connection fails. New output follows the
 scroll position only while the user is near the bottom. These details are
 session-local and are cleared on provider/session reset.
 
-Opening the Agent panel does not connect to an Agent. Choose **Connect** or send
-a message when assistance is needed. The panel shows the current Agent and
-connection status. Provider and model controls sit beneath the message input.
-Choose **Codex**, **Claude Code**, or **OpenCode** to start a fresh conversation
-with that backend. Once connected, the model menu uses the backend's ACP
-configuration options and applies changes to the active session. Switching is
-unavailable while connecting or answering.
+The desktop Agent uses a main-process DeepSeek tool loop through typed IPC.
+Credentials are loaded from local environment files and never exposed to the
+renderer. Model choices are configured locally; Check access sends a short
+request.
 
-The selected provider and each provider's model ID are saved locally;
-credentials remain managed by the respective backend. Attachment and voice
-controls remain disabled until implemented.
+Interactive sessions receive five validated canvas tools for resource operations,
+presentation, capabilities, block submission and inspection. Background widget
+sessions receive no product tools. Tool invocations capture the current execution's
+revocable authorization; the canvas service rechecks it at transaction admission.
+The authenticated local-host HTTP gateway and standalone MCP relay remain
+independent interfaces. Neither gateway availability nor API configuration
+prevents local canvas use.
 
-**Settings → Agents** detects user-installed CLIs, displays their versions and
-resolved paths, and lets users enable providers or set an absolute executable
-path. **Refresh** detects installations made after startup. Installation and
-enablement are separate: a missing or disabled CLI cannot be selected for a new
-session. Changes to the active provider configuration end its current session;
-configuration changes are rejected while an Agent operation is in progress.
-Provider settings are saved locally in `agent-installations.json`.
-
-Checks execute `--version` with a timeout and bounded output, without a shell or
-reading credentials. Login is managed by each CLI and is not inferred from a
-successful version check. Connection or request errors are reported in the
-Agent panel. The installation guide opens the provider's official website;
-installation and login remain user-managed. Discovery searches PATH and common
-user installation locations, with custom paths for version managers. Windows
-command shims require selecting the native executable.
-
-The desktop's built-in Agent overlay talks to a main-process Agent service
-through typed IPC. The host launches the pinned `codex-acp` or
-`claude-agent-acp` adapter over stdio with the detected user CLI explicitly
-selected using `CODEX_PATH` or `CLAUDE_CODE_EXECUTABLE`. It does not silently
-fall back to an adapter-bundled CLI. OpenCode runs its own `opencode acp`
-command. Each backend requires its own existing authentication; the panel does
-not collect credentials.
-
-Provider changes close the previous ACP session and clear its displayed
-conversation. Model selection uses ACP `session/set_config_option` and
-backend-published model choices. Each session runs from an empty, app-managed
-scratch directory instead of the desktop process or source repository working
-directory. The Agent process receives a bounded environment containing runtime,
-network, and provider-authentication variables rather than the desktop's entire
-environment. The first prompt identifies Avesd and the active workspace and
-dashboard names; those names are explicitly marked as untrusted user-created
-labels. Interactive sessions receive a dedicated local MCP server with five
-`aves_dashboard_` tools for canvas resources, presentation, capabilities, block
-submission, and live inspection. See [Dashboard blocks](dashboard-blocks.md). Widget background sessions receive no Avesd MCP server.
-Permission requests are correlated with streamed tool-call metadata; only the
-exact registered tools from the `avesd` MCP server are allowed once automatically.
-Missing metadata and unrelated permission requests remain denied. The harness
-stays read-only for its own file tools.
-
-The MCP process is an authenticated loopback relay to the desktop's canvas
-service; it does not read or write workspace files directly. Canvas metadata changes
-use the service's validated, revisioned transaction boundary. Block documents, data,
-and action bindings use the new rendering contract; the fixed business content
-model remains removed. Legacy widget and
-plugin APIs remain host services for compatibility, without Agent dispatch.
-
-The gateway token stays in main and the ACP-provided MCP environment, never in
-the renderer. Failure to start the gateway disables Agent tools without
-preventing local dashboard use. AI harnesses connect through ACP. The client
-package owns protocol lifecycle and capability negotiation while concrete
-process transports and account authentication remain outside the
-protocol-neutral core.
+See [Agent sessions](agent-sessions.md) for configuration, cancellation,
+supplement queues, question continuations, and execution authorization.

@@ -145,14 +145,18 @@ export function Controller({ expanded }: {
     const send = async () => {
 
         const text = draft.trim();
-        if (!text || busy || changingAgent) {
+        if (!text || changingAgent || (sending && session?.status !== "running")) {
             return;
         }
         setSending(true); setError(undefined);
         try {
             const id = session && session.kind === "interactive" && session.status !== "stopped" ? session.id : (await window.avesd.agentSessions.create("flagship")).id;
             setDraft(""); follow.current = true;
-            await window.avesd.agentSessions.prompt(id, text);
+            if (session?.status === "running" || session?.waitingForAnswer) {
+                await window.avesd.agentSessions.enqueue(id, text);
+            } else {
+                await window.avesd.agentSessions.prompt(id, text);
+            }
         } catch (cause) { fail(cause); } finally { setSending(false); }
     };
 
@@ -330,6 +334,13 @@ export function Controller({ expanded }: {
                         Working across your dashboards…
                     </p>}
                 </div>
+                {!!session?.queuedPrompts.length && <p
+                    className="controller-activity"
+                >
+                    {session.queuedPrompts.length}
+                    {" "}
+                    additional request(s) queued
+                </p>}
                 <AgentRuntimePicker
                     api={window.avesd.agentSessions}
                     providersApi={window.avesd.agentProviders}
@@ -354,7 +365,7 @@ export function Controller({ expanded }: {
                         ref={composer}
                         disabled={changingAgent}
                         aria-label="Message your agent"
-                        placeholder="Ask anything…"
+                        placeholder={busy ? "Add a requirement for the next turn…" : "Ask anything…"}
                         value={draft}
                         maxLength={32000}
                         onChange={event => {
@@ -368,13 +379,13 @@ export function Controller({ expanded }: {
                             }
                         }}
                     />
-                    {busy ? <button
+                    {busy && !draft.trim() ? <button
                         type="button"
-                        aria-label="Stop agent"
+                        aria-label="Cancel current turn"
                         onClick={() => {
 
                             if (session) {
-                                void window.avesd.agentSessions.cancel(session.id).catch(fail);
+                                void window.avesd.agentSessions.cancelTurn(session.id).catch(fail);
                             }
                         }}
                     >

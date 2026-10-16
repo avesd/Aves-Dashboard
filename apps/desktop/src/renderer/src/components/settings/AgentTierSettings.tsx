@@ -100,7 +100,7 @@ export function AgentTierSettings({ api, providersApi }: {
     >
         <h3>Agent tiers</h3>
         <p>Widgets choose a tier. Changes apply to new sessions.</p>
-        <p>Options come from the selected ACP. Listing a model does not guarantee access. Test connection sends a short request and may use provider quota.</p>
+        <p>Model options are configured locally. Listing a model does not guarantee access. Test connection sends a short request and may use provider quota.</p>
         {routes && AGENT_TIERS.map(tier => {
 
             return <AgentTierRouteSettings

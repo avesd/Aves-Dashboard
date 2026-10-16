@@ -120,6 +120,23 @@ export const desktopApi: DesktopApi = Object.freeze({
                 text,
             }) as Promise<void>;
         },
+        enqueue: (id: string, text: string) => {
+
+            return ipcRenderer.invoke(agentSessionsChannels.command, {
+                type: "enqueue",
+                id,
+                text,
+            }) as Promise<{
+                id: string;
+            }>;
+        },
+        cancelTurn: (id: string) => {
+
+            return ipcRenderer.invoke(agentSessionsChannels.command, {
+                type: "cancelTurn",
+                id,
+            }) as Promise<void>;
+        },
         cancel: (id: string) => {
 
             return ipcRenderer.invoke(agentSessionsChannels.command, {

@@ -22,7 +22,7 @@ JavaScript/TypeScript and two for JSON/YAML.
 
 `pnpm lint` also validates repository boundaries, including catalog and
 workspace dependency declarations, renderer privilege isolation, and the
-runtime neutrality of public plugin and ACP contracts.
+runtime neutrality of public plugin contracts.
 
 ## Dependency maintenance
 

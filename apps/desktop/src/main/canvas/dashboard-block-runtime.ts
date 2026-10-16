@@ -185,7 +185,7 @@ export class DashboardBlockRuntime {
             },
             {
                 id: "agent.respond",
-                description: "Save answers to this block's question and continue its original live ACP conversation. Returns acceptance immediately; question snapshots report progress.",
+                description: "Save answers to this block's question and continue its original live Agent conversation. Returns acceptance immediately; question snapshots report progress.",
                 parameters: { questionId: "required ID of this block's question; inputFields must be [answers]" },
             },
         ];

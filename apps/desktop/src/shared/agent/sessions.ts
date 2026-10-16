@@ -5,8 +5,6 @@
  * @description Unified agent session administration and tier routing
  */
 
-import type { AcpModelOptions, AcpModelProbeResult, AcpSelection } from "@avesd/acp-management";
-import { parseAcpSelection } from "@avesd/acp-management";
 import type { AgentEvent, AgentSettings, AgentTaskRequest, AgentTaskStatus, AgentTier } from "@avesd/plugin-api";
 import type { DashboardScope } from "@avesd/workspace-model";
 
@@ -20,11 +18,40 @@ export const agentTierLabels: Record<AgentTier, string> = {
     reasoning: "Reasoning",
     action: "Action",
 };
-export type AgentTierRoute = AcpSelection;
+export interface AgentTierRoute {
+    readonly providerId: string;
+    readonly modelId: string;
+    readonly effortId: string;
+}
 export type AgentTierRoutes = Readonly<Record<AgentTier, AgentTierRoute>>;
-export type AgentRouteOptions = AcpModelOptions;
-export type AgentRouteProbeResult = AcpModelProbeResult;
+export interface AgentRouteOptions {
+    readonly models: readonly {
+        readonly id: string;
+        readonly name: string;
+    }[];
+    readonly efforts: readonly {
+        readonly id: string;
+        readonly name: string;
+    }[];
+    readonly defaultModelId?: string;
+    readonly defaultEffortId?: string;
+    readonly modelId?: string;
+    readonly effortId?: string;
+}
+export type AgentRouteProbeResult = {
+    readonly ok: true;
+    readonly options: AgentRouteOptions;
+    readonly tested: boolean;
+} | {
+    readonly ok: false;
+    readonly message: string;
+};
 export interface AgentSessionSummary extends DashboardScope {
+    readonly execution?: {
+        readonly id: string;
+        readonly status: "running" | "cancelling" | "cancelled" | "completed" | "error";
+    };
+    readonly connectionReset?: boolean;
     readonly waitingForAnswer?: boolean;
     readonly route: AgentTierRoute;
     readonly id: string;
@@ -35,6 +62,10 @@ export interface AgentSessionSummary extends DashboardScope {
     readonly createdAt: number;
 }
 export interface AgentSessionSnapshot extends AgentSessionSummary {
+    readonly queuedPrompts: readonly {
+        readonly id: string;
+        readonly text: string;
+    }[];
     readonly events: readonly {
         readonly sequence: number;
         readonly event: AgentEvent;
@@ -58,6 +89,10 @@ export interface AgentSessionsApi {
     connect(id: string): Promise<void>;
     configureSession(id: string, route: AgentTierRoute): Promise<void>;
     prompt(id: string, text: string): Promise<void>;
+    enqueue(id: string, text: string): Promise<{
+        id: string;
+    }>;
+    cancelTurn(id: string): Promise<void>;
     cancel(id: string): Promise<void>;
     remove(id: string): Promise<void>;
     routes(): Promise<AgentTierRoutes>;
@@ -106,5 +141,23 @@ export function parseAgentRoutes(input: unknown): AgentTierRoutes {
 
 export function parseAgentRoute(input: unknown): AgentTierRoute {
 
-    return parseAcpSelection(input);
+    if (!input || typeof input !== "object") {
+        throw new Error("Invalid Agent route.");
+    }
+    const value = input as Record<string, unknown>;
+    for (const key of [
+        "providerId",
+        "modelId",
+        "effortId",
+    ]) {
+        if (typeof value[key] !== "string" || value[key].length > 512) {
+            throw new Error("Invalid Agent route.");
+        }
+    }
+
+    return {
+        providerId: value.providerId as string,
+        modelId: (value.modelId as string).trim(),
+        effortId: (value.effortId as string).trim(),
+    };
 }

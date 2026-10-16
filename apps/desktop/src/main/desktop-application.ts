@@ -22,19 +22,19 @@ import { localPluginsChannels } from "../shared/plugins/local-plugins";
 import { workbenchPreferencesChannels } from "../shared/workbench/preferences";
 import { parseWidgetWorkspaceRequest, widgetWorkspaceChannels } from "../shared/workspace/widget-workspace";
 import { parseWorkspaceNavigation, workspaceNavigationChannel } from "../shared/workspace/workspace-navigation";
-import { AcpAgentHost } from "./agent/acp-agent-host";
-import { createDesktopAcpRegistry } from "./agent/acp-registry";
 import { openAgentGateway } from "./agent/agent-gateway";
 import { AgentPreferences } from "./agent/agent-preferences";
 import { AgentSessions } from "./agent/agent-sessions";
 import { AgentTaskBridge } from "./agent/agent-task-bridge";
+import { DeepSeekAgentHost } from "./agent/deepseek-agent-host";
+import { deepSeekProviders, probeDeepSeek, requireDeepSeek } from "./agent/deepseek-provider";
 import { browserBindingFile } from "./browser/browser-binding-file";
 import { BrowserBindings } from "./browser/browser-bindings";
 import { BrowserTasks } from "./browser/browser-tasks";
 import { PluginBrowserBridge } from "./browser/plugin-browser-bridge";
 import { WebSurfaceManager } from "./browser/web-surface-manager";
 import { CanvasService } from "./canvas/canvas-service";
-import { invokeCanvasTool } from "./canvas/canvas-tools";
+import { canvasToolDefinitions, invokeCanvasTool } from "./canvas/canvas-tools";
 import { DashboardBlockRuntime } from "./canvas/dashboard-block-runtime";
 import { LocalPluginStore } from "./plugins/local-plugin-store";
 import { LocalWidgetRunner } from "./plugins/local-widget-sandbox";
@@ -47,7 +47,6 @@ import { DesktopWindows } from "./windows/desktop-windows";
 import { WorkbenchPreferences } from "./workbench/preferences";
 import { AgentWorkbench } from "./workspace/agent-workbench";
 import { WidgetWorkspaceBridge } from "./workspace/widget-workspace-bridge";
-import { AcpModelCatalog, AcpProviderInstallations, createAcpProviders } from "@avesd/acp-management/node";
 import type { WidgetInstanceId } from "@avesd/workspace-model";
 import type { WorkspaceSnapshot } from "@avesd/workspace-model";
 import { sameDashboard } from "@avesd/workspace-model";
@@ -63,12 +62,9 @@ export function startDesktop() {
         return Promise.resolve(undefined);
     }
 
-    const acpRegistry = createDesktopAcpRegistry(process.execPath);
-    let providerInstallations: AcpProviderInstallations;
     let workbenchPreferences: WorkbenchPreferences;
     let agentPreferences = new AgentPreferences();
     let agentHost: AgentSessions | undefined;
-    let agentModels: AcpModelCatalog | undefined;
     let mainWindow: BrowserWindow | undefined;
     protocol.registerSchemesAsPrivileged([
         {
@@ -91,7 +87,6 @@ export function startDesktop() {
     let webSurfaces: WebSurfaceManager | undefined;
     let browserTasks: BrowserTasks | undefined;
     let browserBindings: BrowserBindings | undefined;
-    let agentRuntimeRoot: string | undefined;
 
     const createMainWindow = (): BrowserWindow => {
 
@@ -154,9 +149,6 @@ export function startDesktop() {
 
             return workspaceFile!.load();
         }, widgetWorkspaceBridge, workbench, pluginBrowserBridge, agentTaskBridge);
-        if (!agentRuntimeRoot) {
-            throw new Error("Agent runtime storage is not ready");
-        }
     };
 
     const hostForEvent = (event: IpcMainInvokeEvent): AgentSessions => {
@@ -262,35 +254,23 @@ export function startDesktop() {
         return workbenchPreferences.setSide(side);
     });
 
-    ipcMain.handle(agentProvidersChannels.list, async (event, refresh: unknown) => {
+    ipcMain.handle(agentProvidersChannels.list, (event) => {
 
         hostForEvent(event);
-        if (refresh === true) {
-            await providerInstallations.refresh(); agentHost?.publishSettings();
-        }
 
-        return providerInstallations.list();
+        return deepSeekProviders();
     });
-    ipcMain.handle(agentProvidersChannels.configure, (event, id: unknown, configuration: unknown) => {
+    ipcMain.handle(agentProvidersChannels.configure, (event) => {
 
-        const host = hostForEvent(event);
-
-        return host.configureProvider(acpRegistry.get(id).id, () => {
-
-            return providerInstallations.configure(id, configuration);
-        });
+        hostForEvent(event);
+        throw new Error("Configure DeepSeek through the local environment file and restart Avesd.");
     });
     ipcMain.handle(agentProvidersChannels.setup, (event, id: unknown) => {
 
         hostForEvent(event);
-        const providerId = acpRegistry.get(id).id;
+        requireDeepSeek(id);
 
-        const url = acpRegistry.get(providerId).setupUrl;
-        if (!url) {
-            throw new Error("This ACP has no installation guide.");
-        }
-
-        return shell.openExternal(url);
+        return shell.openExternal("https://api-docs.deepseek.com/");
     });
 
     ipcMain.handle(agentSessionsChannels.command, async (event, input: unknown) => {
@@ -301,14 +281,13 @@ export function startDesktop() {
         }
         const request = input as Record<string, unknown>;
         if (request.type === "probeRoute") {
-            if (!agentModels || typeof request.test !== "boolean") {
+            if (typeof request.test !== "boolean") {
                 throw new Error("Invalid model check.");
             }
             const route = parseAgentRoute(request.route);
-            acpRegistry.get(route.providerId);
-            await providerInstallations.refresh();
+            requireDeepSeek(route.providerId);
 
-            return agentModels.probe(route, request.test);
+            return probeDeepSeek(route, request.test);
         }
         if (request.type === "list") {
             return sessions.list();
@@ -316,7 +295,7 @@ export function startDesktop() {
         if (request.type === "create") {
             const route = request.route === undefined ? undefined : parseAgentRoute(request.route);
             if (route) {
-                acpRegistry.get(route.providerId);
+                requireDeepSeek(route.providerId);
             }
 
             return sessions.create(parseAgentTier(request.tier), undefined, route);
@@ -326,7 +305,7 @@ export function startDesktop() {
         }
         if (request.type === "configure") {
             const routes = parseAgentRoutes(request.routes);
-            for (const route of Object.values(routes)) { acpRegistry.get(route.providerId); }
+            for (const route of Object.values(routes)) { requireDeepSeek(route.providerId); }
             await agentPreferences.configureRoutes(routes);
 
             return;
@@ -340,11 +319,13 @@ export function startDesktop() {
             case "connect": return sessions.connect(request.id);
             case "configureSession": {
                 const route = parseAgentRoute(request.route);
-                acpRegistry.get(route.providerId);
+                requireDeepSeek(route.providerId);
 
                 return sessions.configureSession(request.id, route);
             }
             case "prompt": return sessions.prompt(parseAgentPrompt(request.text), request.id);
+            case "enqueue": return sessions.enqueue(parseAgentPrompt(request.text), request.id);
+            case "cancelTurn": return sessions.cancelTurn(request.id);
             case "cancel": return sessions.cancel(request.id);
             case "remove": return sessions.remove(request.id);
             default: throw new Error("Unknown session command.");
@@ -520,9 +501,6 @@ export function startDesktop() {
 
             return;
         }
-        providerInstallations = await AcpProviderInstallations.open(join(storagePaths.dataDirectory, "agent-installations.json"), acpRegistry);
-        agentRuntimeRoot = storagePaths.agentRuntime;
-        await providerInstallations.refresh();
         workbenchPreferences = await WorkbenchPreferences.open(join(storagePaths.dataDirectory, "workbench-preferences.json"));
         agentPreferences = await AgentPreferences.open(join(storagePaths.dataDirectory, "agent-preferences.json"));
         const privateStorage = new PluginStorage(storagePaths.dataDirectory);
@@ -695,10 +673,6 @@ export function startDesktop() {
 
             return undefined;
         });
-        agentModels = new AcpModelCatalog(agentRuntimeRoot, () => {
-
-            return createAcpProviders(providerInstallations);
-        }, { ELECTRON_RUN_AS_NODE: "1" });
         agentHost = new AgentSessions(agentPreferences, async () => {
 
             const snapshot = await workspaceFile!.load();
@@ -713,68 +687,30 @@ export function startDesktop() {
             };
         }, async (origin, route, sessionId) => {
 
-            const providers = createAcpProviders(providerInstallations);
-            const provider = providers.find(item => {
-
-                return item.id === route.providerId;
-            });
-            if (!provider || provider.availability().available === false) {
-                throw new Error("Configured ACP is unavailable. Check Settings → Agents.");
-            }
+            requireDeepSeek(route.providerId);
             const interactive = origin.kind === "interactive" && !origin.widgetId;
-            const access = {
-                clientId: sessionId,
-                canvasIds: "all" as const,
-            };
-            const address = interactive ? await openAgentGateway((name, input, isActive) => {
+            const host = new DeepSeekAgentHost({
+                tools: interactive ? canvasToolDefinitions : {},
+                authorize: executionId => {
 
-                return invokeCanvasTool(canvasService!, {
-                    ...access,
-                    isActive,
-                }, id => {
+                    return agentHost!.authorizeExecution(sessionId, executionId);
+                },
+                invoke: (name, input, isActive) => {
 
-                    return windows!.open(id);
-                }, blockRuntime!, name, input);
-            }, {
-                service: canvasService!,
-                access,
-            }) : undefined;
-            const preferences = new AgentPreferences();
-            preferences.providerId = route.providerId;
-            const host = new AcpAgentHost(agentRuntimeRoot!, address, join(__dirname, "workspace-mcp.js"), preferences, providers, async () => {
+                    return invokeCanvasTool(canvasService!, {
+                        clientId: sessionId,
+                        canvasIds: "all",
+                        isActive,
+                    }, id => {
 
-                if (origin.kind === "interactive" && !origin.widgetId) {
-                    return {
-                        canvasController: true,
-                        workspaceName: "Local canvases",
-                        dashboardName: "",
-                    };
-                }
-                const snapshot = await workspaceFile!.load();
-                const workspace = snapshot?.workspaces.find(item => {
-
-                    return item.id === origin.workspaceId;
-                });
-                const dashboard = snapshot?.dashboards.find(item => {
-
-                    return item.id === origin.dashboardId;
-                });
-                if (!workspace || !dashboard) {
-                    throw new Error("Session workspace no longer exists.");
-                }
-
-                return {
-                    workspaceName: workspace.name,
-                    dashboardName: dashboard.name,
-                };
+                        return windows!.open(id);
+                    }, blockRuntime!, name, input);
+                },
             });
 
             return {
                 host,
-                release: () => {
-
-                    address?.close();
-                },
+                release() {},
             };
         }, change => {
 
@@ -823,7 +759,6 @@ export function startDesktop() {
         webSurfaces?.dispose();
         closePluginStorageProcesses();
         agentHost?.dispose();
-        agentModels?.dispose();
         localWidgetRunner.dispose();
         localWidgetSurfaces?.dispose();
         blockRuntime?.dispose();

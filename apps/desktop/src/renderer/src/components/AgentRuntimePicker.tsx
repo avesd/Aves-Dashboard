@@ -75,11 +75,11 @@ export function AgentRuntimePicker({ api, providersApi, session, disabled, apply
     const currentName = providers.find(item => {
 
         return item.id === selected?.providerId;
-    })?.name ?? selected?.providerId ?? "Choose ACP";
+    })?.name ?? selected?.providerId ?? "Choose Agent";
     const modelName = session?.settings?.models.find(item => {
 
         return item.id === selected?.modelId;
-    })?.name ?? selected?.modelId ?? "ACP default";
+    })?.name ?? selected?.modelId ?? "Agent default";
     const effortName = session?.settings?.efforts?.find(item => {
 
         return item.id === selected?.effortId;
@@ -120,7 +120,7 @@ export function AgentRuntimePicker({ api, providersApi, session, disabled, apply
             .catch(() => {
 
                 if (active) {
-                    setMessage("ACP settings could not be loaded."); setFailed(true);
+                    setMessage("Agent settings could not be loaded."); setFailed(true);
                 }
             });
 
@@ -179,7 +179,7 @@ export function AgentRuntimePicker({ api, providersApi, session, disabled, apply
             .catch(() => {
 
                 if (active) {
-                    setMessage("Could not load this ACP's models. Refresh or check its installation."); setFailed(true);
+                    setMessage("Could not load this Agent's models. Refresh or check its installation."); setFailed(true);
                 }
             })
             .finally(() => {
@@ -258,7 +258,7 @@ export function AgentRuntimePicker({ api, providersApi, session, disabled, apply
             ref={trigger}
             type="button"
             className="controller-runtime-trigger"
-            aria-label="Choose ACP, model and effort"
+            aria-label="Choose Agent, model and effort"
             aria-expanded={open}
             aria-haspopup="dialog"
             disabled={disabled || applying || !selected}
@@ -280,7 +280,7 @@ export function AgentRuntimePicker({ api, providersApi, session, disabled, apply
                 className="controller-runtime-model"
                 title={modelName}
             >
-                {modelName || "ACP default"}
+                {modelName || "Agent default"}
             </span>
             <span
                 className="controller-runtime-effort"
@@ -318,7 +318,7 @@ export function AgentRuntimePicker({ api, providersApi, session, disabled, apply
             <header>
                 <div>
                     <strong>Choose your agent</strong>
-                    <span>ACP · model · reasoning effort</span>
+                    <span>Agent · model · reasoning effort</span>
                 </div>
                 <button
                     type="button"
@@ -334,10 +334,10 @@ export function AgentRuntimePicker({ api, providersApi, session, disabled, apply
                 disabled={applying || testing}
             >
                 <label>
-                    ACP
+                    Agent
                     <select
                         autoFocus
-                        aria-label="Conversation ACP"
+                        aria-label="Conversation Agent"
                         value={draft.providerId}
                         onChange={event => {
 
@@ -374,7 +374,7 @@ export function AgentRuntimePicker({ api, providersApi, session, disabled, apply
                 {provider && <p
                     className="controller-runtime-status"
                 >
-                    {provider.source === "bundled" ? "Bundled runtime" : provider.source === "custom" ? "Custom runtime" : "Local installation"}
+                    {provider.source === "api" ? "Direct API" : provider.source === "bundled" ? "Bundled runtime" : provider.source === "custom" ? "Custom runtime" : "Local installation"}
                     {provider.version ? ` · v${provider.version}` : ""}
                     {unavailable ? " · unavailable" : ""}
                 </p>}
@@ -396,7 +396,7 @@ export function AgentRuntimePicker({ api, providersApi, session, disabled, apply
                         <option
                             value=""
                         >
-                            ACP default
+                            Agent default
                             {defaultModel ? ` · ${defaultModel}` : ""}
                         </option>
                         {draft.modelId && !modelOptions.some(item => {
@@ -446,7 +446,7 @@ export function AgentRuntimePicker({ api, providersApi, session, disabled, apply
                         <option
                             value=""
                         >
-                            {options && !options.efforts.length ? "Not exposed by this ACP" : `ACP default${defaultEffort ? ` · ${defaultEffort}` : ""}`}
+                            {options && !options.efforts.length ? "Not exposed by this Agent" : `Agent default${defaultEffort ? ` · ${defaultEffort}` : ""}`}
                         </option>
                         {missingEffort && <option
                             value={draft.effortId}
@@ -470,22 +470,22 @@ export function AgentRuntimePicker({ api, providersApi, session, disabled, apply
             {loading && <p
                 role="status"
             >
-                Loading models from ACP…
+                Loading models from Agent…
             </p>}
             {missingModel && <p
                 role="alert"
             >
-                Choose an offered model or the ACP default.
+                Choose an offered model or the Agent default.
             </p>}
             {missingEffort && <p
                 role="alert"
             >
-                Choose an available effort or the ACP default.
+                Choose an available effort or the Agent default.
             </p>}
             {waiting && <p
                 className="controller-runtime-note"
             >
-                Answer the pending canvas question before changing its model. Another ACP opens a separate conversation.
+                Answer the pending canvas question before changing its model. Another Agent opens a separate conversation.
             </p>}
             {message && <p
                 className={failed ? "controller-runtime-failure" : "controller-runtime-success"}
@@ -529,13 +529,13 @@ export function AgentRuntimePicker({ api, providersApi, session, disabled, apply
                         setOpen(false); manage();
                     }}
                 >
-                    Manage ACPs
+                    Manage Agents
                 </button>
             </div>
             <p
                 className="controller-runtime-note"
             >
-                Models come from ACP. Check access sends one short request.
+                Model options are configured locally. Check access sends one short request.
             </p>
             <footer>
                 <span>

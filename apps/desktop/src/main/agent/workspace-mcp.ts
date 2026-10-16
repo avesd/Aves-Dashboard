@@ -16,7 +16,7 @@ if (!endpoint || !token || new URL(endpoint).hostname !== "127.0.0.1") {
 }
 
 // This process is a protocol relay. It cannot independently mutate workspace files.
-const server = createAgentMcpServer(async (name, input) => {
+const server = createAgentMcpServer(async (name, input, executionId) => {
 
     const response = await fetch(endpoint, {
         method: "POST",
@@ -27,6 +27,7 @@ const server = createAgentMcpServer(async (name, input) => {
         body: JSON.stringify({
             name,
             input,
+            executionId,
         }),
         signal: AbortSignal.timeout(30_000),
     });

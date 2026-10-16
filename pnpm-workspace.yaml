@@ -17,9 +17,6 @@ updateConfig:
     - typescript
 
 catalog:
-  "@agentclientprotocol/claude-agent-acp": 0.89.1
-  "@agentclientprotocol/codex-acp": 2.2.2
-  "@agentclientprotocol/sdk": 1.8.0
   "@clack/prompts": 1.8.1
   "@eslint/js": 10.0.1
   "@modelcontextprotocol/server": 2.3.1

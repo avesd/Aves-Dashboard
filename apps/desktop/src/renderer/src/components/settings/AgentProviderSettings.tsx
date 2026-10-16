@@ -5,15 +5,15 @@
  * @description Agent Provider Settings
  */
 
-import type { AgentProviderConfiguration, AgentProviderInstallation, AgentProvidersApi } from "../../../../shared/agent/providers";
+import type { AgentProviderInstallation, AgentProvidersApi } from "../../../../shared/agent/providers";
 import { Button } from "@avesd/ui";
 import { ExternalLink, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const labels = {
     checking: "Checking…",
-    installed: "Installed",
-    "not-found": "Not installed",
+    installed: "Configured",
+    "not-found": "Key missing",
     error: "Needs attention",
 };
 
@@ -89,7 +89,7 @@ export function AgentProviderSettings({ api }: {
         <div
             className="settings-section-heading"
         >
-            <h3>ACP providers</h3>
+            <h3>Agent API</h3>
             <Button
                 size="small"
                 disabled={busy}
@@ -107,7 +107,7 @@ export function AgentProviderSettings({ api }: {
                 Refresh
             </Button>
         </div>
-        <p>Use agents installed on this device. Enable the ones you want in the chat picker.</p>
+        <p>DeepSeek runs tasks through its API. GPT-Live handles voice separately.</p>
         {busy && providers.length === 0 && <p
             role="status"
         >
@@ -122,7 +122,7 @@ export function AgentProviderSettings({ api }: {
         <p
             className="settings-note"
         >
-            Changing the active agent’s path or enabled setting ends its current conversation.
+            API keys are loaded in the desktop main process. Restart Avesd after changing local configuration.
         </p>
         {providers.map(provider => {
 
@@ -130,13 +130,6 @@ export function AgentProviderSettings({ api }: {
                 key={provider.id}
                 provider={provider}
                 disabled={busy}
-                configure={configuration => {
-
-                    return run(() => {
-
-                        return api.configure(provider.id, configuration);
-                    });
-                }}
                 openSetup={() => {
 
                     return run(() => {
@@ -149,30 +142,20 @@ export function AgentProviderSettings({ api }: {
         <p
             className="settings-note"
         >
-            Installation checks run locally without sending a message. Installation does not verify login. Sign in with the CLI commands above. ACP adapters are included for Codex and Claude; OpenCode uses its own ACP command.
+            Configuration status only checks whether a key exists. Use Check access in model settings to verify a request.
         </p>
     </section>;
 }
 
-function ProviderCard({ provider, disabled, configure, openSetup }: {
+function ProviderCard({ provider, disabled, openSetup }: {
     readonly provider: AgentProviderInstallation;
     readonly disabled: boolean;
-    readonly configure: (configuration: AgentProviderConfiguration) => Promise<void>;
     readonly openSetup: () => Promise<void>;
 }) {
 
-    const [
-        draft,
-        setDraft,
-    ] = useState({
-        source: provider.executablePath,
-        value: provider.executablePath,
-    });
-    const path = draft.source === provider.executablePath ? draft.value : provider.executablePath;
-
     return <article
         className="provider-card"
-        aria-label={`${provider.name} installation`}
+        aria-label={provider.name}
     >
         <div
             className="provider-card-heading"
@@ -180,25 +163,7 @@ function ProviderCard({ provider, disabled, configure, openSetup }: {
             <strong>
                 {provider.name}
             </strong>
-            <label
-                className="provider-enable"
-            >
-                <input
-                    type="checkbox"
-                    aria-label={`Enable ${provider.name}`}
-                    checked={provider.enabled}
-                    disabled={disabled}
-                    onChange={event => {
-
-                        return void configure({
-                            enabled: event.target.checked,
-                            executablePath: provider.executablePath,
-                        });
-                    }}
-                />
-                {" "}
-                Enabled
-            </label>
+            <span>Direct API</span>
         </div>
         <div
             className="provider-status-line"
@@ -208,99 +173,22 @@ function ProviderCard({ provider, disabled, configure, openSetup }: {
             >
                 {labels[provider.status]}
             </span>
-            <span>
-                {provider.source === "bundled" ? "Bundled runtime" : provider.source === "custom" ? "Custom runtime" : "System runtime"}
-            </span>
-            {provider.version && <span>
-                v
-                {provider.version}
-            </span>}
-            {!provider.enabled && <span>Disabled in chat</span>}
         </div>
-        {provider.message && <p>
+        <p>
             {provider.message}
-        </p>}
-        {provider.resolvedPath && <p
-            className="provider-detected-path"
-            title={provider.resolvedPath}
+        </p>
+        <Button
+            size="small"
+            disabled={disabled}
+            leading={<ExternalLink
+                size={12}
+            />}
+            onClick={() => {
+
+                void openSetup();
+            }}
         >
-            {provider.resolvedPath}
-        </p>}
-        <details>
-            <summary>Executable path</summary>
-            <form
-                onSubmit={event => {
-
-                    event.preventDefault(); void configure({
-                        enabled: provider.enabled,
-                        executablePath: path,
-                    });
-                }}
-            >
-                <label>
-                    Custom path
-                    <input
-                        aria-label={`${provider.name} executable path`}
-                        value={path}
-                        disabled={disabled}
-                        placeholder="Auto-detect"
-                        autoComplete="off"
-                        spellCheck={false}
-                        onChange={event => {
-
-                            return void setDraft({
-                                source: provider.executablePath,
-                                value: event.target.value,
-                            });
-                        }}
-                    />
-                </label>
-                <div
-                    className="provider-path-actions"
-                >
-                    <span>Leave blank to detect automatically.</span>
-                    <Button
-                        size="small"
-                        type="submit"
-                        disabled={disabled || path === provider.executablePath}
-                    >
-                        Save path
-                    </Button>
-                </div>
-            </form>
-        </details>
-        <div
-            className="provider-setup"
-        >
-            {provider.bundledAvailable && provider.source !== "bundled" && <Button
-                size="small"
-                disabled={disabled}
-                onClick={() => {
-
-                    void configure({
-                        enabled: provider.enabled,
-                        executablePath: "",
-                    });
-                }}
-            >
-                Use bundled runtime
-            </Button>}
-            <Button
-                size="small"
-                disabled={disabled || !provider.setupUrl}
-                leading={<ExternalLink
-                    size={12}
-                />}
-                onClick={() => {
-
-                    return void openSetup();
-                }}
-            >
-                Installation guide
-            </Button>
-            <code>
-                {provider.loginCommand}
-            </code>
-        </div>
+            API setup guide
+        </Button>
     </article>;
 }

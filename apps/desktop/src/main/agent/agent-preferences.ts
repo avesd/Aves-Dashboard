@@ -7,31 +7,37 @@
 
 import type { AgentTierRoutes } from "../../shared/agent/sessions";
 import { parseAgentRoutes } from "../../shared/agent/sessions";
-import { parseAcpProviderId } from "@avesd/acp-management";
 import { randomUUID } from "node:crypto";
 import { readFile, rename, unlink, writeFile } from "node:fs/promises";
 
-/** Stores IDs only, outside workspace content. Provider credentials belong to the adapters. */
+const parseProviderId = (id: unknown): void => {
+
+    if (typeof id !== "string" || !id || id.length > 128) {
+        throw new Error("Invalid provider.");
+    }
+};
+
+/** Stores IDs only, outside workspace content. Credentials are loaded separately in the main process. */
 export class AgentPreferences {
     routes: AgentTierRoutes = {
         flagship: {
-            providerId: "codex",
+            providerId: "deepseek",
             modelId: "",
             effortId: "",
         },
         reasoning: {
-            providerId: "codex",
+            providerId: "deepseek",
             modelId: "",
             effortId: "",
         },
         action: {
-            providerId: "codex",
+            providerId: "deepseek",
             modelId: "",
             effortId: "",
         },
     };
     private saving: Promise<void> = Promise.resolve();
-    providerId = "codex";
+    providerId = "deepseek";
     models: Record<string, string> = {};
     constructor(private readonly path?: string) {}
     static async open(path: string): Promise<AgentPreferences> {
@@ -43,14 +49,14 @@ export class AgentPreferences {
                 throw new Error();
             }
             const value = data as Record<string, unknown>;
-            parseAcpProviderId(value.providerId);
+            parseProviderId(value.providerId);
             if (!value.models || typeof value.models !== "object" || Array.isArray(value.models)
                 || Object.entries(value.models).some(([
                     key,
                     model,
                 ]) => {
 
-                    parseAcpProviderId(key);
+                    parseProviderId(key);
 
                     return typeof model !== "string" || model.length > 512;
                 })) {
@@ -61,6 +67,24 @@ export class AgentPreferences {
             }
             preferences.providerId = value.providerId as string;
             preferences.models = value.models as Record<string, string>;
+            // Migrate previous external-Agent selections without starting their adapters.
+            preferences.providerId = "deepseek";
+            for (const tier of [
+                "flagship",
+                "reasoning",
+                "action",
+            ] as const) {
+                if (preferences.routes[tier].providerId !== "deepseek") {
+                    preferences.routes = {
+                        ...preferences.routes,
+                        [tier]: {
+                            providerId: "deepseek",
+                            modelId: "",
+                            effortId: "",
+                        },
+                    };
+                }
+            }
         } catch (error) {
             if (!(error && typeof error === "object" && "code" in error && error.code === "ENOENT")) {
                 throw new Error("Agent preferences could not be loaded.", { cause: error });

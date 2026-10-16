@@ -110,7 +110,7 @@ Initial capabilities are:
   `increment` objects are validated by the host.
 - `canvas.open`: open/focus a declared existing canvas.
 - `agent.respond`: accept this block's declared question answers and continue its
-  original live ACP conversation. Acceptance returns immediately; snapshots report
+  original live Agent conversation. Acceptance returns immediately; snapshots report
   subsequent progress. This action does not create an Agent session or show a
   separate task-start confirmation.
 - `agent.task`: present the declared task through a trusted host confirmation
@@ -168,7 +168,7 @@ The host validates required answers, unknown fields, choice membership, and
 repeated selections. This metadata does not define a fixed visual component.
 
 The calling interactive session must be live and responding. The host binds
-its session ID, ACP connection identity, and originating turn; none can be
+its session ID, Agent connection identity, and originating turn; none can be
 supplied by generated source or tool arguments. There is at most one pending
 question per session turn, across all canvases. Source-only updates preserve
 the question. Replacing question metadata requires replacement source, creates
@@ -193,16 +193,16 @@ Show acceptance and progress separately, preserve the selected answers, disable
 normal resubmission, and provide a retry only when `canRetry` is true.
 
 The Agent renders, opens, and inspects its question, then ends the current turn
-normally. The MCP call does not wait for a human. An early answer is queued
-until the original turn finishes; the next prompt reuses the same ACP session
+normally. The tool call does not wait for a human. An early answer is queued
+until the original turn finishes; the next prompt reuses the same Agent session
 and includes question semantics and accepted answers as user data. The original
 conversation can then ask another question or update the canvas with a result.
 Switching selected conversations or closing the canvas never retargets an answer.
 Queued continuations recheck that their question still exists before starting.
 
 Question semantics and accepted answers persist locally. Session transcripts,
-queues, and ACP connections remain in memory. After application exit, adapter
-exit, session removal, or stop, a question cannot reconnect into a fresh ACP
+queues, and Agent connections remain in memory. After application exit, host
+disposal, session removal, or stop, a question cannot reconnect into a fresh Agent
 conversation. Accepted answers remain visible; continuation reports unavailable.
 An ordinary new user turn also makes a prior unanswered question unavailable.
 Transport/model failures can occur after a provider has already done work;
