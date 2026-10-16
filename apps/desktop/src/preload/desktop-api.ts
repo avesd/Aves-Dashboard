@@ -20,6 +20,8 @@ import type { AgentWorkbenchContext, DesktopApi } from "../shared/desktop-api";
 import { agentIpcChannels, workspaceIpcChannels } from "../shared/desktop-api";
 import type { LocalPluginSummary, LocalWidgetCommand } from "../shared/plugins/local-plugins";
 import { localPluginsChannels } from "../shared/plugins/local-plugins";
+import type { LiveVoiceApi } from "../shared/voice/live";
+import { liveChannels } from "../shared/voice/live";
 import type { SidebarSide } from "../shared/workbench/preferences";
 import { workbenchPreferencesChannels } from "../shared/workbench/preferences";
 import type { WidgetWorkspaceRequest, WidgetWorkspaceResult } from "../shared/workspace/widget-workspace";
@@ -32,7 +34,59 @@ import type { JsonObject, WorkspaceSnapshot } from "@avesd/workspace-model";
 import type { WorkspaceNavigationCommand, WorkspaceNavigationState } from "@avesd/workspace-model";
 import { ipcRenderer } from "electron";
 
+const voice: LiveVoiceApi = {
+    availability: () => {
+
+        return ipcRenderer.invoke(liveChannels.command, { type: "availability" });
+    },
+    start: (connectionId, agentId, sdp) => {
+
+        return ipcRenderer.invoke(liveChannels.command, {
+            type: "start",
+            connectionId,
+            agentId,
+            sdp,
+        });
+    },
+    event: (connectionId, event) => {
+
+        return ipcRenderer.invoke(liveChannels.command, {
+            type: "event",
+            connectionId,
+            event,
+        });
+    },
+    stop: connectionId => {
+
+        return ipcRenderer.invoke(liveChannels.command, {
+            type: "stop",
+            connectionId,
+        });
+    },
+    cancelTask: connectionId => {
+
+        return ipcRenderer.invoke(liveChannels.command, {
+            type: "cancelTask",
+            connectionId,
+        });
+    },
+    subscribe: listener => {
+
+        const receive = (_event: Electron.IpcRendererEvent, value: Parameters<typeof listener>[0]) => {
+
+            return void listener(value);
+        };
+        ipcRenderer.on(liveChannels.event, receive);
+
+        return () => {
+
+            ipcRenderer.off(liveChannels.event, receive);
+        };
+    },
+};
+
 export const desktopApi: DesktopApi = Object.freeze({
+    voice,
     canvases,
     blocks,
     views,

@@ -31,6 +31,7 @@ export interface DesktopRuntime {
 }
 
 export interface DesktopApi {
+    readonly voice: import("./voice/live").LiveVoiceApi;
     readonly canvases: CanvasServiceApi;
     readonly blocks: DashboardBlocksApi;
     readonly views: DesktopViewsApi;

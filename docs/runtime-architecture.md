@@ -155,7 +155,7 @@ session-local and are cleared on provider/session reset.
 The desktop Agent uses a main-process DeepSeek tool loop through typed IPC.
 Credentials are loaded from local environment files and never exposed to the
 renderer. Model choices are configured locally; Check access sends a short
-request.
+request. GPT-Live delegates voice requests to the selected session.
 
 Interactive sessions receive five validated canvas tools for resource operations,
 presentation, capabilities, block submission and inspection. Background widget

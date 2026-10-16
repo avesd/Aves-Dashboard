@@ -1,5 +1,6 @@
 import type { AgentSessionSnapshot, AgentSessionSummary, AgentTierRoute } from "../../../shared/agent/sessions";
 import type { CanvasSummary } from "../../../shared/canvas/contracts";
+import { VoiceControls } from "../voice/VoiceControls";
 import type { TranscriptEntry } from "./agent-transcript";
 import { appendAgentEvent } from "./agent-transcript";
 import { AgentMarkdown } from "./AgentMarkdown";
@@ -334,6 +335,10 @@ export function Controller({ expanded }: {
                         Working across your dashboards…
                     </p>}
                 </div>
+                <VoiceControls
+                    agentId={session?.kind === "interactive" && session.status !== "stopped" ? session.id : undefined}
+                    disabled={changingAgent}
+                />
                 {!!session?.queuedPrompts.length && <p
                     className="controller-activity"
                 >

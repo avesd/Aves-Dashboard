@@ -19,6 +19,7 @@ import { agentIpcChannels,
     workspaceIpcChannels } from "../shared/desktop-api";
 import { parseLocalWidgetCommand } from "../shared/plugins/local-plugins";
 import { localPluginsChannels } from "../shared/plugins/local-plugins";
+import { liveChannels, liveRequestSchema } from "../shared/voice/live";
 import { workbenchPreferencesChannels } from "../shared/workbench/preferences";
 import { parseWidgetWorkspaceRequest, widgetWorkspaceChannels } from "../shared/workspace/widget-workspace";
 import { parseWorkspaceNavigation, workspaceNavigationChannel } from "../shared/workspace/workspace-navigation";
@@ -43,6 +44,7 @@ import { closePluginStorageProcesses, PluginStorage } from "./storage/plugin-sto
 import { resourceDirectoryFile, SharedResources } from "./storage/shared-resources";
 import { loadStoragePaths } from "./storage/storage-paths";
 import { WorkspaceFile } from "./storage/workspace-file";
+import { LiveVoice } from "./voice/live-voice";
 import { DesktopWindows } from "./windows/desktop-windows";
 import { WorkbenchPreferences } from "./workbench/preferences";
 import { AgentWorkbench } from "./workspace/agent-workbench";
@@ -65,6 +67,7 @@ export function startDesktop() {
     let workbenchPreferences: WorkbenchPreferences;
     let agentPreferences = new AgentPreferences();
     let agentHost: AgentSessions | undefined;
+    let voice: LiveVoice | undefined;
     let mainWindow: BrowserWindow | undefined;
     protocol.registerSchemesAsPrivileged([
         {
@@ -95,6 +98,18 @@ export function startDesktop() {
         }
         const window = windows.controller();
         mainWindow = window;
+        window.webContents.on("render-process-gone", () => {
+
+            return voice?.stop();
+        });
+        window.webContents.on("did-start-loading", () => {
+
+            return voice?.stop();
+        });
+        window.on("closed", () => {
+
+            return voice?.stop();
+        });
         browserTasks?.attach(new WebSurfaceManager(window, () => {
 
             return workspaceFile!.load();
@@ -273,6 +288,21 @@ export function startDesktop() {
         return shell.openExternal("https://api-docs.deepseek.com/");
     });
 
+    ipcMain.handle(liveChannels.command, (event, input: unknown) => {
+
+        hostForEvent(event);
+        if (!voice) {
+            throw new Error("Voice is not ready.");
+        }
+        const request = liveRequestSchema.parse(input);
+        switch (request.type) {
+            case "availability": return voice.availability();
+            case "start": return voice.start(request.connectionId, request.agentId, request.sdp);
+            case "event": return void voice.event(request.connectionId, request.event);
+            case "stop": return void voice.stop(request.connectionId);
+            case "cancelTask": return voice.cancelTask(request.connectionId);
+        }
+    });
     ipcMain.handle(agentSessionsChannels.command, async (event, input: unknown) => {
 
         const sessions = hostForEvent(event);
@@ -714,8 +744,19 @@ export function startDesktop() {
             };
         }, change => {
 
+            voice?.observe(change.id);
+
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send(agentSessionsChannels.changed, change);
+            }
+        });
+        voice = new LiveVoice(agentHost, (connectionId, command) => {
+
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send(liveChannels.event, {
+                    connectionId,
+                    command,
+                });
             }
         });
         agentHost.subscribe(event => {
@@ -753,6 +794,8 @@ export function startDesktop() {
     });
 
     app.on("before-quit", () => {
+
+        voice?.stop();
 
         windows?.dispose();
         browserTasks?.detach();

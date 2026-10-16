@@ -161,8 +161,9 @@ and plugin infrastructure.
 
 ### Agent API configuration
 
-The desktop Agent calls DeepSeek directly. Copy `env/.env.local.example` to `env/.env.development.local`, fill
-`DEEPSEEK_API_KEY`, then restart the app.
+The desktop Agent calls DeepSeek directly; GPT-Live remains the optional voice
+front end. Copy `env/.env.local.example` to `env/.env.development.local`, fill
+`DEEPSEEK_API_KEY` and (for voice) `OPENAI_API_KEY`, then restart the app.
 Local environment files are ignored. Process variables override file values.
 See [Agent sessions](docs/agent-sessions.md) for production paths, cancellation,
 tool authorization, and validation details.

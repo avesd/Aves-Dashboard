@@ -35,6 +35,15 @@ export class DesktopWindows {
             webPreferences: this.#preferences(),
         });
         this.#controller = window;
+        window.webContents.session.setPermissionRequestHandler((contents, permission, callback, details) => {
+
+            callback(contents === this.#controller?.webContents && permission === "media" && details.isMainFrame
+                && "mediaTypes" in details && details.mediaTypes?.length === 1 && details.mediaTypes[0] === "audio");
+        });
+        window.webContents.session.setPermissionCheckHandler((contents, permission, _origin, details) => {
+
+            return contents === this.#controller?.webContents && permission === "media" && details.isMainFrame && details.mediaType === "audio";
+        });
         window.setAlwaysOnTop(true, "floating");
         if (process.platform === "darwin") {
             window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
