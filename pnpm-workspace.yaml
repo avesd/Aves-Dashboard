@@ -5,6 +5,7 @@ packages:
 verifyDepsBeforeRun: false
 
 allowBuilds:
+  dotenv: 18.0.4
   electron: true
   esbuild: true
 
@@ -31,6 +32,7 @@ catalog:
   class-variance-authority: 0.7.1
   clsx: 2.1.1
   cordis: 4.0.0-rc.10
+  dotenv: 18.0.4
   electron: 45.0.0-alpha.2
   electron-vite: 5.0.0
   eslint: 10.12.0

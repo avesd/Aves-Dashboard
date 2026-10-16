@@ -209,6 +209,9 @@ catalogs:
     cordis:
       specifier: 4.0.0-rc.10
       version: 4.0.0-rc.10
+    dotenv:
+      specifier: 18.0.4
+      version: 18.0.4
     electron:
       specifier: 45.0.0-alpha.2
       version: 45.0.0-alpha.2
@@ -322,6 +325,9 @@ importers:
       '@modelcontextprotocol/server':
         specifier: 'catalog:'
         version: 2.3.1
+      dotenv:
+        specifier: 'catalog:'
+        version: 18.0.4
       lucide-react:
         specifier: 'catalog:'
         version: 1.55.0(@types/react@19.3.0)(react@19.3.0)
@@ -1977,6 +1983,11 @@ packages:
     peerDependenciesMeta:
       '@swc/core':
         optional: true
+
+  dotenv@18.0.4:
+    resolution: {integrity: sha512-jGt9uI5BIxpVO15kvy+iEFqNAwxYClKWnkptLjSNPnFLC003Imd0ofr3aEVsbpHdSBdSsbcApNIlz4nbyGMwdA==}
+    engines: {node: '>=12'}
+    hasBin: true
 
   electron@45.0.0-alpha.2:
     resolution: {integrity: sha512-RgUjw4YV9tOLLbg3FcOMoztUlmIPto4JaMlCPDbqtY+S/gBTMh3DWGeq1JIlLgJo8Vh7cuW/OJj9WFrqEPIGdA==}
@@ -4298,6 +4309,8 @@ snapshots:
       gopd: 1.2.0
 
   ee-first@1.1.1: {}
+
+  dotenv@18.0.4: {}
 
   electron-to-chromium@1.5.412: {}
 

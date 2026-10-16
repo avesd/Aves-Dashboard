@@ -14,6 +14,7 @@ release/
 
 # Local environment and operating-system files
 .env
+.env.local
 .env.*.local
 .DS_Store
 
