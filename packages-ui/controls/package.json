@@ -1,0 +1,40 @@
+{
+  "name": "@avesd/ui-controls",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "compile": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "node --import tsx --import ./test/setup-dom.ts --test 'test/unit/**/*.test.ts' 'test/integration/**/*.test.tsx'"
+  },
+  "dependencies": {
+    "@base-ui/react": "catalog:",
+    "react": "catalog:",
+    "@avesd/ui-style-utils": "workspace:*",
+    "class-variance-authority": "catalog:",
+    "@radix-ui/react-dropdown-menu": "catalog:",
+    "lucide-react": "catalog:"
+  },
+  "devDependencies": {
+    "@avesd/configuration": "workspace:*",
+    "@types/react": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@types/jsdom": "catalog:",
+    "jsdom": "catalog:",
+    "tsx": "catalog:",
+    "react-dom": "catalog:",
+    "@types/react-dom": "catalog:"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ]
+}

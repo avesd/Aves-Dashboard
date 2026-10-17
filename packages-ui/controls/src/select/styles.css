@@ -1,0 +1,27 @@
+@layer components {
+    .avesd-select-content {
+        --radix-dropdown-menu-content-transform-origin: var(--transform-origin);
+    }
+}
+
+@layer components {
+    .avesd-combobox-content {
+        --radix-dropdown-menu-content-transform-origin: var(--transform-origin);
+    }
+
+    .avesd-combobox-content[data-open] {
+        animation: avesd-surface-enter var(--avesd-motion-duration-normal) var(--avesd-motion-ease-out) both;
+    }
+
+    .avesd-combobox-content[data-ending-style] {
+        pointer-events: none;
+        animation: avesd-surface-exit var(--avesd-motion-duration-quick) var(--avesd-motion-ease-in) both;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .avesd-combobox-content[data-open],
+        .avesd-combobox-content[data-ending-style] {
+            animation: none;
+        }
+    }
+}
