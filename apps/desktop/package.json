@@ -11,7 +11,8 @@
     "preview": "electron-vite preview",
     "lint:fix": "eslint . --fix",
     "test:run": "node --import ./test/register-typescript.mjs --test",
-    "test": "node --import ./test/register-typescript.mjs --test 'test/unit/**/*.test.ts' 'test/integration/**/*.test.ts'"
+    "test": "node --import ./test/register-typescript.mjs --test 'test/unit/**/*.test.ts' 'test/integration/**/*.test.ts'",
+    "test:e2e": "pnpm build && playwright test --config test/e2e/playwright.config.ts"
   },
   "dependencies": {
     "@avesd/plugin-api": "workspace:*",
@@ -35,6 +36,7 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "@tailwindcss/vite": "catalog:",
-    "tailwindcss": "catalog:"
+    "tailwindcss": "catalog:",
+    "@playwright/test": "catalog:"
   }
 }

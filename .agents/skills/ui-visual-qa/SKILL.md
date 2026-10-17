@@ -7,6 +7,23 @@ description: Visually verify user-facing UI work in this repository by opening t
 
 Verify the rendered result rather than treating successful compilation or tests as visual proof. Follow the user's requested scope and the repository instructions; this skill does not expand a review-only request into authorization to edit code.
 
+## Choose the Automation Method
+
+- Default to the repository's Playwright Electron tests for repeatable desktop UI
+  regression: `pnpm --filter @avesd/desktop test:e2e`. This builds and launches the
+  real application with isolated temporary data and the production preload/IPC.
+- Prefer role/name locators and observable behavior assertions. Use pointer input
+  for canvas gestures where semantic locators are unavailable. Do not add a
+  production automation API or a general compatibility layer for tests.
+- Existing behavior-only regressions do not require Computer Use or a screenshot
+  inspection on every run. For visual changes, new layouts, and unexplained visual
+  differences, run the focused visual loop below. Reviewed screenshot baselines
+  may cover stable layouts; passing DOM assertions alone are not visual proof.
+- Reserve Computer Use or manual verification for exploratory review and OS-level
+  behavior that Playwright cannot exercise. Playwright operating a real Electron
+  window qualifies as a native application check; it does not verify OS dialogs
+  or window-manager interactions automatically.
+
 ## Choose the Verification Surface
 
 - Prefer the actual Avesd desktop application for Electron UI changes when native UI automation is available and the host session is accessible.
@@ -20,7 +37,7 @@ Verify the rendered result rather than treating successful compilation or tests 
 
 1. Identify the smallest set of states that covers the changed behavior. Include the initial state and the primary interaction state; add loading, empty, error, disabled, overflow, or narrow-window states only when the change can affect them.
 2. Start the application or renderer with the repository's existing commands. Reuse an already-running instance when it is trustworthy.
-3. Navigate to each selected state using available UI automation. Exercise the interaction instead of relying only on a static initial render.
+3. Navigate to each selected state using Playwright where possible, otherwise the appropriate native UI automation. Exercise the interaction instead of relying only on a static initial render.
 4. Capture screenshots to an operating-system temporary directory unless the user explicitly requests committed artifacts.
 5. Open every captured image with the available image-viewing capability and inspect the pixels. File existence, screenshot dimensions, DOM assertions, and accessibility trees do not substitute for visual inspection.
 6. Check the result against the implementation intent or supplied reference. Look for clipping, overlap, unexpected scrolling, broken focus treatment, inconsistent spacing or alignment, weak hierarchy, unreadable contrast, stale content, and incorrect expanded or collapsed state.

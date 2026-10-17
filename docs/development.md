@@ -9,9 +9,38 @@ workspaces, including `packages-ui/*`. Run `pnpm --filter @avesd/ui-grid test`
 for responsive geometry and row planning. The desktop has its own `test` and
 `test:run` commands; select checks according to the repository verification policy.
 
-Use focused visual QA for rendered changes and actual Electron checks for native
-windows and privileged behavior. Safe substitutes for preload services can verify
-renderer presentation, but do not establish native or provider connectivity.
+Use Playwright against the real Electron application for routine UI regression:
+
+```sh
+pnpm --filter @avesd/desktop test:e2e
+# Select one scenario; this command also rebuilds the desktop first.
+pnpm --filter @avesd/desktop test:e2e --grep "controller expands"
+```
+
+The command builds the desktop and runs `test/e2e/*.spec.ts` serially. It uses the
+workspace Electron binary; no Playwright browser download is required. A graphical
+session is required (use Xvfb on Linux CI). These native tests are separate from
+`pnpm validate` and the desktop unit/integration suite; CI does not run them yet.
+Playwright's Electron support is experimental, so rerun these smoke tests after
+Electron or Playwright upgrades.
+
+Each test starts a fresh app through a test-only bootstrap that redirects home,
+user data, session data, logs, and environment files into a temporary directory.
+Only launch-related environment variables are inherited, not provider credentials
+or development renderer URLs. The fixture closes the app and removes its data on
+teardown. Production renderer, preload, IPC, and persistence remain in use.
+Use synthetic data and role/name locators; use pointer coordinates for canvas
+surfaces only when semantic locators are unavailable. Keep tests in `test/e2e/`,
+which is covered by desktop lint and type checks.
+
+Behavior assertions are the default for existing interactions. For rendered changes,
+use focused screenshots and pixel inspection; stable visual cases may use reviewed
+screenshot baselines. Store ad hoc screenshots in an OS temporary directory. A
+passing interaction assertion alone does not prove visual correctness. Reserve
+Computer Use or manual checks for exploratory review and OS-level interactions
+that Playwright cannot cover, such as native file dialogs or window-manager drag.
+Safe substitutes for preload services can verify renderer presentation, but do not
+establish native or provider connectivity.
 See the [UI contract](../packages-ui/README.md) for style and ownership rules.
 
 `pnpm lint:fix` repairs file headers and applies ESLint fixes to root scripts and every workspace before
