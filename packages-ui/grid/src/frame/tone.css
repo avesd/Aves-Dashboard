@@ -1,0 +1,46 @@
+@layer components {
+    .avesd-frame-brand {
+        --avesd-background: var(--avesd-brand-background);
+        --avesd-foreground: var(--avesd-brand-foreground);
+        --avesd-muted: var(--avesd-brand-muted);
+        --avesd-border: var(--avesd-brand-border);
+        --avesd-link: var(--avesd-brand-link);
+        --avesd-accent-background: var(--avesd-brand-accent-background);
+        --avesd-accent-foreground: var(--avesd-brand-accent-foreground);
+    }
+
+    .avesd-frame-warning {
+        --avesd-background: var(--avesd-warning-background);
+        --avesd-foreground: var(--avesd-warning-foreground);
+        --avesd-muted: var(--avesd-warning-muted);
+        --avesd-border: var(--avesd-warning-border);
+        --avesd-link: var(--avesd-warning-link);
+        --avesd-accent-background: var(--avesd-warning-accent-background);
+        --avesd-accent-foreground: var(--avesd-warning-accent-foreground);
+    }
+
+    .avesd-frame-danger {
+        --avesd-background: var(--avesd-danger-background);
+        --avesd-foreground: var(--avesd-danger-foreground);
+        --avesd-muted: var(--avesd-danger-muted);
+        --avesd-border: var(--avesd-danger-border);
+        --avesd-link: var(--avesd-danger-link);
+        --avesd-accent-background: var(--avesd-danger-accent-background);
+        --avesd-accent-foreground: var(--avesd-danger-accent-foreground);
+    }
+
+    .avesd-frame-brand,
+    .avesd-frame-warning,
+    .avesd-frame-danger {
+        --avesd-frame-previous-border: initial;
+        --avesd-control-border: var(--avesd-foreground);
+        --avesd-focus-color: var(--avesd-foreground);
+        --avesd-decoration: color-mix(in srgb, var(--avesd-foreground) 9%, transparent);
+        --avesd-brand-tint: color-mix(in srgb, var(--avesd-foreground) 8%, transparent);
+        --avesd-surface: color-mix(in srgb, var(--avesd-foreground) 8%, var(--avesd-background));
+        --avesd-surface-hover: color-mix(in srgb, var(--avesd-foreground) 12%, var(--avesd-background));
+
+        color: var(--avesd-foreground);
+        background: var(--avesd-background);
+    }
+}

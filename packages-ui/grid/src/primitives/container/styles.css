@@ -1,0 +1,22 @@
+@layer components {
+    .avesd-container-narrow {
+        --avesd-content-width: var(--avesd-content-narrow);
+    }
+
+    .avesd-container-standard {
+        --avesd-content-width: var(--avesd-content-standard);
+    }
+
+    .avesd-container-wide {
+        --avesd-content-width: var(--avesd-content-wide);
+    }
+
+    .avesd-container > * {
+        min-width: 0;
+        grid-column: content-start / content-end;
+    }
+
+    .avesd-container > [data-width="full"] {
+        grid-column: full-start / full-end;
+    }
+}

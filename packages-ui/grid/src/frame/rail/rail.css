@@ -1,0 +1,42 @@
+@layer components {
+    .avesd-frame-rail-group {
+        --avesd-frame-rail-width: var(--avesd-rail-width-base);
+        --avesd-frame-rail-display: var(--avesd-rail-display-base);
+
+        min-width: 0;
+        isolation: isolate;
+    }
+
+    .avesd-frame-rail-track {
+        z-index: auto;
+        display: var(--avesd-frame-rail-display);
+        min-width: 0;
+        min-height: 0;
+        grid-column: rail-start / rail-end;
+        grid-row: 1;
+        border-left: 1px solid var(--avesd-border);
+    }
+
+    .avesd-frame-rail {
+        background: color-mix(in srgb, var(--avesd-background) 94%, var(--avesd-brand-art));
+    }
+
+    .avesd-frame-rail-sticky-bottom > .avesd-frame-rail-content {
+        position: sticky;
+        bottom: max(var(--avesd-space-16), env(safe-area-inset-bottom));
+    }
+
+    @media (min-width: 40rem) {
+        .avesd-frame-rail-group {
+            --avesd-frame-rail-width: var(--avesd-rail-width-md);
+            --avesd-frame-rail-display: var(--avesd-rail-display-md);
+        }
+    }
+
+    @media (min-width: 64rem) {
+        .avesd-frame-rail-group {
+            --avesd-frame-rail-width: var(--avesd-rail-width-lg);
+            --avesd-frame-rail-display: var(--avesd-rail-display-lg);
+        }
+    }
+}

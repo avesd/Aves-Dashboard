@@ -1,0 +1,27 @@
+@layer components {
+    .avesd-frame-texture {
+        --avesd-texture-ink: color-mix(in srgb, var(--avesd-decoration) 45%, transparent);
+
+        position: absolute;
+        z-index: -1;
+        inset: 0;
+        background-size: var(--avesd-grid-step) var(--avesd-grid-step);
+        background-repeat: round;
+        pointer-events: none;
+    }
+
+    .avesd-frame-texture[data-texture="grid"] {
+        background-image: linear-gradient(var(--avesd-texture-ink) 1px, transparent 1px),
+            linear-gradient(90deg, var(--avesd-texture-ink) 1px, transparent 1px);
+    }
+
+    .avesd-frame-texture[data-texture="dots"] {
+        background-image: radial-gradient(circle at center, var(--avesd-texture-ink) 1px, transparent 1px);
+    }
+
+    .avesd-frame-texture[data-texture="lines"] {
+        background-image: linear-gradient(var(--avesd-texture-ink) 1px, transparent 1px);
+        background-size: 100% var(--avesd-grid-step);
+        background-repeat: no-repeat round;
+    }
+}

@@ -1,0 +1,83 @@
+@layer components {
+    .avesd-frame-rail-body,
+    .avesd-frame-page-header,
+    .avesd-frame-page-footer,
+    .avesd-frame-main,
+    .avesd-frame-sections {
+        display: grid;
+        min-width: 0;
+        grid-column: full-start / full-end;
+        grid-template-columns: subgrid;
+    }
+
+    .avesd-frame-fill {
+        min-height: 0;
+        grid-column: full-start / full-end;
+        background: linear-gradient(var(--avesd-frame-previous-border, var(--avesd-border)), var(--avesd-frame-previous-border, var(--avesd-border))) top / 100% 1px no-repeat;
+    }
+
+    .avesd-frame-rail-body {
+        grid-row: 1;
+        align-content: start;
+    }
+
+    .avesd-frame-rail-body > *,
+    .avesd-frame-page-header > *,
+    .avesd-frame-page-footer > *,
+    .avesd-frame-sections > * {
+        grid-column: full-start / full-end;
+    }
+
+    .avesd-frame-rail-body > .avesd-container,
+    .avesd-frame-page-header > .avesd-container,
+    .avesd-frame-page-footer > .avesd-container,
+    .avesd-frame-sections > .avesd-container,
+    .avesd-frame-main > .avesd-frame-fill,
+    .avesd-frame-rail-body > .avesd-frame-fill {
+        grid-template-columns: subgrid;
+    }
+
+    .avesd-page-frame > .avesd-frame-rail-body {
+        grid-template-rows: auto minmax(auto, 1fr) auto;
+    }
+
+    .avesd-frame-page-header {
+        grid-row: 1;
+    }
+
+    .avesd-frame-main {
+        --avesd-page-gutter-start: var(--avesd-main-gutter-start, var(--avesd-page-gutter));
+
+        grid-row: 2;
+        grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .avesd-frame-page-footer {
+        grid-row: 3;
+    }
+
+    .avesd-frame-main-rail-group {
+        grid-column: full-start / full-end;
+        grid-row: 1 / -1;
+    }
+
+    .avesd-frame-main-rail-group > .avesd-frame-rail-body {
+        grid-template-rows: auto minmax(0, 1fr);
+        align-content: normal;
+    }
+
+    .avesd-frame-sections {
+        grid-auto-rows: max-content;
+        align-content: start;
+    }
+    @media (min-width: 40rem) {
+        .avesd-frame-main {
+            --avesd-page-gutter-start: var(--avesd-main-gutter-start-md, var(--avesd-page-gutter));
+        }
+    }
+    @media (min-width: 64rem) {
+        .avesd-frame-main {
+            --avesd-page-gutter-start: var(--avesd-main-gutter-start-lg, var(--avesd-page-gutter));
+        }
+    }
+}

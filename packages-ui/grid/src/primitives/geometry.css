@@ -1,0 +1,11 @@
+@layer components {
+    .avesd-container,
+    .avesd-frame-rail-group {
+        display: grid;
+        grid-template-columns:
+            [full-start] minmax(var(--avesd-page-gutter-start, var(--avesd-page-gutter)), 1fr)
+            [rail-start] var(--avesd-frame-rail-width, 0px)
+            [rail-end content-start] minmax(0, calc(var(--avesd-content-width, var(--avesd-content-standard)) - var(--avesd-frame-rail-width, 0px)))
+            [content-end] minmax(var(--avesd-page-gutter), 1fr) [full-end];
+    }
+}

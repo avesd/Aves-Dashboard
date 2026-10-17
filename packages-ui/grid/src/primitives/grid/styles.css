@@ -1,0 +1,49 @@
+@layer components {
+    .avesd-grid {
+        grid-template-columns: var(--avesd-grid-template);
+        gap: var(--avesd-gap);
+    }
+
+    .avesd-grid-item {
+        grid-column: var(--avesd-span);
+        padding: var(--avesd-padding);
+    }
+
+    .avesd-grid-cells > .avesd-grid-item {
+        border-right: 1px solid var(--avesd-border);
+        border-bottom: 1px solid var(--avesd-border);
+    }
+
+    .avesd-grid-internal > .avesd-grid-item {
+        position: relative;
+        background-color: var(--avesd-background);
+    }
+
+    .avesd-grid-internal > .avesd-grid-item:is(:hover, :focus-within) {
+        z-index: 1;
+    }
+
+    @media (min-width: 40rem) {
+        .avesd-grid {
+            grid-template-columns: var(--avesd-grid-template-md);
+            gap: var(--avesd-gap-md);
+        }
+
+        .avesd-grid-item {
+            grid-column: var(--avesd-span-md);
+            padding: var(--avesd-padding-md);
+        }
+    }
+
+    @media (min-width: 64rem) {
+        .avesd-grid {
+            grid-template-columns: var(--avesd-grid-template-lg);
+            gap: var(--avesd-gap-lg);
+        }
+
+        .avesd-grid-item {
+            grid-column: var(--avesd-span-lg);
+            padding: var(--avesd-padding-lg);
+        }
+    }
+}

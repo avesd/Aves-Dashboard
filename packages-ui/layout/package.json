@@ -1,0 +1,27 @@
+{
+  "name": "@avesd/ui-layout",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "compile": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "react": "catalog:",
+    "@avesd/ui-grid": "workspace:*"
+  },
+  "devDependencies": {
+    "@avesd/configuration": "workspace:*",
+    "@types/react": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ]
+}
