@@ -7,6 +7,7 @@
 
 import type { AgentToolResult } from "./agent-tools";
 import type { SessionHost } from "./session-host";
+import { IpcErrorCode, OperationError } from "@avesd/desktop-contracts/ipc-result";
 import type { AgentEvent, AgentSettings } from "@avesd/plugin-api";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -79,14 +80,15 @@ export class DeepSeekAgentHost implements SessionHost {
     async connect(): Promise<void> {
 
         if (this.#disposed) {
-            throw new Error("Agent is closed.");
+            throw new OperationError(IpcErrorCode.ServiceNotReady, "Agent is closed.");
         }
         if (!this.#key()) {
             this.#emit({
                 type: "status",
                 status: "error",
                 message: "Configure DEEPSEEK_API_KEY in the local environment file and restart Avesd.",
-            }); throw new Error("DeepSeek API key is not configured.");
+            });
+            throw new OperationError(IpcErrorCode.ServiceNotReady, "DeepSeek API key is not configured.");
         }
         this.#connected = true;
         this.publishSettings();
@@ -132,13 +134,13 @@ export class DeepSeekAgentHost implements SessionHost {
     async selectProvider(id: string): Promise<void> {
 
         if (id !== "deepseek") {
-            throw new Error("Only DeepSeek is enabled.");
+            throw new OperationError(IpcErrorCode.InvalidArgument, "Only DeepSeek is enabled.");
         }
     }
     async selectModel(id: string): Promise<void> {
 
         if (this.#run || !/^[a-zA-Z0-9._-]{1,128}$/u.test(id)) {
-            throw new Error("Invalid model selection.");
+            throw new OperationError(IpcErrorCode.InvalidArgument, "Invalid model selection.");
         }
         this.#model = id;
         this.publishSettings();
@@ -146,7 +148,7 @@ export class DeepSeekAgentHost implements SessionHost {
     async selectEffort(id: string): Promise<void> {
 
         if (id) {
-            throw new Error("This runtime uses non-thinking mode for tool calls.");
+            throw new OperationError(IpcErrorCode.InvalidArgument, "This runtime uses non-thinking mode for tool calls.");
         }
     }
     continuationToken(): string | undefined {
@@ -156,14 +158,14 @@ export class DeepSeekAgentHost implements SessionHost {
     async continuePrompt(text: string, connectionId: string, executionId?: string): Promise<void> {
 
         if (connectionId !== this.#connection) {
-            throw new Error("The original Agent conversation has ended.");
+            throw new OperationError(IpcErrorCode.ServiceNotReady, "The original Agent conversation has ended.");
         }
         await this.prompt(text, executionId);
     }
     async prompt(text: string, executionId?: string): Promise<void> {
 
         if (this.#disposed || this.#run || !executionId) {
-            throw new Error("Agent execution is unavailable.");
+            throw new OperationError(IpcErrorCode.ServiceNotReady, "Agent execution is unavailable.");
         }
         await this.connect();
         const run = new AbortController();
@@ -176,7 +178,7 @@ export class DeepSeekAgentHost implements SessionHost {
         const check = () => {
 
             if (!active()) {
-                throw new Error("Execution revoked.");
+                throw new OperationError(IpcErrorCode.PermissionDenied, "Execution revoked.");
             }
         };
         const tools = this.options.tools ?? {};
@@ -189,7 +191,7 @@ export class DeepSeekAgentHost implements SessionHost {
             for (let round = 0; round < 8; round++) {
                 check();
                 if (JSON.stringify(this.#history).length > 180000) {
-                    throw new Error("Conversation limit reached. Start a new conversation.");
+                    throw new OperationError(IpcErrorCode.Busy, "Conversation limit reached. Start a new conversation.");
                 }
                 const messages: Message[] = [
                     {

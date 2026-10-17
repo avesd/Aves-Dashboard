@@ -8,11 +8,12 @@
 import type { AgentProviderInstallation } from "../../shared/agent/providers";
 import type { AgentRouteProbeResult, AgentTierRoute } from "../../shared/agent/sessions";
 import { DeepSeekAgentHost, defaultDeepSeekModel } from "./deepseek-agent-host";
+import { IpcErrorCode, OperationError } from "@avesd/desktop-contracts/ipc-result";
 
 export function requireDeepSeek(id: unknown): void {
 
     if (id !== "deepseek") {
-        throw new Error("Only the direct DeepSeek provider is enabled.");
+        throw new OperationError(IpcErrorCode.InvalidArgument, "Only the direct DeepSeek provider is enabled.");
     }
 }
 export function deepSeekProviders(): readonly AgentProviderInstallation[] {

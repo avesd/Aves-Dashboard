@@ -6,7 +6,7 @@
  */
 
 import { AgentPreferences } from "../../../../src/main/agent/agent-preferences";
-import { AgentSessions } from "../../../../src/main/agent/agent-sessions";
+import { AgentSessions } from "../../../../src/main/agent/sessions/agent-sessions";
 import { LiveAgentBridge } from "../../../../src/main/voice/live-agent-bridge";
 import { LiveVoice } from "../../../../src/main/voice/live-voice";
 import type { LiveCommand } from "../../../../src/shared/voice/live";

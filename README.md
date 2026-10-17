@@ -109,6 +109,10 @@ Feature ownership inside `packages/workspace-model/src/` follows responsibility:
 `packages/desktop-contracts` owns runtime-neutral window commands, domain schemas,
 and safe IPC result contracts shared by main, preload, and renderer consumers.
 
+`apps/desktop/src/main/agent/sessions/` separates session coordination, connection
+lifetimes, execution/cancellation, question continuations, and event storage.
+The extracted workflows share entries owned by the session coordinator.
+
 Add a feature folder when several related files need a home; avoid generic
 `utils` folders, internal barrel files, or new packages solely to shorten paths.
 

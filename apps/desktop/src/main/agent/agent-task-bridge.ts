@@ -8,7 +8,7 @@
 import { parseAgentTask } from "../../shared/agent/sessions";
 import { widgetAgentChannel } from "../../shared/agent/widget-agent";
 import type { AgentWorkbench } from "../workspace/agent-workbench";
-import type { AgentSessions } from "./agent-sessions";
+import type { AgentSessions } from "./sessions/agent-sessions";
 import type { DashboardScope } from "@avesd/workspace-model";
 import type { WebContents } from "electron";
 import { ipcMain } from "electron";

@@ -25,7 +25,7 @@ import { parseWidgetWorkspaceRequest, widgetWorkspaceChannels } from "../shared/
 import { parseWorkspaceNavigation, workspaceNavigationChannel } from "../shared/workspace/workspace-navigation";
 import { openAgentGateway } from "./agent/agent-gateway";
 import { AgentPreferences } from "./agent/agent-preferences";
-import { AgentSessions } from "./agent/agent-sessions";
+import { AgentSessions } from "./agent/sessions/agent-sessions";
 import { AgentTaskBridge } from "./agent/agent-task-bridge";
 import { DeepSeekAgentHost } from "./agent/deepseek-agent-host";
 import { deepSeekProviders, probeDeepSeek, requireDeepSeek } from "./agent/deepseek-provider";

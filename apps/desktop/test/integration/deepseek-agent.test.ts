@@ -6,7 +6,7 @@
  */
 
 import { AgentPreferences } from "../../src/main/agent/agent-preferences";
-import { AgentSessions } from "../../src/main/agent/agent-sessions";
+import { AgentSessions } from "../../src/main/agent/sessions/agent-sessions";
 import { DeepSeekAgentHost } from "../../src/main/agent/deepseek-agent-host";
 import { CanvasService } from "../../src/main/canvas/canvas-service";
 import { canvasToolDefinitions, invokeCanvasTool } from "../../src/main/canvas/canvas-tools";

@@ -6,7 +6,7 @@
  */
 
 import type { LiveCommand, LiveEvent } from "../../shared/voice/live";
-import type { AgentSessions } from "../agent/agent-sessions";
+import type { AgentSessions } from "../agent/sessions/agent-sessions";
 import { randomUUID } from "node:crypto";
 
 type Transcript = {
