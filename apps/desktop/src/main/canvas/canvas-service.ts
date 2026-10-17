@@ -337,7 +337,11 @@ export class CanvasService {
         });
         if (!committed.duplicate) {
             this.publish({
-                type: request.type === "create" ? "canvas.created" : request.type === "render" ? "canvas.changed" : "canvas.renamed",
+                type: ({
+                    create: "canvas.created",
+                    render: "canvas.changed",
+                    rename: "canvas.renamed",
+                } as const)[request.type],
                 ...committed.receipt,
             });
             this.changed();

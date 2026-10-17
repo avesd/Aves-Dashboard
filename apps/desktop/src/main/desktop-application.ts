@@ -36,7 +36,7 @@ import { PluginBrowserBridge } from "./browser/plugin-browser-bridge";
 import { WebSurfaceManager } from "./browser/web-surface-manager";
 import { CanvasService } from "./canvas/canvas-service";
 import { canvasToolDefinitions, invokeCanvasTool } from "./canvas/canvas-tools";
-import { DashboardBlockRuntime } from "./canvas/dashboard-block-runtime";
+import { DashboardBlockRuntime } from "./canvas/blocks/block-runtime";
 import { LocalPluginStore } from "./plugins/local-plugin-store";
 import { LocalWidgetRunner } from "./plugins/local-widget-sandbox";
 import { LocalWidgetSurfaces } from "./plugins/local-widget-surfaces";

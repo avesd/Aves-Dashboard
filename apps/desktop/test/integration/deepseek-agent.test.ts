@@ -6,11 +6,11 @@
  */
 
 import { AgentPreferences } from "../../src/main/agent/agent-preferences";
-import { AgentSessions } from "../../src/main/agent/sessions/agent-sessions";
 import { DeepSeekAgentHost } from "../../src/main/agent/deepseek-agent-host";
+import { AgentSessions } from "../../src/main/agent/sessions/agent-sessions";
+import type { DashboardBlockRuntime } from "../../src/main/canvas/blocks/block-runtime";
 import { CanvasService } from "../../src/main/canvas/canvas-service";
 import { canvasToolDefinitions, invokeCanvasTool } from "../../src/main/canvas/canvas-tools";
-import type { DashboardBlockRuntime } from "../../src/main/canvas/dashboard-block-runtime";
 import type { WorkspaceFile } from "../../src/main/storage/workspace-file";
 import type { DashboardScope } from "@avesd/workspace-model";
 import assert from "node:assert/strict";
@@ -168,7 +168,14 @@ void test("DeepSeek cancellation retains conversation, rejects late tool respons
 
                     requests.push(JSON.parse(init!.body as string) as typeof requests[number]);
 
-                    return requests.length === 1 ? delayed : requests.length === 2 ? delayedSecond : answer();
+                    if (requests.length === 1) {
+                        return delayed;
+                    }
+                    if (requests.length === 2) {
+                        return delayedSecond;
+                    }
+
+                    return answer();
                 },
                 invoke: async () => {
 

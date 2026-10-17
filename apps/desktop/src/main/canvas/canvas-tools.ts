@@ -9,8 +9,8 @@ import { capabilitiesSchema, inspectBlocksSchema, renderBlocksSchema } from "../
 import { canvasRequestSchema } from "../../shared/canvas/contracts";
 import type { DesktopView } from "../../shared/canvas/views";
 import type { AgentToolResult } from "../agent/agent-tools";
+import type { DashboardBlockRuntime } from "./blocks/block-runtime";
 import type { CanvasAccess, CanvasService } from "./canvas-service";
-import type { DashboardBlockRuntime } from "./dashboard-block-runtime";
 import { changeDashboardBlocks } from "@avesd/workspace-model";
 import * as z from "zod";
 

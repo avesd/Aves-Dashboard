@@ -113,6 +113,9 @@ and safe IPC result contracts shared by main, preload, and renderer consumers.
 lifetimes, execution/cancellation, question continuations, and event storage.
 The extracted workflows share entries owned by the session coordinator.
 
+`apps/desktop/src/main/canvas/blocks/` separates runtime coordination, sandbox
+registration, leases, action transactions, snapshots, and inspection.
+
 Add a feature folder when several related files need a home; avoid generic
 `utils` folders, internal barrel files, or new packages solely to shorten paths.
 
