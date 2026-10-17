@@ -5,6 +5,8 @@
     "allowImportingTsExtensions": true
   },
   "include": [
-    "release/**/*.ts"
+    "release/**/*.ts",
+    "validation/**/*.ts",
+    "test/**/*.ts"
   ]
 }

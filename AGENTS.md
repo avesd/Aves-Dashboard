@@ -38,8 +38,8 @@ add subtree-specific constraints.
 
 - Dependency versions belong in the `pnpm-workspace.yaml` catalog; workspace
   manifests reference them with `catalog:`.
-- Use root scripts for normal verification: `pnpm lint`, `pnpm compile`,
-  `pnpm build`, and `pnpm validate`.
+- Root verification scripts are `pnpm lint`, `pnpm compile`, `pnpm build`,
+  and `pnpm validate`; choose their scope using the verification policy below.
 - `README.md` currently owns product orientation and repository onboarding.
 - `working/` contains non-authoritative audits, plans, and temporary notes.
 - Tests live under each workspace's `test/`, never beside production source.
@@ -49,6 +49,50 @@ add subtree-specific constraints.
 - Package `src/index.ts` files contain re-exports only. Put types and behavior
   in responsibility-named files; use explicit names for executable entry points
   and configuration factories. Avoid internal barrels solely to shorten imports.
+
+## Implementation readability
+
+- Start maintained JavaScript and TypeScript source, test, and configuration files
+  with the four-field header documented in `docs/development.md`. Use
+  `@author Avesd`, `@package`, `@namespace`, and `@description`, followed by one
+  blank line. Run `pnpm check:file-headers` or `pnpm fix:file-headers`; preserve
+  existing descriptions and extra annotations. Generated declarations and output
+  are excluded.
+- Put each executable statement on its own line and expand control-flow blocks.
+  Separate asynchronous test setup, actions, waits, and assertions into readable phases.
+- Express business decisions with explicit branches or typed mappings, not nested
+  ternary expressions. Name nontrivial state mappings and cover every known state.
+- Model mutually exclusive lifecycle states explicitly. Keep independent lifecycles
+  separate, derive redundant state when possible, and centralize state transitions.
+- Preserve safe operational error codes and details. Convert unknown failures to
+  safe messages at boundaries; never expose raw exceptions or sensitive inputs.
+- Keep type assertions narrow and explain non-obvious invariants. Test observable
+  behavior and failure recovery, including cancellation and authorization races.
+
+## Proportionate verification
+
+- Choose checks from the changed behavior, affected callers, and risk before
+  running them. Use workspace/file-scoped lint, compile, and tests during edits.
+- Documentation-only edits need a content/reference review. Local UI or wording
+  changes need affected checks and, when rendered behavior changes, a focused
+  visual check. Do not rerun unrelated Agent or IPC suites for these changes.
+- For shared contracts, IPC, permissions, persistence, cancellation, or execution
+  authorization, retain targeted behavioral tests and affected boundary checks.
+  Similar scenarios at different trust boundaries are not automatically duplicates.
+- Run full `pnpm validate` and relevant complete test suites once after broad or
+  cross-package changes settle, or when explicitly requested. Small isolated
+  changes do not require full-repository validation. `pnpm validate` already
+  includes root lint, compile, and build; do not run those again separately.
+- After a follow-up fix, rerun only checks affected by that fix. Repeat a full
+  pass only when new evidence leaves a cross-cutting risk unresolved. Once the
+  selected checks pass, stop; report what ran and any material coverage limits.
+- Prefer tests of observable behavior and failure recovery. Delete or consolidate
+  redundant tests and assertions that merely restate implementation, preserving
+  unique edge cases and security/data-loss protection. Do not add tests for every
+  reversible wording, style, or assembly change, or optimize for test count.
+- Use `pnpm --filter @avesd/desktop test:run <test-file> ...` for targeted desktop
+  tests (paths relative to `apps/desktop`); `pnpm --filter @avesd/desktop test`
+  runs the complete desktop suite.
 
 ## Git handling
 

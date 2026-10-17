@@ -95,4 +95,3 @@ export interface WidgetWorkspaceServices {
     readonly navigation?: WidgetNavigationService;
     readonly management?: WidgetManagementService;
 }
-

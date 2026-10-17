@@ -14,7 +14,7 @@ windows and privileged behavior. Safe substitutes for preload services can verif
 renderer presentation, but do not establish native or provider connectivity.
 See the [UI contract](../packages-ui/README.md) for style and ownership rules.
 
-`pnpm lint:fix` applies ESLint fixes to root scripts and every workspace before
+`pnpm lint:fix` repairs file headers and applies ESLint fixes to root scripts and every workspace before
 checking repository and workflow boundaries. JavaScript uses ESLint recommended
 correctness checks with explicit Node/browser globals; TypeScript retains
 type-aware source checks. React source also checks Hook call order and effect
@@ -24,6 +24,46 @@ JavaScript/TypeScript and two for JSON/YAML.
 `pnpm lint` also validates repository boundaries, including catalog and
 workspace dependency declarations, renderer privilege isolation, and the
 runtime neutrality of public plugin contracts.
+
+## File headers
+
+Every maintained JavaScript and TypeScript source, test, and configuration file
+starts with this header, followed by one blank line:
+
+```ts
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Main_Canvas
+ * @description Canvas service operations
+ */
+```
+
+The checker covers root configuration files, `scripts/`, `.github/`, and packages
+declared by the immediate workspace patterns in `pnpm-workspace.yaml`, including
+`apps/*`, `packages/*`, `packages-renderer/*`, and `packages-ui/*`. Supported
+extensions are `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, and `.cjs`.
+It excludes `.d.ts`, `.d.mts`, and `.d.cts` declarations, symbolic links,
+dependencies, build and coverage output, tool caches, and temporary `working/`
+material. `scripts/release/` contains maintained scripts and remains included;
+workspace `release/` output is excluded. HTML, CSS, JSON, YAML, and Markdown files
+do not require JavaScript headers.
+
+Use `pnpm check:file-headers` to report missing or malformed headers without
+writing files. Use `pnpm fix:file-headers` to repair them. Equivalent Make targets
+are `make check-file-headers` and `make fix-file-headers`. `pnpm lint` includes
+the check, so `pnpm validate` and CI enforce it; `pnpm lint:fix` runs the repair.
+Run the tool's behavior tests with `pnpm test:file-headers`.
+
+The repair uses `@author Avesd` and retains existing nonempty package, namespace,
+and description values, along with extra annotations such as `@license`. For
+missing fields, it derives the package label from the workspace manifest name
+(or `Workspace`, `Scripts`, or `GitHub`), the namespace from directories joined
+with underscores (omitting a workspace's leading `src/`, using `Root` at its
+top level), and the description from the filename. Keep descriptions meaningful
+when editing them. The tool preserves shebangs, byte order marks, line endings,
+leading documentation comments, and executable content. Repeating a repair makes
+no further changes.
 
 ## Dependency maintenance
 

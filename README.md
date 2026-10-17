@@ -35,6 +35,8 @@ Use the root pnpm scripts for repository tasks:
 ```sh
 pnpm lint
 pnpm lint:fix
+pnpm check:file-headers
+pnpm fix:file-headers
 pnpm compile
 pnpm build
 pnpm validate

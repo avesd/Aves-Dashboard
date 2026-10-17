@@ -66,7 +66,11 @@ const relativePath = (path) => {
     return path.slice(repositoryRoot.length + 1);
 };
 
-for (const directory of listDirectories(join(repositoryRoot, "packages"))) {
+for (const directory of [
+    ...listDirectories(join(repositoryRoot, "packages")),
+    ...listDirectories(join(repositoryRoot, "packages-renderer")),
+    ...listDirectories(join(repositoryRoot, "packages-ui")),
+]) {
     const path = join(directory, "src/index.ts");
     if (!existsSync(path)) {
         continue;
@@ -82,6 +86,14 @@ for (const directory of listDirectories(join(repositoryRoot, "packages"))) {
 
 const packageJsonPaths = [
     join(repositoryRoot, "package.json"),
+    ...listDirectories(join(repositoryRoot, "packages-ui")).map(path => {
+
+        return join(path, "package.json");
+    }),
+    ...listDirectories(join(repositoryRoot, "packages-renderer")).map(path => {
+
+        return join(path, "package.json");
+    }),
     ...listDirectories(join(repositoryRoot, "apps")).map((path) => {
 
         return join(path, "package.json");
@@ -165,6 +177,53 @@ validateImports(
     "renderer cannot import privileged runtime module",
 );
 
+for (const directory of listDirectories(join(repositoryRoot, "packages-renderer"))) {
+    validateImports(join(directory, "src"), specifier => {
+
+        return specifier === "electron" || nodeBuiltins.has(specifier) || specifier.includes("apps/desktop") || specifier.includes("/main/") || specifier.includes("/preload/");
+    }, "renderer packages cannot import desktop internals or privileged modules");
+}
+
+const uiFoundations = new Set([
+    "@avesd/ui-controls",
+    "@avesd/ui-grid",
+    "@avesd/ui-data",
+    "@avesd/ui-theme",
+    "@avesd/ui-style-utils",
+    "@avesd/ui-logo",
+]);
+const forbiddenUiImport = (specifier, foundation) => {
+
+    if (specifier === "electron" || nodeBuiltins.has(specifier)) {
+        return true;
+    }
+    if (!specifier.startsWith("@avesd/")) {
+        return false;
+    }
+    if (specifier.startsWith("@avesd/configuration")) {
+        return false;
+    }
+    if (!specifier.startsWith("@avesd/ui-")) {
+        return true;
+    }
+
+    return foundation && specifier.split("/").slice(0, 2)
+        .join("/") === "@avesd/ui-layout";
+};
+for (const directory of listDirectories(join(repositoryRoot, "packages-ui"))) {
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
+    const foundation = uiFoundations.has(manifest.name);
+    validateImports(join(directory, "src"), specifier => {
+
+        return forbiddenUiImport(specifier, foundation);
+    }, "UI packages cannot depend on domain, renderer, privileged, or higher composition layers");
+    for (const specifier of Object.keys(manifest.dependencies ?? {})) {
+        if (forbiddenUiImport(specifier, foundation)) {
+            violations.push(`${relativePath(directory)}/package.json: invalid UI dependency: ${specifier}`);
+        }
+    }
+}
+
 const publicContractRuntimeImports = new Set([
     "@avesd/kernel",
     "cordis",
@@ -180,6 +239,19 @@ validateImports(
         return publicContractRuntimeImports.has(specifier) || nodeBuiltins.has(specifier);
     },
     "plugin-api cannot depend on an implementation runtime",
+);
+
+validateImports(
+    join(repositoryRoot, "packages/desktop-contracts/src"),
+    specifier => {
+
+        return nodeBuiltins.has(specifier) || [
+            "electron",
+            "react",
+            "react-dom",
+        ].includes(specifier) || specifier.startsWith("@avesd/renderer-");
+    },
+    "desktop contracts must remain runtime neutral",
 );
 
 if (violations.length > 0) {
