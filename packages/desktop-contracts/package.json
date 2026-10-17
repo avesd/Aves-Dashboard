@@ -1,0 +1,31 @@
+{
+  "name": "@avesd/desktop-contracts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "exports": {
+    "./agent/sessions": "./src/agent/sessions.ts",
+    "./agent/providers": "./src/agent/providers.ts",
+    "./canvas/contracts": "./src/canvas/contracts.ts",
+    "./canvas/blocks": "./src/canvas/blocks.ts",
+    "./canvas/views": "./src/canvas/views.ts",
+    "./voice/live": "./src/voice/live.ts",
+    "./settings": "./src/settings-contract.ts",
+    "./ipc-commands": "./src/ipc-commands.ts",
+    "./ipc-result": "./src/ipc-result.ts"
+  },
+  "dependencies": {
+    "@avesd/plugin-api": "workspace:*",
+    "@avesd/workspace-model": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@avesd/configuration": "workspace:*",
+    "eslint": "catalog:",
+    "typescript": "catalog:"
+  }
+}

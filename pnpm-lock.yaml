@@ -283,6 +283,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@avesd/desktop-contracts':
+        specifier: workspace:*
+        version: link:../../packages/desktop-contracts
       '@avesd/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
@@ -384,6 +387,28 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.5
+      eslint:
+        specifier: 'catalog:'
+        version: 10.12.0
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
+  packages/desktop-contracts:
+    dependencies:
+      '@avesd/plugin-api':
+        specifier: workspace:*
+        version: link:../plugin-api
+      '@avesd/workspace-model':
+        specifier: workspace:*
+        version: link:../workspace-model
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
+    devDependencies:
+      '@avesd/configuration':
+        specifier: workspace:*
+        version: link:../configuration
       eslint:
         specifier: 'catalog:'
         version: 10.12.0
@@ -512,6 +537,7 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+
 
 packages:
 

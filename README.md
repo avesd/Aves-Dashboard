@@ -106,6 +106,9 @@ Feature ownership inside `packages/workspace-model/src/` follows responsibility:
 - `repository/` owns snapshot validation and repository implementations.
 - `widgets/` and `resources/` retain widget/data-source and scoped resource contracts.
 
+`packages/desktop-contracts` owns runtime-neutral window commands, domain schemas,
+and safe IPC result contracts shared by main, preload, and renderer consumers.
+
 Add a feature folder when several related files need a home; avoid generic
 `utils` folders, internal barrel files, or new packages solely to shorten paths.
 

@@ -24,6 +24,9 @@
     },
     {
       "path": "./apps/desktop"
+    },
+    {
+      "path": "./packages/desktop-contracts"
     }
   ]
 }

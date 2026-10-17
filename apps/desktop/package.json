@@ -26,7 +26,8 @@
     "react-dom": "catalog:",
     "react-markdown": "catalog:",
     "remark-gfm": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@avesd/desktop-contracts": "workspace:*"
   },
   "devDependencies": {
     "@avesd/configuration": "workspace:*",
