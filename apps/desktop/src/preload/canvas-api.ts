@@ -1,137 +1,106 @@
-import type { BlockRuntimeResponse, DashboardBlocksApi } from "../shared/canvas/blocks";
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Preload
+ * @description Canvas API
+ */
+
+import type { DashboardBlocksApi } from "../shared/canvas/blocks";
 import { dashboardBlocksChannels } from "../shared/canvas/blocks";
-import type { CanvasChange, CanvasDocument, CanvasListing, CanvasReceipt, CanvasResult, CanvasServiceApi } from "../shared/canvas/contracts";
-import { canvasServiceChannels, unwrapCanvasResult } from "../shared/canvas/contracts";
-import type { DesktopView, DesktopViewsApi } from "../shared/canvas/views";
+import type { CanvasChange, CanvasServiceApi } from "../shared/canvas/contracts";
+import { canvasServiceChannels } from "../shared/canvas/contracts";
+import type { DesktopViewsApi } from "../shared/canvas/views";
 import { desktopViewChannels } from "../shared/canvas/views";
-import { ipcRenderer } from "electron";
+import type { PreloadIpc } from "./preload-ipc";
+import type { WireApi } from "@avesd/desktop-contracts/ipc-result";
 
-async function request(input: unknown) {
+export function createCanvasClient(ipc: PreloadIpc): Pick<WireApi<CanvasServiceApi>, "list" | "read" | "subscribe"> {
 
-    return unwrapCanvasResult(await ipcRenderer.invoke(canvasServiceChannels.request, input) as CanvasResult);
+    return {
+        list: async input => {
+
+            return ipc.invoke(canvasServiceChannels.request, {
+                ...input,
+                type: "list",
+            });
+        },
+        read: async canvasId => {
+
+            return ipc.invoke(canvasServiceChannels.request, {
+                type: "read",
+                canvasId,
+            });
+        },
+        subscribe: listener => {
+
+            const handler = (_event: Electron.IpcRendererEvent, change: CanvasChange) => {
+
+                listener(change);
+            };
+            ipc.on(canvasServiceChannels.changed, handler);
+
+            return () => {
+
+                ipc.off(canvasServiceChannels.changed, handler);
+            };
+        },
+    };
 }
-export const canvases: CanvasServiceApi = {
-    list: input => {
+export function createBlocksClient(ipc: PreloadIpc): WireApi<DashboardBlocksApi> {
 
-        return request({
-            ...input,
-            type: "list",
-        }) as Promise<CanvasListing>;
-    },
-    read: canvasId => {
+    return {
+        invoke: input => {
 
-        return request({
-            type: "read",
-            canvasId,
-        }) as Promise<CanvasDocument>;
-    },
-    create: (requestId, title) => {
+            return ipc.invoke(dashboardBlocksChannels.request, input);
+        },
+        subscribe: listener => {
 
-        return request({
-            type: "create",
-            requestId,
-            title,
-        }) as Promise<CanvasReceipt>;
-    },
-    rename: (requestId, canvasId, expectedRevision, title) => {
+            const handler = () => {
 
-        return request({
-            type: "rename",
-            requestId,
-            canvasId,
-            expectedRevision,
-            title,
-        }) as Promise<CanvasReceipt>;
-    },
-    receipt: requestId => {
+                listener();
+            };
+            ipc.on(dashboardBlocksChannels.changed, handler);
 
-        return request({
-            type: "receipt",
-            requestId,
-        }) as Promise<CanvasReceipt | null>;
-    },
-    subscribe: listener => {
+            return () => {
 
-        const handler = (_event: Electron.IpcRendererEvent, change: CanvasChange) => {
+                ipc.off(dashboardBlocksChannels.changed, handler);
+            };
+        },
+    };
+}
+export function createViewsClient(ipc: PreloadIpc): Pick<WireApi<DesktopViewsApi>, "inspect" | "open" | "controller" | "subscribe"> {
 
-            listener(change);
-        };
-        ipcRenderer.on(canvasServiceChannels.changed, handler);
+    return {
+        inspect: () => {
 
-        return () => {
+            return ipc.invoke(desktopViewChannels.request, { type: "inspect" });
+        },
+        open: canvasId => {
 
-            ipcRenderer.off(canvasServiceChannels.changed, handler);
-        };
-    },
-};
-export const views: DesktopViewsApi = {
-    inspect: () => {
+            return ipc.invoke(desktopViewChannels.request, {
+                type: "open",
+                canvasId,
+            });
+        },
+        controller: expanded => {
 
-        return ipcRenderer.invoke(desktopViewChannels.request, { type: "inspect" }) as Promise<DesktopView>;
-    },
-    list: () => {
+            return ipc.invoke(desktopViewChannels.request, {
+                type: "controller",
+                expanded,
+            });
+        },
+        subscribe: listener => {
 
-        return ipcRenderer.invoke(desktopViewChannels.request, { type: "list" }) as Promise<readonly DesktopView[]>;
-    },
-    open: canvasId => {
+            const handler = () => {
 
-        return ipcRenderer.invoke(desktopViewChannels.request, {
-            type: "open",
-            canvasId,
-        }) as Promise<DesktopView>;
-    },
-    focus: viewId => {
+                listener();
+            };
+            ipc.on(desktopViewChannels.changed, handler);
 
-        return ipcRenderer.invoke(desktopViewChannels.request, {
-            type: "focus",
-            viewId,
-        }) as Promise<void>;
-    },
-    close: viewId => {
+            return () => {
 
-        return ipcRenderer.invoke(desktopViewChannels.request, {
-            type: "close",
-            viewId,
-        }) as Promise<void>;
-    },
-    controller: expanded => {
-
-        return ipcRenderer.invoke(desktopViewChannels.request, {
-            type: "controller",
-            expanded,
-        }) as Promise<void>;
-    },
-    subscribe: listener => {
-
-        const handler = () => {
-
-            listener();
-        };
-        ipcRenderer.on(desktopViewChannels.changed, handler);
-
-        return () => {
-
-            ipcRenderer.off(desktopViewChannels.changed, handler);
-        };
-    },
-};
-
-export const blocks: DashboardBlocksApi = {
-    invoke: input => {
-
-        return ipcRenderer.invoke(dashboardBlocksChannels.request, input) as Promise<BlockRuntimeResponse>;
-    },
-    subscribe: listener => {
-
-        const handler = () => {
-
-            listener();
-        };
-        ipcRenderer.on(dashboardBlocksChannels.changed, handler);
-
-        return () => {
-
-            ipcRenderer.off(dashboardBlocksChannels.changed, handler);
-        };
-    },
-};
+                ipc.off(desktopViewChannels.changed, handler);
+            };
+        },
+    };
+}

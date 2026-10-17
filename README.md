@@ -49,7 +49,11 @@ browser test setup, and dependency maintenance.
 ## Repository layout
 
 - `assets/brand` — source SVGs and usage notes for the Avesd bird mark.
-- `apps/desktop` — Electron main, preload, and React renderer processes.
+- `apps/desktop` — Electron main, preload, and canvas renderer processes.
+- `packages-renderer/canvas` — canvas renderer, sandbox block presentation and viewport interactions.
+- `packages-renderer/controller` — floating controller renderer, voice controls and session UI.
+- `packages/desktop-contracts` — runtime-neutral contracts shared by the desktop and renderer packages.
+- `packages-renderer/settings` — independent settings window renderer and its narrow API contracts.
 - `packages/configuration` — shared TypeScript and ESLint defaults.
 - `packages/kernel` — legacy Cordis-backed plugin lifecycle adapter and
   contribution registries.
@@ -57,8 +61,9 @@ browser test setup, and dependency maintenance.
 - `packages/plugin-data` — runtime-neutral local data-source contributions.
 - `packages/plugin-ui` — framework-neutral renderer widget contracts and
   contribution points.
-- `packages/ui` — internal React components and design tokens for trusted Avesd
-  product surfaces.
+- `packages-ui/*` — Theme, Controls, Grid, Data, Layout, class utilities, and the
+  Avesd mark. See the [shared UI contract](packages-ui/README.md).
+- `packages-renderer/agent` — shared domain-aware model-option loading.
 - `packages/workspace-model` — runtime-neutral canvas commands and legacy
   workspace, dashboard, widget, and data-source ownership contracts.
 - `.agents/common-skills-policy.md` and `.agents/audit-policy.md` — local
@@ -73,7 +78,8 @@ apps/desktop/
   src/
     main/
       main.ts               # Process startup entry
-      desktop-application.ts # Application composition, IPC, and lifecycle
+      desktop-application.ts # Service composition and application lifecycle
+      ipc/                  # Capability-specific IPC registration and authorization
       agent/                # Agent transport, tools, permissions, MCP entry
       browser/              # Native web surfaces and browser bindings
       plugins/              # Local authoring, installation, sandboxed views
@@ -81,40 +87,60 @@ apps/desktop/
       workspace/            # Workbench orchestration and widget service bridge
     preload/
       preload.ts            # Context bridge startup entry
-      desktop-api.ts        # Narrow privileged bridge implementation
+      controller-api.ts     # Controller capability composition
+      canvas-view-api.ts    # Canvas capability composition
+      settings.ts           # Dedicated settings bridge
+      preload-ipc.ts        # Host-only IPC transport type
     shared/
       browser/              # Browser IPC contracts
       plugins/              # Local plugin IPC contracts
       storage/              # File, SQLite, and resource contracts/facades
       workspace/            # Widget workspace contracts/facades
-      desktop-api.ts        # Aggregate preload API
+      desktop-api.ts        # Compatibility Agent/workspace channels and context
       widget-appearance.ts  # DOM/native geometry
-    renderer/src/
-      components/           # Dashboard shell and widget hosting
-      workbench/            # Renderer orchestration
-      plugins/              # One directory per built-in plugin/adapter
+    renderer/
+      canvas.html           # Canvas HTML shell and CSP
+      controller.html       # Controller HTML shell and CSP
+      settings.html         # Settings HTML shell and CSP
+      public/               # Shared static assets
+      src/                  # Thin package entry assembly and Vite types
 ```
 
-The previous automated test suites and synthetic scenarios have been removed.
-`pnpm validate` currently runs lint, type checks, and the production build.
-The first real usage scenario has not been defined yet. Future tests belong in
-each workspace's `test/` directory and must be included in compile and lint checks.
-Feature ownership inside `packages/workspace-model/src/` follows responsibility:
+`pnpm validate` runs lint, type checks, and the production build; it does not
+run runtime tests. Choose checks by change scope using `AGENTS.md` rather than
+running every check after each edit.
 
-- `workspace/` owns workspace types, catalog queries, navigation, and domain errors.
-- `canvas/` owns canvas metadata and block schemas.
-- `repository/` owns snapshot validation and repository implementations.
-- `widgets/` and `resources/` retain widget/data-source and scoped resource contracts.
+Desktop tests live in `apps/desktop/test/` and are included in compile and lint.
+Run an affected test file, or several files, from the repository root:
 
-`packages/desktop-contracts` owns runtime-neutral window commands, domain schemas,
-and safe IPC result contracts shared by main, preload, and renderer consumers.
+```sh
+pnpm --filter @avesd/desktop test:run test/integration/desktop-ipc.test.ts test/unit/main/ipc/ipc-result.test.ts
+```
 
-`apps/desktop/src/main/agent/sessions/` separates session coordination, connection
-lifetimes, execution/cancellation, question continuations, and event storage.
-The extracted workflows share entries owned by the session coordinator.
+Use `pnpm --filter @avesd/desktop test` for the complete desktop suite when the
+change warrants it. Keep authorization, cancellation, persistence, and protocol
+boundary coverage; consolidate overlapping schema checks into boundary tests.
 
-`apps/desktop/src/main/canvas/blocks/` separates runtime coordination, sandbox
-registration, leases, action transactions, snapshots, and inspection.
+Feature ownership is also reflected inside the larger workspaces:
+
+- `packages/workspace-model/src/workspace/` owns workspace types, catalog queries,
+  navigation, and domain errors; `canvas/` owns canvas metadata and block schemas.
+- `packages/workspace-model/src/repository/` owns snapshot validation and repository
+  implementations; `widgets/` and `resources/` retain widget/data-source and scoped
+  resource contracts.
+- `apps/desktop/src/main/agent/sessions/` owns session coordination, connection
+  lifetimes, execution/cancellation, question continuations, and event storage.
+  Entries remain owned by the session coordinator; extracted workflows share those
+  entries rather than maintaining parallel lifecycle state.
+- `apps/desktop/src/main/canvas/blocks/` owns block runtime coordination, sandbox
+  protocol registration, leases, action transactions, snapshots, and inspection.
+- `packages-renderer/controller/src/` groups chat, sessions, canvas discovery,
+  runtime selection, and voice by feature. `components/Controller.tsx` composes them.
+- `packages-renderer/canvas/src/blocks/` separates React rendering from sandbox
+  synchronization and validated message forwarding.
+- `packages-renderer/controller/src/chat/` owns transcript presentation and event reduction.
+- `packages-renderer/agent/` owns model-option loading shared with Settings.
+- `packages-ui/*` separates visual foundations from reusable compositions.
 
 Add a feature folder when several related files need a home; avoid generic
 `utils` folders, internal barrel files, or new packages solely to shorten paths.

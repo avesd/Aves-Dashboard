@@ -5,10 +5,15 @@
  * @description Preload
  */
 
-import { desktopApi } from "./desktop-api";
-import { contextBridge } from "electron";
+import { createCanvasApi } from "./canvas-view-api";
+import { createControllerApi } from "./controller-api";
+import { contextBridge, ipcRenderer } from "electron";
 
 if (process.isMainFrame) {
 
-    contextBridge.exposeInMainWorld("avesd", desktopApi);
+    if (process.argv.includes("--avesd-controller")) {
+        contextBridge.exposeInMainWorld("avesdController", createControllerApi(ipcRenderer));
+    } else if (process.argv.includes("--avesd-canvas")) {
+        contextBridge.exposeInMainWorld("avesdCanvas", createCanvasApi(ipcRenderer));
+    }
 }

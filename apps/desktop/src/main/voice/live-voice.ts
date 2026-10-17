@@ -6,8 +6,9 @@
  */
 
 import type { LiveCommand, LiveEvent } from "../../shared/voice/live";
-import type { AgentSessions } from "../agent/agent-sessions";
+import type { AgentSessions } from "../agent/sessions/agent-sessions";
 import { LiveAgentBridge } from "./live-agent-bridge";
+import { IpcErrorCode, OperationError } from "@avesd/desktop-contracts/ipc-result";
 import { z } from "zod";
 
 const answerSchema = z.object({
@@ -40,15 +41,15 @@ export class LiveVoice {
     }> {
 
         if (this.#connection) {
-            throw new Error("End the current voice conversation first.");
+            throw new OperationError(IpcErrorCode.Busy, "End the current voice conversation first.");
         }
         const key = this.key();
         if (!key?.trim()) {
-            throw new Error("Set OPENAI_API_KEY in the Avesd process environment, then restart Avesd.");
+            throw new OperationError(IpcErrorCode.ServiceNotReady, "Set OPENAI_API_KEY in the Avesd process environment, then restart Avesd.");
         }
         const agent = this.sessions.read(agentId);
         if (agent.kind !== "interactive" || agent.status === "stopped") {
-            throw new Error("Choose an active interactive Agent session.");
+            throw new OperationError(IpcErrorCode.InvalidArgument, "Choose an active interactive Agent session.");
         }
         const bridge = new LiveAgentBridge(agentId, this.sessions, command => {
 
@@ -87,11 +88,11 @@ export class LiveVoice {
                 }),
             });
             if (!response.ok) {
-                throw new Error(`GPT-Live connection failed (HTTP ${response.status}). Check API access and billing.`);
+                throw new OperationError(IpcErrorCode.ServiceNotReady, `GPT-Live connection failed (HTTP ${response.status}). Check API access and billing.`);
             }
             const answer = answerSchema.parse(await response.json());
             if (this.#connection !== connection) {
-                throw new Error("Voice connection was closed.");
+                throw new OperationError(IpcErrorCode.ServiceNotReady, "Voice connection was closed.");
             }
 
             return { sdp: answer.transport.sdp };
@@ -102,8 +103,8 @@ export class LiveVoice {
             if (error instanceof Error && error.message.startsWith("GPT-Live connection failed")) {
                 throw error;
             }
-            // eslint-disable-next-line preserve-caught-error -- Provider payloads and request details must not cross IPC.
-            throw new Error("Could not establish the voice connection. Check network and API configuration.");
+
+            throw new OperationError(IpcErrorCode.ServiceNotReady, "Could not establish the voice connection. Check network and API configuration.");
         }
     }
     event(id: string, event: LiveEvent): void {
@@ -132,7 +133,7 @@ export class LiveVoice {
     async cancelTask(id: string): Promise<void> {
 
         if (this.#connection?.id !== id || !this.#connection.ready) {
-            throw new Error("Voice is not connected.");
+            throw new OperationError(IpcErrorCode.ServiceNotReady, "Voice is not connected.");
         }
         await this.#connection.bridge.cancelTask();
     }

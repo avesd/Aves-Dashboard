@@ -10,36 +10,31 @@
     "lint": "eslint .",
     "preview": "electron-vite preview",
     "lint:fix": "eslint . --fix",
-    "test": "node --import ./test/register-typescript.mjs --test test/unit/**/*.test.ts test/integration/**/*.test.ts"
+    "test:run": "node --import ./test/register-typescript.mjs --test",
+    "test": "node --import ./test/register-typescript.mjs --test 'test/unit/**/*.test.ts' 'test/integration/**/*.test.ts'"
   },
   "dependencies": {
-    "@avesd/kernel": "workspace:*",
     "@avesd/plugin-api": "workspace:*",
-    "@avesd/plugin-data": "workspace:*",
-    "@avesd/plugin-ui": "workspace:*",
-    "@avesd/ui": "workspace:*",
     "@avesd/workspace-model": "workspace:*",
     "@modelcontextprotocol/server": "catalog:",
     "dotenv": "catalog:",
-    "lucide-react": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "react-markdown": "catalog:",
-    "remark-gfm": "catalog:",
     "zod": "catalog:",
-    "@avesd/desktop-contracts": "workspace:*"
+    "@avesd/renderer-settings": "workspace:*",
+    "@avesd/desktop-contracts": "workspace:*",
+    "@avesd/renderer-controller": "workspace:*",
+    "@avesd/renderer-canvas": "workspace:*"
   },
   "devDependencies": {
     "@avesd/configuration": "workspace:*",
     "@types/node": "catalog:",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "electron": "catalog:",
     "electron-vite": "catalog:",
     "eslint": "catalog:",
     "globals": "catalog:",
     "typescript": "catalog:",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "tailwindcss": "catalog:"
   }
 }

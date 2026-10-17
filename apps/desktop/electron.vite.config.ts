@@ -5,6 +5,7 @@
  * @description Electron Vite Config
  */
 
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "electron-vite";
 
@@ -14,6 +15,8 @@ export default defineConfig({
             externalizeDeps: {
                 exclude: [
                     "@avesd/workspace-model",
+                    "@avesd/renderer-settings",
+                    "@avesd/desktop-contracts",
                     "@modelcontextprotocol/server",
                 ],
             },
@@ -32,6 +35,7 @@ export default defineConfig({
                 external: ["electron"],
                 input: {
                     index: "src/preload/preload.ts",
+                    settings: "src/preload/settings.ts",
                     "local-widget": "src/preload/local-widget.ts",
                 },
                 output: {
@@ -43,6 +47,18 @@ export default defineConfig({
     },
     renderer: {
         root: "src/renderer",
-        plugins: [react()],
+        plugins: [
+            react(),
+            tailwindcss(),
+        ],
+        build: {
+            rollupOptions: {
+                input: {
+                    canvas: "src/renderer/canvas.html",
+                    settings: "src/renderer/settings.html",
+                    controller: "src/renderer/controller.html",
+                },
+            },
+        },
     },
 });

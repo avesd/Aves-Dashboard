@@ -9,6 +9,7 @@ import type { CanvasChange } from "../../shared/canvas/contracts";
 import { canvasServiceChannels } from "../../shared/canvas/contracts";
 import type { DesktopView } from "../../shared/canvas/views";
 import { desktopViewChannels } from "../../shared/canvas/views";
+import { IpcErrorCode, OperationError } from "@avesd/desktop-contracts/ipc-result";
 import type { IpcMainInvokeEvent, WebContents } from "electron";
 import { BrowserWindow, screen } from "electron";
 
@@ -17,7 +18,7 @@ export class DesktopWindows {
     #controller?: BrowserWindow;
     #expanded = false;
     #quitting = false;
-    constructor(private readonly preload: string, private readonly load: (window: BrowserWindow) => void, private readonly readTitle: (id: string) => Promise<string>, private readonly allowBlockURL: (owner: WebContents, url: string) => boolean) {
+    constructor(private readonly preload: string, private readonly load: (window: BrowserWindow, controller?: boolean) => void, private readonly readTitle: (id: string) => Promise<string>, private readonly allowBlockURL: (owner: WebContents, url: string) => boolean) {
 
         screen.on("display-metrics-changed", this.#position);
         screen.on("display-removed", this.#position);
@@ -39,7 +40,10 @@ export class DesktopWindows {
             alwaysOnTop: true,
             skipTaskbar: true,
             title: "Avesd",
-            webPreferences: this.#preferences(),
+            webPreferences: {
+                ...this.#preferences(),
+                additionalArguments: ["--avesd-controller"],
+            },
         });
         this.#controller = window;
         window.webContents.session.setPermissionRequestHandler((contents, permission, callback, details) => {
@@ -68,7 +72,7 @@ export class DesktopWindows {
         });
         this.#secure(window);
         this.#position();
-        this.load(window);
+        this.load(window, true);
 
         return window;
     }
@@ -115,7 +119,10 @@ export class DesktopWindows {
                 show: false,
                 title,
                 backgroundColor: "#101b29",
-                webPreferences: this.#preferences(),
+                webPreferences: {
+                    ...this.#preferences(),
+                    additionalArguments: ["--avesd-canvas"],
+                },
             });
             const created = window;
             this.#canvases.set(canvasId, created);
@@ -144,14 +151,14 @@ export class DesktopWindows {
     inspect(event: IpcMainInvokeEvent): DesktopView {
 
         if (event.senderFrame !== event.sender.mainFrame) {
-            throw new Error("Desktop requests require a trusted main frame.");
+            throw new OperationError(IpcErrorCode.PermissionDenied, "Desktop requests require a trusted main frame.");
         }
         const view = this.list().find(entry => {
 
             return BrowserWindow.fromId(entry.viewId)?.webContents === event.sender;
         });
         if (!view) {
-            throw new Error("Desktop window is unavailable.");
+            throw new OperationError(IpcErrorCode.PermissionDenied, "Desktop window is unavailable.");
         }
 
         return view;
@@ -184,7 +191,7 @@ export class DesktopWindows {
             return item.viewId === viewId;
         });
         if (!view) {
-            throw new Error("Window is unavailable.");
+            throw new OperationError(IpcErrorCode.ServiceNotReady, "Window is unavailable.");
         }
         const window = BrowserWindow.fromId(viewId)!;
         window.show();
@@ -196,7 +203,7 @@ export class DesktopWindows {
 
             return item.viewId === viewId;
         })) {
-            throw new Error("Window is unavailable.");
+            throw new OperationError(IpcErrorCode.ServiceNotReady, "Window is unavailable.");
         }
         BrowserWindow.fromId(viewId)?.close();
     }

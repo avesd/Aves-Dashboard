@@ -4,14 +4,15 @@ The root pnpm scripts are the source of truth for repository tasks.
 
 ## Validation
 
-`pnpm validate` runs lint, type checks, and the production build. The previous
-unit, integration, browser, and native Electron suites have been removed while
-the first real usage scenario is prepared. There are currently no automated
-repository test commands or synthetic scenario harnesses.
+`pnpm validate` runs lint, type checks, and the production build across all
+workspaces, including `packages-ui/*`. Run `pnpm --filter @avesd/ui-grid test`
+for responsive geometry and row planning. The desktop has its own `test` and
+`test:run` commands; select checks according to the repository verification policy.
 
-Use visual QA for rendered changes and native Electron checks for privileged
-APIs, input, windows, and persistence. The first real scenario should establish
-its own acceptance criteria before new automated coverage is introduced.
+Use focused visual QA for rendered changes and actual Electron checks for native
+windows and privileged behavior. Safe substitutes for preload services can verify
+renderer presentation, but do not establish native or provider connectivity.
+See the [UI contract](../packages-ui/README.md) for style and ownership rules.
 
 `pnpm lint:fix` applies ESLint fixes to root scripts and every workspace before
 checking repository and workflow boundaries. JavaScript uses ESLint recommended

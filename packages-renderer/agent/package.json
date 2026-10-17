@@ -1,0 +1,26 @@
+{
+  "name": "@avesd/renderer-agent",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./use-agent-route-options": "./src/use-agent-route-options.ts",
+    "./route-select-options": "./src/route-select-options.ts"
+  },
+  "scripts": {
+    "compile": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "node --experimental-strip-types --test test/unit/**/*.test.ts"
+  },
+  "dependencies": {
+    "@avesd/desktop-contracts": "workspace:*",
+    "react": "catalog:"
+  },
+  "devDependencies": {
+    "@avesd/configuration": "workspace:*",
+    "@types/react": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "@types/node": "catalog:"
+  }
+}

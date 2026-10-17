@@ -1,0 +1,34 @@
+{
+  "name": "@avesd/renderer-canvas",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "exports": {
+    "./entry": "./src/main.tsx",
+    "./contracts": "./src/canvas-api.ts"
+  },
+  "dependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "@avesd/desktop-contracts": "workspace:*",
+    "@avesd/workspace-model": "workspace:*",
+    "@avesd/ui-theme": "workspace:*",
+    "@avesd/ui-controls": "workspace:*",
+    "@avesd/ui-grid": "workspace:*",
+    "@avesd/ui-data": "workspace:*",
+    "@avesd/ui-layout": "workspace:*",
+    "@avesd/ui-logo": "workspace:*"
+  },
+  "devDependencies": {
+    "@avesd/configuration": "workspace:*",
+    "@types/react": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "@types/react-dom": "catalog:",
+    "tailwindcss": "catalog:"
+  }
+}

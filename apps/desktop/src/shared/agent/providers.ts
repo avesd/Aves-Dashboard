@@ -5,30 +5,4 @@
  * @description Providers
  */
 
-export type AgentProviderId = string;
-export interface AgentProviderConfiguration {
-    readonly enabled: boolean;
-    readonly executablePath: string;
-}
-export interface AgentProviderInstallation extends AgentProviderConfiguration {
-    readonly id: string;
-    readonly name: string;
-    readonly status: "checking" | "installed" | "not-found" | "error";
-    readonly source: "bundled" | "system" | "custom" | "api";
-    readonly bundledAvailable: boolean;
-    readonly resolvedPath?: string;
-    readonly version?: string;
-    readonly message?: string;
-    readonly loginCommand: string;
-    readonly setupUrl?: string;
-}
-export interface AgentProvidersApi {
-    list(refresh?: boolean): Promise<readonly AgentProviderInstallation[]>;
-    configure(id: AgentProviderId, configuration: AgentProviderConfiguration): Promise<void>;
-    openSetup(id: AgentProviderId): Promise<void>;
-}
-export const agentProvidersChannels = {
-    list: "agent-providers:list",
-    configure: "agent-providers:configure",
-    setup: "agent-providers:setup",
-} as const;
+export * from "@avesd/desktop-contracts/agent/providers";

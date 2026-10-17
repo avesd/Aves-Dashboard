@@ -6,14 +6,15 @@
  */
 
 import type { AgentTierRoutes } from "../../shared/agent/sessions";
-import { parseAgentRoutes } from "../../shared/agent/sessions";
+import { parseAgentRoute, parseAgentRoutes } from "../../shared/agent/sessions";
+import { IpcErrorCode, OperationError } from "@avesd/desktop-contracts/ipc-result";
 import { randomUUID } from "node:crypto";
 import { readFile, rename, unlink, writeFile } from "node:fs/promises";
 
 const parseProviderId = (id: unknown): void => {
 
     if (typeof id !== "string" || !id || id.length > 128) {
-        throw new Error("Invalid provider.");
+        throw new OperationError(IpcErrorCode.InvalidArgument, "Invalid provider.");
     }
 };
 
@@ -36,6 +37,21 @@ export class AgentPreferences {
             effortId: "",
         },
     };
+    #revision = 0;
+    readonly #listeners = new Set<() => void>();
+    get revision(): number {
+
+        return this.#revision;
+    }
+    subscribe(listener: () => void): () => void {
+
+        this.#listeners.add(listener);
+
+        return () => {
+
+            this.#listeners.delete(listener);
+        };
+    }
     private saving: Promise<void> = Promise.resolve();
     providerId = "deepseek";
     models: Record<string, string> = {};
@@ -104,7 +120,23 @@ export class AgentPreferences {
             };
         });
     }
-    configureRoutes(input: unknown): Promise<void> {
+    configureFlagship(input: unknown): Promise<void> {
+
+        const route = parseAgentRoute(input);
+
+        return this.#save(() => {
+
+            return {
+                providerId: this.providerId,
+                models: this.models,
+                routes: {
+                    ...this.routes,
+                    flagship: route,
+                },
+            };
+        });
+    }
+    configureRoutes(input: unknown, expectedRevision?: number): Promise<void> {
 
         const routes = parseAgentRoutes(input);
 
@@ -115,17 +147,20 @@ export class AgentPreferences {
                 models: this.models,
                 routes,
             };
-        });
+        }, expectedRevision);
     }
     #save(next: () => {
         providerId: string;
         models: Record<string, string>;
         routes: AgentTierRoutes;
-    }): Promise<void> {
+    }, expectedRevision?: number): Promise<void> {
 
         const save = this.saving.catch(() => {
         }).then(async () => {
 
+            if (expectedRevision !== undefined && expectedRevision !== this.#revision) {
+                throw new OperationError(IpcErrorCode.VersionConflict, "Settings changed in another window. Reload before saving.", this.#revision);
+            }
             const value = next();
             if (this.path) {
                 const temporary = `${this.path}.${randomUUID()}.tmp`;
@@ -137,7 +172,13 @@ export class AgentPreferences {
                     });
                 }
             }
-            this.providerId = value.providerId; this.models = { ...value.models }; this.routes = value.routes;
+            this.providerId = value.providerId;
+            this.models = { ...value.models };
+            this.routes = value.routes;
+            this.#revision++;
+            for (const listener of this.#listeners) {
+                listener();
+            }
         });
         this.saving = save;
 

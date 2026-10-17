@@ -6,6 +6,13 @@ dispatches validated tools locally.
 
 ## Configuration
 
+The controller opens settings in a separate, single-instance native window.
+Its renderer lives in [packages-renderer/settings](../packages-renderer/settings/README.md).
+Saved defaults synchronize across windows. Settings drafts carry a revision;
+external changes require reloading a dirty draft before saving. Existing Agent
+sessions retain their pinned configuration.
+
+
 Copy `env/.env.local.example` to `env/.env.development.local` and set
 `DEEPSEEK_API_KEY` for tasks and `OPENAI_API_KEY` for optional voice.
 Never commit actual keys. Development defaults live in `env/.env.development`;

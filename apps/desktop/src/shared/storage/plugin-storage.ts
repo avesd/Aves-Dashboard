@@ -7,6 +7,18 @@
 
 import type { PluginFileEntry, SqlMutationResult, SqlStatement, SqlValue } from "@avesd/workspace-model";
 
+function sqlValueBytes(value: SqlValue): number {
+
+    if (typeof value === "string") {
+        return new TextEncoder().encode(value).byteLength;
+    }
+    if (value instanceof Uint8Array) {
+        return value.byteLength;
+    }
+
+    return 8;
+}
+
 export const MAX_FILE_BYTES = 4 * 1024 * 1024;
 export type PluginStorageRequest =
   | {
@@ -86,7 +98,7 @@ function statement(input: unknown): SqlStatement {
     }
     if (parameters.reduce((size, item) => {
 
-        return size + (typeof item === "string" ? new TextEncoder().encode(item).byteLength : item instanceof Uint8Array ? item.byteLength : 8);
+        return size + sqlValueBytes(item);
     }, 0) > MAX_FILE_BYTES) {
         throw new Error("SQL parameters exceed the request limit.");
     }
@@ -143,7 +155,7 @@ export function parsePluginStorageRequest(input: unknown): PluginStorageRequest 
                 return total + new TextEncoder().encode(entry.sql).byteLength
         + (entry.parameters ?? []).reduce<number>((size, item) => {
 
-            return size + (typeof item === "string" ? new TextEncoder().encode(item).byteLength : item instanceof Uint8Array ? item.byteLength : 8);
+            return size + sqlValueBytes(item);
         }, 0);
             }, 0);
             if (bytes > MAX_FILE_BYTES) {

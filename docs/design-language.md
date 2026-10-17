@@ -1,13 +1,14 @@
 # Avesd design language
 
-Status: Approved visual direction, October 14, 2026. The current canvas uses
-the light field and independent Agent-authored HTML/CSS/SVG blocks. The fixed
+Status: Updated visual direction, October 16, 2026. Trusted application surfaces
+use the Tips-derived grid and theme system. The current canvas uses a quiet
+neutral field and independent Agent-authored HTML/CSS/SVG blocks. The fixed
 content renderers and their selection and relationship presentation have been
 removed. Content examples below are visual guidance, not fixed component
 types or claims about current rendering capabilities.
 
-Avesd combines the spatial atmosphere of a light field with the clarity of
-precise projection. Content appears directly in a continuous workspace.
+Avesd combines a freely positioned workspace with the clarity of continuous
+grid boundaries on application surfaces. Content appears directly in a continuous workspace.
 Typography, placement, light, and meaningful relationships establish hierarchy.
 Interface controls appear when needed and recede when the interaction ends.
 
@@ -121,9 +122,8 @@ tiny uppercase labels as the default interface language. Long content wraps
 predictably; truncation must have an accessible way to inspect the full value.
 
 Use a quiet neutral field, clear foreground text, restrained secondary text,
-and a small cool emphasis range. Dark presentation can suggest depth through
-near-black cool neutrals; light presentation can suggest projection through
-pale cool neutrals. Both preserve the same hierarchy and interaction meanings.
+and a restrained green brand accent. Dark presentation uses near-black
+neutrals; light presentation uses a warm off-white field. Both preserve the same hierarchy and interaction meanings.
 Dark mode alone does not define the design language.
 
 Keep these color responsibilities distinct:
@@ -168,7 +168,7 @@ shrink for small bounds and scale with the canvas. The center and most of every
 edge remain open. A low-opacity radial glow fades out before the object's edges,
 without a rectangular fill, text glow, blur filter, or pulsing animation.
 
-`SelectionIndicator` in `@avesd/ui` owns the decorative treatment and its theme
+`SelectionIndicator` in `@avesd/ui-data` owns the decorative treatment and its theme
 tokens. Canvas objects and groups consume the same primitive. The indicator
 never captures input, changes geometry, moves content, or replaces accessible
 selection state. Related sources keep a restrained short-edge cue, not four
@@ -206,12 +206,12 @@ its own background may use a bounded surface. Such surfaces need a clear
 purpose, reliable contrast, restrained edges, and correct stacking.
 
 Focused object details use square outer frames and continuous thin internal
-boundaries, informed by Tips' layout and grid language. The frame owns the outer
+boundaries, migrated from Tips' layout and grid language. The frame owns the outer
 edge, sections own horizontal boundaries, and grids own internal cell seams.
 Adjacent regions share one line instead of stacking independent card borders.
 Detail inspection uses an opaque readable surface, retains the field palette,
 and returns to the unframed canvas when dismissed. The reusable contract lives
-in [Framed detail layouts](../packages/ui/docs/layout-grid.md).
+in the [shared UI contract](../packages-ui/README.md).
 
 Atmospheric light must not lower text contrast. Selection and focus remain
 distinguishable without color alone. Large invisible hit areas must not overlap
@@ -226,16 +226,17 @@ disabled.
 
 ## Implementation ownership and open calibration
 
-`@avesd/ui` owns shared visual tokens and accessible primitives. The desktop
-renderer owns spatial composition, domain-aware presentation, and selection
-behavior. Keep geometry, persisted content, and service operations independent
-of atmospheric effects. Legacy dashboard and plugin systems are not
-dependencies of this visual direction.
+`packages-ui/*` owns shared Theme, Controls, Grid, Data, Layout, class utilities,
+and the Avesd mark. Foundations remain independent of domain contracts and
+renderer packages. Layout combines foundations. Desktop renderers own state,
+requests, spatial composition, and domain behavior. The shared model-option hook
+lives in `packages-renderer/agent`; transcript presentation belongs to the controller.
 
-Future implementation should consolidate semantic foreground, field,
-illumination, emphasis, relationship, temporary-surface, typography, spacing,
-and motion roles in the existing UI package. These are responsibilities, not a
-new token API or a requirement to create more packages.
+Settings, controller regions, menus, and detail surfaces use Tips-derived
+semantic colors, typography, spacing, modest control radii, and thin grid seams.
+Replace repeated rounded cards with continuous regions where content shares a
+structure. The free canvas retains stable object positions and no permanent
+page chrome. User-authored block styles remain independent.
 
 The following need validation on real content before being fixed as tokens:
 
@@ -245,8 +246,8 @@ The following need validation on real content before being fixed as tokens:
 - Relationship visibility at different densities and zoom levels.
 - Motion timing, effect budgets, and temporary control placement.
 
-The approved direction is content without permanent chrome, light-field depth,
-and precise readable presentation. Prototype wording, demonstration buttons,
+The approved direction is freely positioned content without permanent canvas
+chrome, paired with precise grid-based application surfaces. Prototype wording, demonstration buttons,
 sample positions, and particular gradients are not product requirements.
 
 ## Visual acceptance

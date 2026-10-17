@@ -17,16 +17,22 @@
       "path": "./packages/plugin-ui"
     },
     {
-      "path": "./packages/ui"
-    },
-    {
       "path": "./packages/kernel"
     },
     {
       "path": "./apps/desktop"
     },
     {
+      "path": "./packages-renderer/settings"
+    },
+    {
       "path": "./packages/desktop-contracts"
+    },
+    {
+      "path": "./packages-renderer/controller"
+    },
+    {
+      "path": "./packages-renderer/canvas"
     },
     {
       "path": "./packages-ui/theme"
@@ -35,19 +41,22 @@
       "path": "./packages-ui/style-utils"
     },
     {
-      "path": "./packages-ui/logo"
-    },
-    {
-      "path": "./packages-ui/data"
+      "path": "./packages-ui/controls"
     },
     {
       "path": "./packages-ui/grid"
     },
     {
+      "path": "./packages-ui/data"
+    },
+    {
       "path": "./packages-ui/layout"
     },
     {
-      "path": "./packages-ui/controls"
+      "path": "./packages-ui/logo"
+    },
+    {
+      "path": "./packages-renderer/agent"
     }
   ]
 }

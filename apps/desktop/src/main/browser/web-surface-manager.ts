@@ -288,10 +288,18 @@ export class WebSurfaceManager {
                 const operation = Symbol();
                 surface.operation = operation;
                 try {
-                    const work = command.mode === "css"
-                        ? contents.insertCSS(command.code)
-                        : command.mode === "page" ? contents.executeJavaScript(command.code)
-                            : contents.executeJavaScriptInIsolatedWorld(1001, [{ code: command.code }]);
+                    let work: Promise<unknown>;
+                    switch (command.mode) {
+                        case "css":
+                            work = contents.insertCSS(command.code);
+                            break;
+                        case "page":
+                            work = contents.executeJavaScript(command.code);
+                            break;
+                        case "isolated":
+                            work = contents.executeJavaScriptInIsolatedWorld(1001, [{ code: command.code }]);
+                            break;
+                    }
                     // Timeout bounds the caller's wait; it does not promise to stop page side effects.
                     let timer: ReturnType<typeof setTimeout> | undefined;
                     const completion = work.finally(() => {

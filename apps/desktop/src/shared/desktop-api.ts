@@ -5,66 +5,11 @@
  * @description Desktop API
  */
 
-import type { AgentProvidersApi } from "./agent/providers";
-import type { AgentSessionsApi } from "./agent/sessions";
-import type { WidgetAgentApi } from "./agent/widget-agent";
-import type { BrowserControlsApi } from "./browser/browser-controls";
-import type { BrowserTasksApi } from "./browser/browser-tasks";
-import type { WebSurfaceApi } from "./browser/web-surface";
-import type { DashboardBlocksApi } from "./canvas/blocks";
-import type { CanvasServiceApi } from "./canvas/contracts";
-import type { DesktopViewsApi } from "./canvas/views";
-import type { LocalPluginsApi } from "./plugins/local-plugins";
-import type { WorkbenchPreferencesApi } from "./workbench/preferences";
-import type { DesktopWidgetWorkspaceApi } from "./workspace/widget-workspace";
-import type { WorkspaceNavigationApi } from "./workspace/workspace-navigation";
-import type { AgentService } from "@avesd/plugin-api";
-import type { DataSourceDefinition,
-    WidgetDefinition,
-    WorkspaceSnapshot } from "@avesd/workspace-model";
-
-export interface DesktopRuntime {
-    readonly chrome: string;
-    readonly electron: string;
-    readonly node: string;
-    readonly platform: string;
-}
-
-export interface DesktopApi {
-    readonly voice: import("./voice/live").LiveVoiceApi;
-    readonly canvases: CanvasServiceApi;
-    readonly blocks: DashboardBlocksApi;
-    readonly views: DesktopViewsApi;
-    readonly browserTasks: BrowserTasksApi;
-    readonly agentSessions: AgentSessionsApi;
-    readonly widgetAgent: WidgetAgentApi;
-    readonly agentProviders: AgentProvidersApi;
-    readonly preferences: WorkbenchPreferencesApi;
-    readonly widgetWorkspace: DesktopWidgetWorkspaceApi;
-    readonly navigation: WorkspaceNavigationApi;
-    readonly localPlugins: LocalPluginsApi;
-    readonly browserControls: BrowserControlsApi;
-    readonly web: WebSurfaceApi;
-    readonly agent: DesktopAgentApi;
-    readonly runtime: DesktopRuntime;
-    readonly workspaceStorage: WorkspaceStorageApi;
-}
+import type { DataSourceDefinition, WidgetDefinition } from "@avesd/workspace-model";
 
 export interface AgentWorkbenchContext {
     readonly dataSourceDefinitions: readonly DataSourceDefinition[];
     readonly widgetDefinitions: readonly WidgetDefinition[];
-}
-
-export interface DesktopAgentApi extends AgentService {
-    configureWorkbench(context: AgentWorkbenchContext): Promise<void>;
-}
-
-export interface WorkspaceStorageApi {
-    load(): Promise<unknown>;
-    save(snapshot: WorkspaceSnapshot, expected?: {
-        snapshot: WorkspaceSnapshot | undefined;
-    }): Promise<void>;
-    subscribe(listener: () => void): () => void;
 }
 
 export const agentIpcChannels = Object.freeze({
@@ -100,10 +45,4 @@ export const parseAgentPrompt = (input: unknown): string => {
     }
 
     return prompt;
-};
-
-export const formatRuntimeSummary = (runtime: DesktopRuntime): string =>
-{
-
-    return `Electron ${runtime.electron} · ${runtime.platform}`;
 };

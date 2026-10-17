@@ -1,0 +1,38 @@
+{
+  "name": "@avesd/renderer-controller",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "exports": {
+    "./entry": "./src/main.tsx",
+    "./contracts": "./src/controller-api.ts"
+  },
+  "dependencies": {
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "@avesd/plugin-api": "workspace:*",
+    "@avesd/desktop-contracts": "workspace:*",
+    "@avesd/ui-theme": "workspace:*",
+    "@avesd/ui-controls": "workspace:*",
+    "@avesd/ui-grid": "workspace:*",
+    "@avesd/ui-data": "workspace:*",
+    "@avesd/ui-layout": "workspace:*",
+    "@avesd/ui-logo": "workspace:*",
+    "@avesd/renderer-agent": "workspace:*",
+    "react-markdown": "catalog:",
+    "remark-gfm": "catalog:"
+  },
+  "devDependencies": {
+    "@avesd/configuration": "workspace:*",
+    "@types/react": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "@types/react-dom": "catalog:",
+    "tailwindcss": "catalog:"
+  }
+}
