@@ -1,8 +1,8 @@
 /**
  * @author Avesd
  * @package Desktop
- * @namespace Root
- * @description Unified agent session administration and tier routing
+ * @namespace Shared_Agent
+ * @description Sessions
  */
 
 import type { AgentEvent, AgentSettings, AgentTaskRequest, AgentTaskStatus, AgentTier } from "@avesd/plugin-api";

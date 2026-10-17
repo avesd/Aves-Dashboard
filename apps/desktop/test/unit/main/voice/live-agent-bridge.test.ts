@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Test_Unit_Main_Voice
+ * @description Live Agent Bridge.test
+ */
+
 import { AgentPreferences } from "../../../../src/main/agent/agent-preferences";
 import { AgentSessions } from "../../../../src/main/agent/agent-sessions";
 import { LiveAgentBridge } from "../../../../src/main/voice/live-agent-bridge";
@@ -178,7 +185,9 @@ void test("voice delegation reuses execution authorization, queues additions, an
                 text: "Dashboard created.",
             });
         });
-        host.requests[0]!.done.resolve(); await setImmediate(); await setImmediate();
+        host.requests[0]!.done.resolve();
+        await setImmediate();
+        await setImmediate();
         assert.equal(host.requests.length, 2);
         assert.equal(sessions.authorizeExecution(id, execution)(), false);
         host.listeners.forEach(listener => {
@@ -188,7 +197,8 @@ void test("voice delegation reuses execution authorization, queues additions, an
                 text: "Note added.",
             });
         });
-        host.requests[1]!.done.resolve(); await setImmediate();
+        host.requests[1]!.done.resolve();
+        await setImmediate();
         assert.deepEqual(output.filter(item => {
 
             return item.type === "session.commentary.append";
@@ -199,7 +209,10 @@ void test("voice delegation reuses execution authorization, queues additions, an
             "one",
             "two",
         ]);
-    } finally { bridge.close(); sessions.dispose(); }
+    } finally {
+        bridge.close();
+        sessions.dispose();
+    }
 });
 void test("cancel revokes a voice run, discards pending additions and late output, then allows conversation reuse", async () => {
 
@@ -224,9 +237,13 @@ void test("cancel revokes a voice run, discards pending additions and late outpu
         }), false);
         await delegate(bridge, "three", "Now list dashboards.", 300);
         assert.equal(host.requests.length, 2);
-        host.requests[1]!.done.resolve(); await setImmediate();
+        host.requests[1]!.done.resolve();
+        await setImmediate();
         assert.equal(host.disposed, false);
-    } finally { bridge.close(); sessions.dispose(); }
+    } finally {
+        bridge.close();
+        sessions.dispose();
+    }
 });
 void test("transcripts alone never launch or cancel work; late transcript and duplicate delegation are handled", async () => {
 
@@ -238,7 +255,8 @@ void test("transcripts alone never launch or cancel work; late transcript and du
             start_ms: 0,
             end_ms: 10,
         });
-        await delay(800); assert.equal(host.requests.length, 0);
+        await delay(800);
+        assert.equal(host.requests.length, 0);
         bridge.receive({
             type: "session.delegation.created",
             delegation: {
@@ -253,11 +271,15 @@ void test("transcripts alone never launch or cancel work; late transcript and du
             start_ms: 10,
             end_ms: 100,
         });
-        await delay(800); assert.equal(host.requests.length, 1);
+        await delay(800);
+        assert.equal(host.requests.length, 1);
         await bridge.cancelTask();
         await delegate(bridge, "two", "Do not cancel the task; list dashboards.", 200);
         assert.equal(host.requests.length, 2);
-    } finally { bridge.close(); sessions.dispose(); }
+    } finally {
+        bridge.close();
+        sessions.dispose();
+    }
 });
 void test("ending voice leaves Agent work running and suppresses result delivery", async () => {
 
@@ -273,12 +295,15 @@ void test("ending voice leaves Agent work running and suppresses result delivery
                 text: "Done.",
             });
         });
-        host.requests[0]!.done.resolve(); await setImmediate();
+        host.requests[0]!.done.resolve();
+        await setImmediate();
         assert.equal(output.some(item => {
 
             return item.type === "session.commentary.append";
         }), false);
-    } finally { sessions.dispose(); }
+    } finally {
+        sessions.dispose();
+    }
 });
 void test("Live session creation keeps credentials in backend, fixes delegation mode, and rejects stale connection events", async () => {
 
@@ -301,7 +326,8 @@ void test("Live session creation keeps credentials in backend, fixes delegation 
                 };
             };
         };
-        assert.equal(body.session.model, "gpt-live-1"); assert.equal(body.session.delegation.type, "client");
+        assert.equal(body.session.model, "gpt-live-1");
+        assert.equal(body.session.delegation.type, "client");
 
         return new Response(JSON.stringify({
             session: { id: "synthetic-live" },
@@ -313,7 +339,8 @@ void test("Live session creation keeps credentials in backend, fixes delegation 
     });
     try {
         assert.deepEqual(await voice.start("connection", id, "synthetic-offer"), { sdp: "synthetic-answer" });
-        await assert.rejects(voice.start("another", id, "offer")); assert.equal(calls, 1);
+        await assert.rejects(voice.start("another", id, "offer"));
+        assert.equal(calls, 1);
         voice.event("old", { type: "session.started" });
         voice.event("old", {
             type: "session.delegation.created",
@@ -323,10 +350,15 @@ void test("Live session creation keeps credentials in backend, fixes delegation 
             },
             offset_ms: 100,
         });
-        await delay(800); assert.equal(host.requests.length, 0);
+        await delay(800);
+        assert.equal(host.requests.length, 0);
         await assert.rejects(voice.cancelTask("old"));
-        voice.stop("old"); await assert.rejects(voice.start("another", id, "offer"));
-    } finally { voice.stop(); sessions.dispose(); }
+        voice.stop("old");
+        await assert.rejects(voice.start("another", id, "offer"));
+    } finally {
+        voice.stop();
+        sessions.dispose();
+    }
 });
 
 void test("an explicit delegated cancellation stops only the current turn", async () => {
@@ -343,7 +375,10 @@ void test("an explicit delegated cancellation stops only the current turn", asyn
         }), true);
         await delegate(bridge, "next", "List dashboards.", 300);
         assert.equal(host.requests.length, 2);
-    } finally { bridge.close(); sessions.dispose(); }
+    } finally {
+        bridge.close();
+        sessions.dispose();
+    }
 });
 void test("missing credentials fail before network access and provider errors do not expose payloads", async () => {
 
@@ -375,5 +410,9 @@ void test("missing credentials fail before network access and provider errors do
 
             return true;
         });
-    } finally { unavailable.stop(); denied.stop(); sessions.dispose(); }
+    } finally {
+        unavailable.stop();
+        denied.stop();
+        sessions.dispose();
+    }
 });

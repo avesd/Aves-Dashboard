@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Test_Unit_Main_Environment
+ * @description Load Environment.test
+ */
+
 import { loadEnvironment } from "../../../../src/main/environment/load-environment";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";

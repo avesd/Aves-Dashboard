@@ -110,7 +110,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         return findActionViolations(readFileSync(file, "utf8"), relative(actionsDirectory, file));
     }));
     if (errors.length) {
-        console.error(errors.join("\n")); process.exitCode = 1;
+        console.error(errors.join("\n"));
+        process.exitCode = 1;
     }
     else {
         console.log(`Verified workflow policy in ${files.length} workflows and ${actionFiles.length} local actions.`);

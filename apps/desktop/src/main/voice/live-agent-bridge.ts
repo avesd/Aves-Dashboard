@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Main_Voice
+ * @description Live Agent Bridge
+ */
+
 import type { LiveCommand, LiveEvent } from "../../shared/voice/live";
 import type { AgentSessions } from "../agent/agent-sessions";
 import { randomUUID } from "node:crypto";
@@ -55,7 +62,9 @@ export class LiveAgentBridge {
             while (this.#transcript.length > 256 || this.#transcript.reduce((sum, item) => {
 
                 return sum + item.text.length;
-            }, 0) > 24000) {this.#transcript.shift();}
+            }, 0) > 24000) {
+                this.#transcript.shift();
+            }
         }
         if (event.type === "session.delegation.created" && !this.#seen.has(event.delegation.id)) {
             if (this.#seen.size >= 256) {
@@ -234,7 +243,9 @@ export class LiveAgentBridge {
         this.#generation++;
         this.#active = undefined;
         this.#requests.clear();
-        for (const pending of this.#pending.values()) {clearTimeout(pending.timer);}
+        for (const pending of this.#pending.values()) {
+            clearTimeout(pending.timer);
+        }
         this.#pending.clear();
         this.#consumed = Math.max(this.#consumed, ...this.#transcript.map(item => {
 
@@ -255,7 +266,12 @@ export class LiveAgentBridge {
     close(): void {
 
         this.#closed = true;
-        for (const item of this.#pending.values()) {clearTimeout(item.timer);}
-        this.#pending.clear(); this.#requests.clear(); this.#transcript.length = 0; this.#active = undefined;
+        for (const item of this.#pending.values()) {
+            clearTimeout(item.timer);
+        }
+        this.#pending.clear();
+        this.#requests.clear();
+        this.#transcript.length = 0;
+        this.#active = undefined;
     }
 }

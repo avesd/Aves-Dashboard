@@ -75,7 +75,8 @@ export class BrowserTasks {
 
     attach(pages: Pages): void {
 
-        this.detach(); this.#pages = pages;
+        this.detach();
+        this.#pages = pages;
         this.#timer = setInterval(() => {
 
             void this.#tick();
@@ -85,14 +86,21 @@ export class BrowserTasks {
 
     detach(): void {
 
-        clearInterval(this.#timer); this.#timer = undefined;
-        const pages = this.#pages; this.#pages = undefined; this.#runtime.clear(); pages?.dispose();
-        this.#slots.clear(); this.#wake();
+        clearInterval(this.#timer);
+        this.#timer = undefined;
+        const pages = this.#pages;
+        this.#pages = undefined;
+        this.#runtime.clear();
+        pages?.dispose();
+        this.#slots.clear();
+        this.#wake();
     }
 
     #wake(): void {
 
-        for (const resume of this.#waiting) { resume(); }
+        for (const resume of this.#waiting) {
+            resume();
+        }
         this.#waiting.clear();
     }
 
@@ -327,13 +335,16 @@ export class BrowserTasks {
                     });
                     throw new Error("Browser task was closed while opening its page.");
                 }
-                runtime.page = state.id; runtime.state = "idle"; this.changed();
+                runtime.page = state.id;
+                runtime.state = "idle";
+                this.changed();
 
                 return state.id;
             })
             .catch(error => {
 
-                this.#slots.delete(runtime); this.#wake();
+                this.#slots.delete(runtime);
+                this.#wake();
                 throw error;
             })
             .finally(() => {
@@ -361,7 +372,8 @@ export class BrowserTasks {
             });
         }
         if (runtime && !runtime.opening) {
-            this.#slots.delete(runtime); this.#wake();
+            this.#slots.delete(runtime);
+            this.#wake();
         }
         this.changed();
     }
@@ -382,7 +394,8 @@ export class BrowserTasks {
         if (!pages) {
             return Promise.reject(new Error("Background browser is unavailable."));
         }
-        runtime.state = "refreshing"; this.changed();
+        runtime.state = "refreshing";
+        this.changed();
         const current = () => {
 
             return this.#runtime.get(task.id) === runtime && this.#pages === pages && this.#tasks.includes(task);
@@ -391,7 +404,8 @@ export class BrowserTasks {
 
             try {
                 const page = await this.#page(task, runtime);
-                runtime.state = "refreshing"; this.changed();
+                runtime.state = "refreshing";
+                this.changed();
                 if (!current() || pages.isPresented(page)) {
                     return;
                 }
@@ -427,7 +441,8 @@ export class BrowserTasks {
                             code: `(() => { const result = {}; for (const [key, selector] of Object.entries(${JSON.stringify(task.fields)})) { const nodes = document.querySelectorAll(selector); if (nodes.length !== 1) return null; result[key] = nodes[0].textContent.slice(0,4096); } return result; })()`,
                         });
                         if (output.result && typeof output.result === "object" && !Array.isArray(output.result)) {
-                            value = output.result as Record<string, string>; break;
+                            value = output.result as Record<string, string>;
+                            break;
                         }
                     }
                     await new Promise(resolve => {
@@ -487,9 +502,12 @@ export class BrowserTasks {
 
                         return undefined;
                     });
-                    this.#slots.delete(runtime); this.#wake();
+                    this.#slots.delete(runtime);
+                    this.#wake();
                 }
-                runtime.work = undefined; runtime.due = Date.now() + Math.max(1, task.intervalMinutes) * 60_000; this.changed();
+                runtime.work = undefined;
+                runtime.due = Date.now() + Math.max(1, task.intervalMinutes) * 60_000;
+                this.changed();
             }
         })();
 
@@ -527,7 +545,9 @@ export class BrowserTasks {
                     });
                 }
             }
-        } catch { /* Keep local work usable when storage is temporarily unavailable. */ }
+        } catch {
+            /* Keep local work usable when storage is temporarily unavailable. */
+        }
     }
 
     #write(update: () => BrowserTask[]): Promise<void> {
@@ -543,8 +563,11 @@ export class BrowserTasks {
                     tasks,
                 }), { mode: 0o600 });
                 await rename(temporary, this.path);
-            } finally { await rm(temporary, { force: true }); }
-            this.#tasks = tasks; this.changed();
+            } finally {
+                await rm(temporary, { force: true });
+            }
+            this.#tasks = tasks;
+            this.changed();
         });
         this.#writes = work.catch(() => {
 

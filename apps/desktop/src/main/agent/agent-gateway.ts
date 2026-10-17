@@ -113,7 +113,8 @@ export async function openAgentGateway(invoke: (name: string, input: unknown, au
     server.requestTimeout = 15_000;
     await new Promise<void>((resolve, reject) => {
 
-        server.once("error", reject); server.listen(0, "127.0.0.1", resolve);
+        server.once("error", reject);
+        server.listen(0, "127.0.0.1", resolve);
     });
     const address = server.address();
     if (!address || typeof address === "string") {
@@ -134,7 +135,8 @@ export async function openAgentGateway(invoke: (name: string, input: unknown, au
         close() {
 
             closed = true;
-            server.closeAllConnections(); server.close();
+            server.closeAllConnections();
+            server.close();
         },
     };
 }

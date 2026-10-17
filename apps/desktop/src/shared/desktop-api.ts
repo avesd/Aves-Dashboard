@@ -1,7 +1,7 @@
 /**
  * @author Avesd
  * @package Desktop
- * @namespace Root
+ * @namespace Shared
  * @description Desktop API
  */
 

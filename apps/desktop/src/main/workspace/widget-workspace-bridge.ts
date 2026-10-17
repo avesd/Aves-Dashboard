@@ -52,7 +52,8 @@ export class WidgetWorkspaceBridge {
 
         return () => {
 
-            dispose(); contents.off("destroyed", dispose);
+            dispose();
+            contents.off("destroyed", dispose);
         };
     }
 

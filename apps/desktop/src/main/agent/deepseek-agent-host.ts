@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Main_Agent
+ * @description Deepseek Agent Host
+ */
+
 import type { AgentToolResult } from "./agent-tools";
 import type { SessionHost } from "./session-host";
 import type { AgentEvent, AgentSettings } from "@avesd/plugin-api";
@@ -81,7 +88,9 @@ export class DeepSeekAgentHost implements SessionHost {
                 message: "Configure DEEPSEEK_API_KEY in the local environment file and restart Avesd.",
             }); throw new Error("DeepSeek API key is not configured.");
         }
-        this.#connected = true; this.publishSettings(); this.#emit({
+        this.#connected = true;
+        this.publishSettings();
+        this.#emit({
             type: "status",
             status: "connected",
         });
@@ -131,7 +140,8 @@ export class DeepSeekAgentHost implements SessionHost {
         if (this.#run || !/^[a-zA-Z0-9._-]{1,128}$/u.test(id)) {
             throw new Error("Invalid model selection.");
         }
-        this.#model = id; this.publishSettings();
+        this.#model = id;
+        this.publishSettings();
     }
     async selectEffort(id: string): Promise<void> {
 
@@ -156,7 +166,8 @@ export class DeepSeekAgentHost implements SessionHost {
             throw new Error("Agent execution is unavailable.");
         }
         await this.connect();
-        const run = new AbortController(); this.#run = run;
+        const run = new AbortController();
+        this.#run = run;
         const authorized = this.options.authorize(executionId);
         const active = () => {
 
@@ -226,7 +237,8 @@ export class DeepSeekAgentHost implements SessionHost {
                 if (!response.ok) {
                     throw new Error(`DeepSeek request failed (HTTP ${response.status}). Check API access and quota.`);
                 }
-                const raw = await response.text(); check();
+                const raw = await response.text();
+                check();
                 if (raw.length > 2000000) {
                     throw new Error("DeepSeek response exceeded the size limit.");
                 }
@@ -361,11 +373,15 @@ export class DeepSeekAgentHost implements SessionHost {
     #emit(event: AgentEvent): void {
 
         if (!this.#disposed) {
-            for (const listener of this.#listeners) {listener(event);}
+            for (const listener of this.#listeners) {
+                listener(event);
+            }
         }
     }
     dispose(): void {
 
-        this.#disposed = true; this.#run?.abort(); this.#listeners.clear();
+        this.#disposed = true;
+        this.#run?.abort();
+        this.#listeners.clear();
     }
 }

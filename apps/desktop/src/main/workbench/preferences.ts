@@ -52,7 +52,8 @@ export class WorkbenchPreferences {
                     sidebarSide: this.side,
                     sessionPosition: position,
                 }), { mode: 0o600 });
-                await rename(temporary, this.path); this.sessionPosition = Number(position);
+                await rename(temporary, this.path);
+                this.sessionPosition = Number(position);
             } finally {
                 await unlink(temporary).catch(() => {
                 });

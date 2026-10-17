@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Main_Agent
+ * @description Deepseek Provider
+ */
+
 import type { AgentProviderInstallation } from "../../shared/agent/providers";
 import type { AgentRouteProbeResult, AgentTierRoute } from "../../shared/agent/sessions";
 import { DeepSeekAgentHost, defaultDeepSeekModel } from "./deepseek-agent-host";
@@ -52,14 +59,18 @@ export async function probeDeepSeek(route: AgentTierRoute, test: boolean): Promi
                 throw new Error("No tools in connection checks.");
             },
         });
-        try { await host.prompt("Reply with OK.", "probe"); }
+        try {
+            await host.prompt("Reply with OK.", "probe");
+        }
         catch {
             return {
                 ok: false,
                 message: "DeepSeek request failed. Check API key, model access, quota and network.",
             };
         }
-        finally { host.dispose(); }
+        finally {
+            host.dispose();
+        }
     }
 
     return {

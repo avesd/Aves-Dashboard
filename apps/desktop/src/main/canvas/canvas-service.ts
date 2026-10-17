@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Main_Canvas
+ * @description Canvas Service
+ */
+
 import type { CanvasChange, CanvasDocument, CanvasErrorCode, CanvasListing, CanvasReceipt, CanvasRequest, CanvasResponse, CanvasResult } from "../../shared/canvas/contracts";
 import { canvasServiceRequestSchema } from "../../shared/canvas/contracts";
 import type { WorkspaceFile } from "../storage/workspace-file";
@@ -97,7 +104,11 @@ export class CanvasService {
             sequence: ++this.#sequence,
         };
         for (const listener of this.#listeners) {
-            try { listener(change); } catch { /* A disconnected observer cannot roll back a committed write. */ }
+            try {
+                listener(change);
+            } catch {
+                /* A disconnected observer cannot roll back a committed write. */
+            }
         }
     }
     async execute(access: CanvasAccess, input: unknown): Promise<CanvasResult> {

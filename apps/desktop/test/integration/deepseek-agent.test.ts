@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Test_Integration
+ * @description Deepseek Agent.test
+ */
+
 import { AgentPreferences } from "../../src/main/agent/agent-preferences";
 import { AgentSessions } from "../../src/main/agent/agent-sessions";
 import { DeepSeekAgentHost } from "../../src/main/agent/deepseek-agent-host";
@@ -109,7 +116,9 @@ void test("direct DeepSeek loop executes a real canvas tool and returns its resu
         assert.equal(messages.at(-1)!.tool_call_id, "call-1");
         assert.match(messages.at(-1)!.content, /content/u);
         assert.equal(JSON.stringify(requests).includes("synthetic-key"), false);
-    } finally { host.dispose(); }
+    } finally {
+        host.dispose();
+    }
 });
 
 void test("DeepSeek cancellation retains conversation, rejects late tool responses, and drains supplements FIFO", { timeout: 5000 }, async () => {
@@ -175,23 +184,30 @@ void test("DeepSeek cancellation retains conversation, rejects late tool respons
     try {
         const { id } = await sessions.create();
         const first = sessions.prompt("first", id);
-        while (!requests.length) {await setImmediate();}
+        while (!requests.length) {
+            await setImmediate();
+        }
         const oldId = sessions.read(id).execution!.id;
         const oldGate = sessions.authorizeExecution(id, oldId);
         sessions.enqueue("discard", id);
         const cancel = sessions.cancelTurn(id);
         assert.equal(oldGate(), false);
         release(call());
-        await cancel; await first;
+        await cancel;
+        await first;
         assert.equal(invoked, 0);
         assert.equal(sessions.read(id).execution!.status, "cancelled");
         const second = sessions.prompt("second", id);
-        while (requests.length < 2) { await setImmediate(); }
+        while (requests.length < 2) {
+            await setImmediate();
+        }
         sessions.enqueue("third", id);
         sessions.enqueue("fourth", id);
         releaseSecond(answer());
         await second;
-        while (sessions.read(id).status === "running" || requests.length < 4) {await setImmediate();}
+        while (sessions.read(id).status === "running" || requests.length < 4) {
+            await setImmediate();
+        }
         assert.equal(hostCount, 1);
         assert.equal(oldGate(), false);
         assert.equal(sessions.authorizeExecution(id, oldId)(), false);
@@ -207,9 +223,13 @@ void test("DeepSeek cancellation retains conversation, rejects late tool respons
                 "second",
                 "third",
                 "fourth",
-            ].entries()) {assert.match(requests[i + 1]!.messages.at(-1)!.content, new RegExp(text, "u"));}
+            ].entries()) {
+            assert.match(requests[i + 1]!.messages.at(-1)!.content, new RegExp(text, "u"));
+        }
         assert.equal(JSON.stringify(requests).includes("discard"), false);
-    } finally { sessions.dispose(); }
+    } finally {
+        sessions.dispose();
+    }
 });
 
 void test("cancelling during a tool fences its work and repairs pending tool messages before reuse", async () => {
@@ -283,7 +303,9 @@ void test("cancelling during a tool fences its work and repairs pending tool mes
         },
         invoke: async (_name, _input, active) => {
 
-            invocations++; entered(); await blocked;
+            invocations++;
+            entered();
+            await blocked;
             if (active()) {
                 commits++;
             }
@@ -320,5 +342,8 @@ void test("cancelling during a tool fences its work and repairs pending tool mes
             "two",
         ]);
         assert.equal(requests, 2);
-    } finally { release(); host.dispose(); }
+    } finally {
+        release();
+        host.dispose();
+    }
 });

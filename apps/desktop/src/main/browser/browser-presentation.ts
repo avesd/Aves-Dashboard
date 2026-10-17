@@ -26,7 +26,9 @@ export class BrowserPresentation {
                 if (url !== "about:blank") {
                     parseWebUrl(url);
                 }
-            } catch { return { action: "deny" }; }
+            } catch {
+                return { action: "deny" };
+            }
 
             return {
                 action: "allow",
@@ -61,9 +63,12 @@ export class BrowserPresentation {
             });
             popup.on("closed", () => {
 
-                this.#popup = undefined; this.changed();
+                this.#popup = undefined;
+                this.changed();
             });
-            popup.show(); popup.focus(); this.changed();
+            popup.show();
+            popup.focus();
+            this.changed();
         });
         const reveal = (_event: Electron.Event, url: string, _inPlace?: boolean, mainFrame?: boolean) => {
 
@@ -74,7 +79,9 @@ export class BrowserPresentation {
                 if (parseWebUrl(url).origin !== parseWebUrl(view.webContents.getURL()).origin) {
                     this.show();
                 }
-            } catch { /* Invalid destinations are blocked by the navigation guard. */ }
+            } catch {
+                /* Invalid destinations are blocked by the navigation guard. */
+            }
         };
         view.webContents.on("will-redirect", reveal);
         view.webContents.on("will-navigate", reveal);
@@ -127,13 +134,22 @@ export class BrowserPresentation {
             });
             resize();
         }
-        try { this.#window.setTitle(`Browser · ${parseWebUrl(this.view.webContents.getURL()).origin} · close to return`); } catch { /* Empty browser. */ }
-        this.view.setVisible(true); this.#window.show(); this.#window.focus(); this.view.webContents.focus(); this.changed();
+        try {
+            this.#window.setTitle(`Browser · ${parseWebUrl(this.view.webContents.getURL()).origin} · close to return`);
+        } catch {
+            /* Empty browser. */
+        }
+        this.view.setVisible(true);
+        this.#window.show();
+        this.#window.focus();
+        this.view.webContents.focus();
+        this.changed();
     }
 
     hide(): void {
 
-        this.#popup?.close(); this.#window?.close();
+        this.#popup?.close();
+        this.#window?.close();
     }
 
     dispose(): void {
@@ -142,7 +158,9 @@ export class BrowserPresentation {
         this.#popup?.destroy();
         // Detach the guest before destroying its presentation window.
         if (this.#window) {
-            this.#window.contentView.removeChildView(this.view); this.#window.destroy(); this.#window = undefined;
+            this.#window.contentView.removeChildView(this.view);
+            this.#window.destroy();
+            this.#window = undefined;
         }
     }
 
@@ -150,7 +168,11 @@ export class BrowserPresentation {
 
         const guard = (event: Electron.Event, url: string) => {
 
-            try { parseWebUrl(url); } catch { event.preventDefault(); }
+            try {
+                parseWebUrl(url);
+            } catch {
+                event.preventDefault();
+            }
         };
         contents.on("will-frame-navigate", event => {
 
@@ -162,11 +184,16 @@ export class BrowserPresentation {
         });
         const title = () => {
 
-            try { (contents === this.view.webContents ? this.#window : this.#popup)?.setTitle(`Sign in · ${parseWebUrl(contents.getURL()).origin} · close to return`); } catch { /* Initial blank popup. */ }
+            try {
+                (contents === this.view.webContents ? this.#window : this.#popup)?.setTitle(`Sign in · ${parseWebUrl(contents.getURL()).origin} · close to return`);
+            } catch {
+                /* Initial blank popup. */
+            }
         };
         contents.on("page-title-updated", event => {
 
-            event.preventDefault(); title();
+            event.preventDefault();
+            title();
         });
         contents.on("did-navigate", title);
     }

@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Main_Voice
+ * @description Live Voice
+ */
+
 import type { LiveCommand, LiveEvent } from "../../shared/voice/live";
 import type { AgentSessions } from "../agent/agent-sessions";
 import { LiveAgentBridge } from "./live-agent-bridge";

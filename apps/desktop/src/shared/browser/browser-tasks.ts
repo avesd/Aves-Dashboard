@@ -21,7 +21,9 @@ export const browserTaskRecipeSchema = z.strictObject({
                 parseWebUrl(value);
 
                 return true;
-            } catch { return false; }
+            } catch {
+                return false;
+            }
         }, "Use an HTTPS or loopback HTTP URL without credentials."),
     fields: z.record(z.string().regex(/^[a-zA-Z][a-zA-Z0-9_]{0,63}$/), z.string().min(1)
         .max(512))

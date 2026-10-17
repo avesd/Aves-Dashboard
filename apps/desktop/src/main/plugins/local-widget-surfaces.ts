@@ -93,7 +93,9 @@ export class LocalWidgetSurfaces {
                 view,
                 disposeServices: () => {
 
-                    disposeAgent(); disposeBrowser(); disposeServices();
+                    disposeAgent();
+                    disposeBrowser();
+                    disposeServices();
                 },
             });
             this.window.contentView.addChildView(view);
@@ -104,7 +106,10 @@ export class LocalWidgetSurfaces {
                     return void this.#destroy(id);
                 });
             }
-            catch (error) { this.#destroy(id); throw new Error("Local widget failed to start.", { cause: error }); }
+            catch (error) {
+                this.#destroy(id);
+                throw new Error("Local widget failed to start.", { cause: error });
+            }
             if (!this.#views.has(id)) {
                 throw new Error("Local widget was closed.");
             }
@@ -169,6 +174,9 @@ export class LocalWidgetSurfaces {
 
     dispose(): void {
 
-        this.#closed = true; for (const id of this.#views.keys()) {this.#destroy(id);}
+        this.#closed = true;
+        for (const id of this.#views.keys()) {
+            this.#destroy(id);
+        }
     }
 }

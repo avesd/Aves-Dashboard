@@ -23,7 +23,9 @@ export function resourceDirectoryFile(path: string): ResourceDirectoryStorage {
     return {
         async load() {
 
-            try { return JSON.parse(await readFile(path, "utf8")) as unknown; }
+            try {
+                return JSON.parse(await readFile(path, "utf8")) as unknown;
+            }
             catch (error) {
                 if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
                     return undefined;
@@ -101,7 +103,8 @@ function parseRecords(input: unknown): readonly ResourceRecord[] {
         if (ids.has(id) || keys.has(key) || !Array.isArray(item.grants) || item.grants.length > 256) {
             throw new Error("Invalid resource grants or duplicate resource.");
         }
-        ids.add(id); keys.add(key);
+        ids.add(id);
+        keys.add(key);
         const recipients = new Set<string>();
         const grants = item.grants.map((input: unknown) => {
 
@@ -274,7 +277,9 @@ export class SharedResources {
     }
     grant(workspaceId: string, resourceId: string, pluginId: string, access: ResourceAccess | "none"): Promise<void> {
 
-        identifier(workspaceId); identifier(resourceId); identifier(pluginId);
+        identifier(workspaceId);
+        identifier(resourceId);
+        identifier(pluginId);
         // This persisted-data boundary validates values supplied outside TypeScript.
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (access !== "read" && access !== "read-write" && access !== "none") {
@@ -331,13 +336,18 @@ export class SharedResources {
     }
     async #save(records: readonly ResourceRecord[]): Promise<void> {
 
-        try { await this.directory.save(records); }
-        catch { throw new Error("Resource directory could not be saved."); }
+        try {
+            await this.directory.save(records);
+        }
+        catch {
+            throw new Error("Resource directory could not be saved.");
+        }
         this.changed();
     }
     #serial<T>(work: () => Promise<T>): Promise<T> {
 
-        const pending = this.#queue.then(work); this.#queue = pending.catch(() => {
+        const pending = this.#queue.then(work);
+        this.#queue = pending.catch(() => {
 
             return undefined;
         });

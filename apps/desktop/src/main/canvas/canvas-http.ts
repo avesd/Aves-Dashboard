@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Main_Canvas
+ * @description Canvas Http
+ */
+
 import type { CanvasResult } from "../../shared/canvas/contracts";
 import type { CanvasAccess, CanvasService } from "./canvas-service";
 import type { IncomingMessage, ServerResponse } from "node:http";

@@ -143,11 +143,14 @@ export async function bounded<T>(work: Promise<T>, milliseconds: number, timeout
 
                 timer = setTimeout(() => {
 
-                    timeout(); reject(new Error("Widget operation timed out."));
+                    timeout();
+                    reject(new Error("Widget operation timed out."));
                 }, milliseconds);
             }),
         ]);
-    } finally { clearTimeout(timer); }
+    } finally {
+        clearTimeout(timer);
+    }
 }
 
 export class LocalWidgetRunner {

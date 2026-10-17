@@ -18,7 +18,9 @@ import { join } from "node:path";
 const sqliteProcesses = new Set<ChildProcess>();
 export function closePluginStorageProcesses(): void {
 
-    for (const child of sqliteProcesses) {child.kill("SIGKILL");}
+    for (const child of sqliteProcesses) {
+        child.kill("SIGKILL");
+    }
 }
 process.once("exit", closePluginStorageProcesses);
 
@@ -63,7 +65,9 @@ export class PluginStorage {
                         "-journal",
                         "-wal",
                         "-shm",
-                    ]) {await this.#checkFile(path + suffix);}
+                    ]) {
+                        await this.#checkFile(path + suffix);
+                    }
                     active();
 
                     return await this.#sqlite(path, request, isActive);
@@ -71,7 +75,9 @@ export class PluginStorage {
                 const parts = request.path.split("/").filter(Boolean);
                 let parent = root;
                 const directories = request.operation === "list" ? parts : parts.slice(0, -1);
-                for (const part of directories) {parent = await this.#directory(parent, part, request.operation === "write");}
+                for (const part of directories) {
+                    parent = await this.#directory(parent, part, request.operation === "write");
+                }
                 active();
                 if (request.operation === "list") {
                     const entries = await readdir(parent, { withFileTypes: true });
@@ -136,7 +142,9 @@ export class PluginStorage {
                     active();
 
                     return new Uint8Array(buffer.subarray(0, count));
-                } finally { await file.close(); }
+                } finally {
+                    await file.close();
+                }
             } catch (error) {
 
                 if (!isActive()) {
@@ -168,7 +176,9 @@ export class PluginStorage {
             hash(identity.workspaceId),
             hash(identity.pluginId),
             kind,
-        ]) {root = await this.#directory(root, part, true);}
+        ]) {
+            root = await this.#directory(root, part, true);
+        }
 
         return root;
     }
@@ -235,7 +245,8 @@ export class PluginStorage {
                     return;
                 }
                 settled = true;
-                clearTimeout(timeout); clearInterval(revocation);
+                clearTimeout(timeout);
+                clearInterval(revocation);
                 worker.once("close", () => {
 
                     if (ok && isActive()) {

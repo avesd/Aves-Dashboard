@@ -15,7 +15,9 @@ export function browserBindingFile(path: string): BrowserBindingStorage {
     return {
         async load() {
 
-            try { return JSON.parse(await readFile(path, "utf8")) as unknown; }
+            try {
+                return JSON.parse(await readFile(path, "utf8")) as unknown;
+            }
             catch (error) {
                 if (error instanceof Error && "code" in error && error.code === "ENOENT") {
                     return undefined;

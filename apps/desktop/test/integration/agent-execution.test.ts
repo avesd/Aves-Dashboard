@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Test_Integration
+ * @description Agent Execution.test
+ */
+
 import { openAgentGateway } from "../../src/main/agent/agent-gateway";
 import { CanvasService } from "../../src/main/canvas/canvas-service";
 import type { WorkspaceFile } from "../../src/main/storage/workspace-file";
@@ -26,7 +33,8 @@ void test("relay rejects stale runs and in-flight authorization stays bound to i
     const release = deferred();
     const gateway = await openAgentGateway(async (_name, _input, active) => {
 
-        entered.resolve(); await release.promise;
+        entered.resolve();
+        await release.promise;
 
         return {
             content: [
@@ -61,7 +69,8 @@ void test("relay rejects stale runs and in-flight authorization stays bound to i
     try {
         assert.equal((await invoke()).status, 403);
         assert.equal((await invoke("wrong-run")).status, 403);
-        const pending = invoke("run-one"); await entered.promise;
+        const pending = invoke("run-one");
+        await entered.promise;
         current = "run-two";
         release.resolve();
         const result = await (await pending).json() as {
@@ -74,7 +83,10 @@ void test("relay rejects stale runs and in-flight authorization stays bound to i
         assert.equal((await invoke("run-two")).status, 200);
         current = undefined;
         assert.equal((await invoke("run-two")).status, 403);
-    } finally { release.resolve(); gateway.close(); }
+    } finally {
+        release.resolve();
+        gateway.close();
+    }
 });
 
 void test("HTTP canvas routes reject missing or stale execution IDs", async () => {
@@ -123,7 +135,9 @@ void test("HTTP canvas routes reject missing or stale execution IDs", async () =
         current = "run-two";
         assert.equal((await get("run-one")).status, 401);
         assert.notEqual((await get("run-two")).status, 401);
-    } finally { gateway.close(); }
+    } finally {
+        gateway.close();
+    }
 });
 
 void test("revocation before the storage transaction prevents the canvas mutation", async () => {
@@ -147,7 +161,8 @@ void test("revocation before the storage transaction prevents the canvas mutatio
         },
         async transaction(change) {
 
-            entered.resolve(); await release.promise;
+            entered.resolve();
+            await release.promise;
             const next = change(snapshot, {});
             committed = true;
 
@@ -168,7 +183,8 @@ void test("revocation before the storage transaction prevents the canvas mutatio
         title: "Test canvas",
     });
     await entered.promise;
-    active = false; release.resolve();
+    active = false;
+    release.resolve();
     const result = await pending;
     assert.equal(result.ok, false);
     assert.equal(result.error.code, "UNAUTHENTICATED");

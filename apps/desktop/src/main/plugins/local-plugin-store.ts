@@ -125,7 +125,9 @@ export class LocalPluginStore {
     async list(): Promise<readonly LocalPluginSummary[]> {
 
         let files: string[];
-        try { files = await readdir(join(this.directory, "installed")); }
+        try {
+            files = await readdir(join(this.directory, "installed"));
+        }
         catch (error) {
             if (error instanceof Error && "code" in error && error.code === "ENOENT") {
                 return [];

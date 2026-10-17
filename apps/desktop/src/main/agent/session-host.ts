@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Main_Agent
+ * @description Session Host
+ */
+
 import type { AgentEvent, AgentSettings } from "@avesd/plugin-api";
 
 export interface SessionHost {

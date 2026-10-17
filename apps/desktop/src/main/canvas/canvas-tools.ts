@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Main_Canvas
+ * @description Canvas Tools
+ */
+
 import { capabilitiesSchema, inspectBlocksSchema, renderBlocksSchema } from "../../shared/canvas/blocks";
 import { canvasRequestSchema } from "../../shared/canvas/contracts";
 import type { DesktopView } from "../../shared/canvas/views";

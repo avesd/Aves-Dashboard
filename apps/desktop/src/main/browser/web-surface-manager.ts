@@ -224,14 +224,20 @@ export class WebSurfaceManager {
         const contents = surface.view.webContents;
         await authorize?.();
         switch (command.type) {
-            case "destroy": this.#destroy(command.id); break;
+            case "destroy": this.#destroy(command.id);
+                break;
             case "inspect": break;
-            case "show": surface.presentation.show(); break;
-            case "hide": surface.presentation.hide(); surface.view.setVisible(false); break;
+            case "show": surface.presentation.show();
+                break;
+            case "hide": surface.presentation.hide();
+                surface.view.setVisible(false);
+                break;
             case "clear": surface.state = {
                 ...surface.state,
                 result: null,
-            }; this.changed(); break;
+            };
+                this.changed();
+                break;
             case "bounds": {
                 if (surface.presentation.presented) {
                     break;
@@ -306,7 +312,9 @@ export class WebSurfaceManager {
                                 }, 5000);
                             }),
                         ]);
-                    } finally { clearTimeout(timer); }
+                    } finally {
+                        clearTimeout(timer);
+                    }
                     await authorize?.();
                     if (this.#surfaces.get(command.id) !== surface || surface.state.document !== command.document) {
                         throw new Error("Discarded a result from an old document.");
@@ -413,6 +421,8 @@ export class WebSurfaceManager {
     dispose(): void {
 
         this.#closed = true;
-        for (const id of this.#surfaces.keys()) {this.#destroy(id);}
+        for (const id of this.#surfaces.keys()) {
+            this.#destroy(id);
+        }
     }
 }

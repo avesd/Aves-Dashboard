@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Main_Environment
+ * @description Load Environment
+ */
+
 import { parse } from "dotenv";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -16,7 +23,9 @@ export function loadEnvironment(directory: string, stage: "development" | "produ
         ".env.local",
         `.env.${stage}.local`,
     ]) {
-        try { Object.assign(values, parse(readFileSync(join(directory, filename)))); }
+        try {
+            Object.assign(values, parse(readFileSync(join(directory, filename))));
+        }
         catch (error) {
             if (!(error && typeof error === "object" && "code" in error && error.code === "ENOENT")) {
                 // eslint-disable-next-line preserve-caught-error -- Environment contents must never enter diagnostics.

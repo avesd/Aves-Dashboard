@@ -15,7 +15,11 @@ export const localManifestSchema = z.strictObject({
         origins: z.array(z.string().max(4096)
             .refine(value => {
 
-                try { return parseWebUrl(value).origin === value; } catch { return false; }
+                try {
+                    return parseWebUrl(value).origin === value;
+                } catch {
+                    return false;
+                }
             }, "Use an HTTPS origin or loopback HTTP origin.")).min(1)
             .max(16),
         session: z.strictObject({

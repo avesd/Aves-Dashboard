@@ -41,7 +41,8 @@ export class AgentTaskBridge {
 
         return () => {
 
-            dispose(); contents.off("destroyed", dispose);
+            dispose();
+            contents.off("destroyed", dispose);
         };
     }
     async invoke(widgetId: string, input: unknown, active: () => boolean = () => {
@@ -65,7 +66,8 @@ export class AgentTaskBridge {
                 source: owner.pluginId,
             });
             if (!active()) {
-                await manager.remove(session.id); throw new Error("Widget was closed.");
+                await manager.remove(session.id);
+                throw new Error("Widget was closed.");
             }
             void manager.prompt(task.prompt, session.id).catch(() => {
             });

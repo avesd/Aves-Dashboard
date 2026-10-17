@@ -1,3 +1,10 @@
+/**
+ * @author Avesd
+ * @package Desktop
+ * @namespace Main_Windows
+ * @description Desktop Windows
+ */
+
 import type { CanvasChange } from "../../shared/canvas/contracts";
 import { canvasServiceChannels } from "../../shared/canvas/contracts";
 import type { DesktopView } from "../../shared/canvas/views";
@@ -55,7 +62,8 @@ export class DesktopWindows {
         window.on("close", event => {
 
             if (!this.#quitting) {
-                event.preventDefault(); this.expand(false);
+                event.preventDefault();
+                this.expand(false);
             }
         });
         this.#secure(window);
@@ -87,9 +95,11 @@ export class DesktopWindows {
         this.#position();
         window.webContents.send(desktopViewChannels.changed);
         if (expanded) {
-            window.show(); window.focus();
+            window.show();
+            window.focus();
         } else {
-            window.blur(); window.showInactive();
+            window.blur();
+            window.showInactive();
         }
     }
     async open(canvasId: string): Promise<DesktopView> {
@@ -115,12 +125,14 @@ export class DesktopWindows {
             });
             created.once("closed", () => {
 
-                this.#canvases.delete(canvasId); this.#notify();
+                this.#canvases.delete(canvasId);
+                this.#notify();
             });
             this.#secure(created);
             this.load(created);
         } else {
-            window.show(); window.focus();
+            window.show();
+            window.focus();
         }
         this.#notify();
 
@@ -175,7 +187,8 @@ export class DesktopWindows {
             throw new Error("Window is unavailable.");
         }
         const window = BrowserWindow.fromId(viewId)!;
-        window.show(); window.focus();
+        window.show();
+        window.focus();
     }
     close(viewId: number): void {
 

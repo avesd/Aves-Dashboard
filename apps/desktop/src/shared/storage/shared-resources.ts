@@ -89,12 +89,16 @@ export function parsePublication(input: unknown): ResourcePublication {
             return;
         }
         if (Array.isArray(item)) {
-            for (const child of item) {validate(child, depth + 1);}
+            for (const child of item) {
+                validate(child, depth + 1);
+            }
 
             return;
         }
         if (item && typeof item === "object" && Object.getPrototypeOf(item) === Object.prototype) {
-            for (const child of Object.values(item)) {validate(child, depth + 1);}
+            for (const child of Object.values(item)) {
+                validate(child, depth + 1);
+            }
 
             return;
         }
