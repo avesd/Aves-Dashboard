@@ -27,6 +27,18 @@
     },
     {
       "path": "./packages/desktop-contracts"
+    },
+    {
+      "path": "./packages-ui/theme"
+    },
+    {
+      "path": "./packages-ui/style-utils"
+    },
+    {
+      "path": "./packages-ui/logo"
+    },
+    {
+      "path": "./packages-ui/data"
     }
   ]
 }
