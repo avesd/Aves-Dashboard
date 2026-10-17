@@ -5,9 +5,9 @@
  * @description Workspace Navigation
  */
 
-import { InMemoryWorkspaceRepository } from "./in-memory-workspace-repository";
+import { InMemoryWorkspaceRepository } from "../repository/in-memory-workspace-repository";
+import { parseWorkspaceSnapshot } from "../repository/workspace-snapshot";
 import type { Dashboard, DashboardId, DashboardScope, Workspace, WorkspaceId, WorkspaceSnapshot } from "./workspace-model";
-import { parseWorkspaceSnapshot } from "./workspace-snapshot";
 
 export type WorkspaceNavigationCommand =
   | {

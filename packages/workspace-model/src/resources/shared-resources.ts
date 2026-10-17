@@ -5,8 +5,8 @@
  * @description Shared Resources
  */
 
+import type { JsonObject } from "../workspace/workspace-model";
 import type { PluginDatabase } from "./plugin-storage";
-import type { JsonObject } from "./workspace-model";
 
 export type ResourceAccess = "read" | "read-write";
 export type ResourceKind = "file" | "sqlite";

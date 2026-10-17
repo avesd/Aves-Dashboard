@@ -5,10 +5,17 @@
  * @description Workspace Model exports
  */
 
-export type { CanvasMetadata } from "./canvas-metadata";
-export { readCanvasMetadata, writeCanvasMetadata } from "./canvas-metadata";
-export type { BlockAction, BlockChange, BlockData, BlockQuestion, BlockQuestionOwner, BlockSource, DashboardBlock } from "./dashboard-blocks";
-export { blockActionSchema, blockBindingSchema, blockBoundsSchema, blockChangeSchema, blockDataSchema, blockIdSchema, blockQuestionInputSchema, blockQuestionSchema, blockRevisionSchema, blockSourceSchema, changeDashboardBlocks, dashboardBlockSchema, questionAnswers, readDashboardBlocks, writeDashboardBlocks } from "./dashboard-blocks";
+export type { CanvasMetadata } from "./canvas/canvas-metadata";
+export { readCanvasMetadata, writeCanvasMetadata } from "./canvas/canvas-metadata";
+export type { BlockAction, BlockChange, BlockData, BlockQuestion, BlockQuestionOwner, BlockSource, DashboardBlock } from "./canvas/dashboard-blocks";
+export { blockActionSchema, blockBindingSchema, blockBoundsSchema, blockChangeSchema, blockDataSchema, blockIdSchema, blockQuestionInputSchema, blockQuestionSchema, blockRevisionSchema, blockSourceSchema, changeDashboardBlocks, dashboardBlockSchema, questionAnswers, readDashboardBlocks, writeDashboardBlocks } from "./canvas/dashboard-blocks";
+export { InMemoryWorkspaceRepository } from "./repository/in-memory-workspace-repository";
+export type { WorkspacePersistenceDriver } from "./repository/persistent-workspace-repository";
+export { PersistentWorkspaceRepository } from "./repository/persistent-workspace-repository";
+export { parseWorkspaceSnapshot } from "./repository/workspace-snapshot";
+export type { PluginDatabase, PluginFileEntry, PluginFileService, PluginSqliteService, SqlMutationResult, SqlStatement, SqlValue } from "./resources/plugin-storage";
+export type { PluginResourceService, ResourceAccess, ResourceContract, ResourceIdentity, ResourceKind, ResourcePublication, ResourceQuery, ResourceRecord, SharedFile, SharedResource } from "./resources/shared-resources";
+export { describeResource, resourceAccess } from "./resources/shared-resources";
 export type {
     ApplyDashboardLayout,
     DashboardLayoutErrorCode,
@@ -18,28 +25,22 @@ export type {
     WidgetDefinitionResolver,
     WidgetInputDefinition,
     WidgetSize,
-} from "./dashboard-layout";
+} from "./widgets/dashboard-layout";
 export {
     DASHBOARD_GRID_COLUMNS,
     DashboardLayoutCoordinator,
     DashboardLayoutError,
     findAvailablePlacement,
-} from "./dashboard-layout";
+} from "./widgets/dashboard-layout";
 export type {
     CreateDataSourceCommand,
     DataSourceDefinition,
     DataSourceDefinitionResolver,
     DataSourceService,
-} from "./data-sources";
-export { WorkspaceDataCoordinator } from "./data-sources";
-export { InMemoryWorkspaceRepository } from "./in-memory-workspace-repository";
-export type { WorkspacePersistenceDriver } from "./persistent-workspace-repository";
-export { PersistentWorkspaceRepository } from "./persistent-workspace-repository";
-export type { PluginDatabase, PluginFileEntry, PluginFileService, PluginSqliteService, SqlMutationResult, SqlStatement, SqlValue } from "./plugin-storage";
-export type { PluginResourceService, ResourceAccess, ResourceContract, ResourceIdentity, ResourceKind, ResourcePublication, ResourceQuery, ResourceRecord, SharedFile, SharedResource } from "./shared-resources";
-export { describeResource, resourceAccess } from "./shared-resources";
-export type { DashboardSummary, WidgetCatalogService, WidgetManagementService, WidgetNavigationService, WidgetWorkspaceCapability, WidgetWorkspaceServices, WorkspaceCatalogQuery, WorkspaceCatalogResult, WorkspaceManagementCommand } from "./workspace-catalog";
-export { readWorkspaceCatalog } from "./workspace-catalog";
+} from "./widgets/data-sources";
+export { WorkspaceDataCoordinator } from "./widgets/data-sources";
+export type { DashboardSummary, WidgetCatalogService, WidgetManagementService, WidgetNavigationService, WidgetWorkspaceCapability, WidgetWorkspaceServices, WorkspaceCatalogQuery, WorkspaceCatalogResult, WorkspaceManagementCommand } from "./workspace/workspace-catalog";
+export { readWorkspaceCatalog } from "./workspace/workspace-catalog";
 export type {
     CreateDashboard,
     CreateDataSource,
@@ -65,8 +66,7 @@ export type {
     WorkspaceRepositoryListener,
     WorkspaceScope,
     WorkspaceSnapshot,
-} from "./workspace-model";
-export { WorkspaceModelError } from "./workspace-model-error";
-export type { WorkspaceNavigationCommand, WorkspaceNavigationState } from "./workspace-navigation";
-export { navigateWorkspace, sameDashboard } from "./workspace-navigation";
-export { parseWorkspaceSnapshot } from "./workspace-snapshot";
+} from "./workspace/workspace-model";
+export { WorkspaceModelError } from "./workspace/workspace-model-error";
+export type { WorkspaceNavigationCommand, WorkspaceNavigationState } from "./workspace/workspace-navigation";
+export { navigateWorkspace, sameDashboard } from "./workspace/workspace-navigation";

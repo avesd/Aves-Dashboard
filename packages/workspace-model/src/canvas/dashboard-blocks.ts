@@ -1,6 +1,13 @@
+/**
+ * @author Avesd
+ * @package Workspace Model
+ * @namespace Canvas
+ * @description Dashboard Blocks
+ */
+
 /** Runtime-neutral source, data, and capability contracts for dashboard blocks. */
 
-import type { Dashboard, JsonObject } from "./workspace-model";
+import type { Dashboard, JsonObject } from "../workspace/workspace-model";
 import * as z from "zod";
 
 export const blockIdSchema = z.string().regex(/^[a-zA-Z0-9_-]{1,128}$/);

@@ -99,6 +99,13 @@ The previous automated test suites and synthetic scenarios have been removed.
 `pnpm validate` currently runs lint, type checks, and the production build.
 The first real usage scenario has not been defined yet. Future tests belong in
 each workspace's `test/` directory and must be included in compile and lint checks.
+Feature ownership inside `packages/workspace-model/src/` follows responsibility:
+
+- `workspace/` owns workspace types, catalog queries, navigation, and domain errors.
+- `canvas/` owns canvas metadata and block schemas.
+- `repository/` owns snapshot validation and repository implementations.
+- `widgets/` and `resources/` retain widget/data-source and scoped resource contracts.
+
 Add a feature folder when several related files need a home; avoid generic
 `utils` folders, internal barrel files, or new packages solely to shorten paths.
 

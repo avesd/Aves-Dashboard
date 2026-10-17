@@ -5,7 +5,7 @@
  * @description Dashboard Layout
  */
 
-import type { WidgetWorkspaceCapability } from "./workspace-catalog";
+import type { WidgetWorkspaceCapability } from "../workspace/workspace-catalog";
 import type { DashboardLayoutSnapshot,
     DashboardScope,
     DataSourceId,
@@ -13,7 +13,7 @@ import type { DashboardLayoutSnapshot,
     JsonObject,
     WidgetInstance,
     WidgetInstanceId,
-    WorkspaceRepository } from "./workspace-model";
+    WorkspaceRepository } from "../workspace/workspace-model";
 
 export const DASHBOARD_GRID_COLUMNS = 24;
 

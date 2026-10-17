@@ -1,6 +1,13 @@
+/**
+ * @author Avesd
+ * @package Workspace Model
+ * @namespace Canvas
+ * @description Canvas Metadata
+ */
+
 /** Canvas resource metadata, independent of any component rendering format. */
 
-import type { Dashboard, JsonObject } from "./workspace-model";
+import type { Dashboard, JsonObject } from "../workspace/workspace-model";
 
 export interface CanvasMetadata {
     readonly revision: number;

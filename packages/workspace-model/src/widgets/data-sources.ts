@@ -13,7 +13,7 @@ import type { DashboardScope,
     JsonValue,
     WorkspaceRepository,
     WorkspaceRepositoryListener,
-    WorkspaceScope } from "./workspace-model";
+    WorkspaceScope } from "../workspace/workspace-model";
 
 export interface DataSourceDefinition {
     readonly configuration: JsonObject;

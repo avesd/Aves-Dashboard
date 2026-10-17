@@ -5,8 +5,8 @@
  * @description Workspace Catalog
  */
 
-import type { PluginFileService, PluginSqliteService } from "./plugin-storage";
-import type { PluginResourceService } from "./shared-resources";
+import type { PluginFileService, PluginSqliteService } from "../resources/plugin-storage";
+import type { PluginResourceService } from "../resources/shared-resources";
 import type { Dashboard, DashboardScope, Workspace, WorkspaceId, WorkspaceSnapshot } from "./workspace-model";
 import type { WorkspaceNavigationCommand } from "./workspace-navigation";
 

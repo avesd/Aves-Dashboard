@@ -5,7 +5,6 @@
  * @description Persistent Workspace Repository
  */
 
-import { InMemoryWorkspaceRepository } from "./in-memory-workspace-repository";
 import type { CreateDashboard,
     CreateDataSource,
     CreateWorkspace,
@@ -21,7 +20,8 @@ import type { CreateDashboard,
     WorkspaceRepository,
     WorkspaceRepositoryListener,
     WorkspaceScope,
-    WorkspaceSnapshot } from "./workspace-model";
+    WorkspaceSnapshot } from "../workspace/workspace-model";
+import { InMemoryWorkspaceRepository } from "./in-memory-workspace-repository";
 import { parseWorkspaceSnapshot } from "./workspace-snapshot";
 
 export interface WorkspacePersistenceDriver {

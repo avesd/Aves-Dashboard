@@ -23,8 +23,8 @@ import type { CreateDashboard,
     WorkspaceRepository,
     WorkspaceRepositoryListener,
     WorkspaceScope,
-    WorkspaceSnapshot } from "./workspace-model";
-import { WorkspaceModelError } from "./workspace-model-error";
+    WorkspaceSnapshot } from "../workspace/workspace-model";
+import { WorkspaceModelError } from "../workspace/workspace-model-error";
 
 export class InMemoryWorkspaceRepository implements WorkspaceRepository {
     #selection?: DashboardScope;

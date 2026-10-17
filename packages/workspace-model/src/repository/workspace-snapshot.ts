@@ -5,10 +5,10 @@
  * @description Workspace Snapshot
  */
 
-import { readCanvasMetadata } from "./canvas-metadata";
-import { readDashboardBlocks } from "./dashboard-blocks";
-import { assertDashboardLayout } from "./dashboard-layout";
-import type { WorkspaceSnapshot } from "./workspace-model";
+import { readCanvasMetadata } from "../canvas/canvas-metadata";
+import { readDashboardBlocks } from "../canvas/dashboard-blocks";
+import { assertDashboardLayout } from "../widgets/dashboard-layout";
+import type { WorkspaceSnapshot } from "../workspace/workspace-model";
 
 /** Validate persisted data independently of installed plugins or a concrete driver. */
 export const parseWorkspaceSnapshot = (input: unknown): WorkspaceSnapshot | undefined => {
@@ -43,7 +43,9 @@ export const parseWorkspaceSnapshot = (input: unknown): WorkspaceSnapshot | unde
         }
     };
 
-    for (const workspace of workspaces.values()) {text(workspace.name);}
+    for (const workspace of workspaces.values()) {
+        text(workspace.name);
+    }
     if (snapshot.selection !== undefined) {
         const selection = record(snapshot.selection);
         requireDashboard(selection.workspaceId, selection.dashboardId);
@@ -204,6 +206,8 @@ function assertJson(value: unknown, ancestors: Set<object>): void {
     }
     ancestors.add(value);
     const children = Array.isArray(value) ? value : Object.values(record(value));
-    for (const child of children) {assertJson(child, ancestors);}
+    for (const child of children) {
+        assertJson(child, ancestors);
+    }
     ancestors.delete(value);
 }
