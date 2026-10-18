@@ -9,17 +9,30 @@
   "scripts": {
     "compile": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test": "tsx --tsconfig tsconfig.test.json --import ./test/setup-dom.ts --test 'test/integration/**/*.test.tsx'"
   },
   "dependencies": {
     "react": "catalog:",
-    "@avesd/ui-grid": "workspace:*"
+    "@avesd/ui-grid": "workspace:*",
+    "@avesd/ui-controls": "workspace:*",
+    "@avesd/ui-style-utils": "workspace:*",
+    "class-variance-authority": "catalog:",
+    "lucide-react": "catalog:"
   },
   "devDependencies": {
     "@avesd/configuration": "workspace:*",
     "@types/react": "catalog:",
     "eslint": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@types/jsdom": "catalog:",
+    "jsdom": "catalog:",
+    "tsx": "catalog:",
+    "react-dom": "catalog:",
+    "@types/react-dom": "catalog:"
   },
   "sideEffects": [
     "**/*.css"

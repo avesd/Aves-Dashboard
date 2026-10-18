@@ -1,3 +1,5 @@
+@import "./sidebar/styles.css";
+
 @layer components {
     .avesd-section-heading { border-bottom: 1px solid var(--avesd-border); }
 }

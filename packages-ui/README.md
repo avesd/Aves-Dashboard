@@ -12,7 +12,7 @@ brand mark, local system fonts, desktop window behavior, and free spatial canvas
 | `ui-controls` | Buttons, inputs, Select/Combobox, context/dropdown menus, and detail dialogs |
 | `ui-grid` | Responsive geometry, page frames, regions, rails, and continuous boundaries |
 | `ui-data` | Value/badge/bar presentation and decorative selection geometry |
-| `ui-layout` | Section headings and detail compositions built from foundations |
+| `ui-layout` | Section headings, detail compositions, and grouped sidebar layouts |
 | `ui-logo` | Avesd bird geometry and React SVG rendering |
 | `packages-renderer/*` | Domain state, requests, labels, operations, and desktop-specific composition |
 
@@ -102,3 +102,45 @@ coordinates, handles viewport collisions, keyboard navigation, outside dismissal
 and window blur. Consumers supply `DropdownMenuItem` children and own operation
 callbacks and focus restoration. The canvas no longer implements a separate
 menu keyboard or positioning system.
+
+## Sidebar layouts
+
+`SidebarLayout` owns container geometry, expansion and expanded width. Compose
+`Sidebar`, `SidebarHeader`, `SidebarContent`, `SidebarGroup`, `SidebarItem` or
+`SidebarLink`, `SidebarFooter`, and `SidebarMain`. Add `SidebarToggle` and
+`SidebarResizeHandle` for explicit collapse and resizing. Import layout styles
+once alongside the foundation styles. Give the layout a bounded height so the
+navigation and main content scroll independently while the header/footer remain
+visible. The layout stays inside its parent; it does not use viewport-fixed
+positioning or a compensating spacer.
+
+Use `SidebarHeader`'s `title` for text hidden in icon mode, keeping interactive
+children mounted so collapse does not lose toggle focus. `SidebarFooter` accepts
+optional `collapsedContent` for a compact footer. Groups own their lists; place
+items directly inside them. Items require an icon and text label. Buttons select
+local sections; links preserve native anchor behavior. Active items expose
+`aria-current="page"`. Consumers own selection, routing, labels, data and drafts.
+Keep draft-bearing panels mounted with `hidden` when switching local sections.
+
+The expanded width defaults to 216px, bounded by 192–360px. `defaultWidth`,
+`minWidth` and `maxWidth` customize it. Left and right sidebars use direction-aware
+pointer and keyboard resizing. Arrow keys move 16px, Home/End reach the limits,
+and double-click resets to the default. Escape, pointer cancellation, lost
+capture and window blur restore the width from before a drag. Collapse retains
+the expanded width. Below a 640px container width, navigation uses a 60px icon
+rail; restoring the container restores the user's expansion preference. This is
+a desktop compact layout, not a modal mobile drawer. Motion respects reduced
+motion preferences and is disabled during dragging.
+
+Use `expanded`/`onExpandedChange` and `width`/`onWidthChange` for controlled state;
+omit values for internal state. `onWidthCommit` fires after completed drag,
+keyboard adjustment or reset, not cancellation. The component does not write
+cookies, local storage or desktop preferences, and does not register a global
+keyboard shortcut. Applications own persistence through their authorized APIs.
+The settings window currently retains presentation state only while mounted.
+
+Files under `layout/src/sidebar/` separate layout/context, regions, navigation,
+toggle and resize behavior. `style.ts` owns ordinary semantic presentation;
+`styles.css` owns inherited geometry and scroll behavior. Run
+`pnpm --filter @avesd/ui-layout test` for component contracts and the settings
+sidebar Electron scenario for native pointer geometry and draft retention.

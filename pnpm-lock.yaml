@@ -687,9 +687,21 @@ importers:
 
   packages-ui/layout:
     dependencies:
+      '@avesd/ui-controls':
+        specifier: workspace:*
+        version: link:../controls
       '@avesd/ui-grid':
         specifier: workspace:*
         version: link:../grid
+      '@avesd/ui-style-utils':
+        specifier: workspace:*
+        version: link:../style-utils
+      class-variance-authority:
+        specifier: 'catalog:'
+        version: 0.7.1
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.55.0(@types/react@19.3.0)(react@19.3.0)
       react:
         specifier: 'catalog:'
         version: 19.3.0
@@ -697,12 +709,36 @@ importers:
       '@avesd/configuration':
         specifier: workspace:*
         version: link:../../packages/configuration
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@testing-library/user-event':
+        specifier: 'catalog:'
+        version: 14.6.8(@testing-library/dom@10.4.2)
+      '@types/jsdom':
+        specifier: 'catalog:'
+        version: 30.0.0
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
       '@types/react':
         specifier: 'catalog:'
         version: 19.3.0
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.0)
       eslint:
         specifier: 'catalog:'
         version: 10.12.0(jiti@2.7.0)
+      jsdom:
+        specifier: 'catalog:'
+        version: 30.1.2
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.0(react@19.3.0)
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.15
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

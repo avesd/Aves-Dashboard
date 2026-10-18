@@ -7,10 +7,17 @@
       "ES2023",
       "DOM",
       "DOM.Iterable"
-    ]
+    ],
+    "types": [
+      "node",
+      "react"
+    ],
+    "allowImportingTsExtensions": true
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx"
+    "src/**/*.tsx",
+    "test/**/*.ts",
+    "test/**/*.tsx"
   ]
 }
