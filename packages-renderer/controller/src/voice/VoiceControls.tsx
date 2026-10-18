@@ -37,25 +37,36 @@ export function VoiceControls({ agentId, disabled = false }: {
     useEffect(() => {
 
         mounted.current = true;
-        void api.voice.availability().then(value => {
+        let generation = 0;
+        const refresh = () => {
 
-            if (mounted.current) {
-                setConfigured(value.configured);
-            }
-        })
-            .catch((cause) => {
+            const current = ++generation;
+            void api.voice.availability().then(value => {
 
-                if (mounted.current) {
-                    setError(ipcErrorMessage(cause, "Voice configuration unavailable."));
+                if (mounted.current && current === generation) {
+                    setConfigured(value.configured);
                 }
-            });
+            })
+                .catch(cause => {
+
+                    if (mounted.current && current === generation) {
+                        setError(ipcErrorMessage(cause, "Voice configuration unavailable."));
+                    }
+                });
+        };
+        refresh();
+        const unsubscribe = api.settings.subscribe(refresh);
 
         return () => {
 
+            unsubscribe();
             mounted.current = false;
             connection.current?.dispose();
         };
-    }, [api.voice]);
+    }, [
+        api.voice,
+        api.settings,
+    ]);
     useEffect(() => {
 
         if (connection.current && connection.current.agentId !== agentId) {
@@ -198,7 +209,7 @@ export function VoiceControls({ agentId, disabled = false }: {
         <p
             role="status"
         >
-            {error ?? (configured === false ? "Set OPENAI_API_KEY before launching Avesd to enable voice." : state?.message ?? "AI voice via OpenAI · Tools via DeepSeek.")}
+            {error ?? (configured === false ? "Add an OpenAI API key in Settings → Models & services to enable voice." : state?.message ?? "AI voice via OpenAI · Tools via DeepSeek.")}
         </p>
         {active && <p
             className="voice-hint"

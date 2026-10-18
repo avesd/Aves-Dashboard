@@ -207,8 +207,9 @@ and plugin infrastructure.
 ### Agent API configuration
 
 The desktop Agent calls DeepSeek directly; GPT-Live remains the optional voice
-front end. Copy `env/.env.local.example` to `env/.env.development.local`, fill
-`DEEPSEEK_API_KEY` and (for voice) `OPENAI_API_KEY`, then restart the app.
-Local environment files are ignored. Process variables override file values.
-See [Agent sessions](docs/agent-sessions.md) for production paths, cancellation,
-tool authorization, and validation details.
+front end. Open **Settings → Models & services** to save a DeepSeek key and an
+optional OpenAI key. Keys are encrypted with the operating system's secure
+storage and apply to new requests without restarting. Settings support replacement,
+deletion, and explicit authentication checks. API keys are not read from environment
+variables or `.env` files. See [Agent sessions](docs/agent-sessions.md) for storage,
+connection-test limits, cancellation, tool authorization, and validation details.

@@ -12,8 +12,7 @@ import type { AgentTierRoute, AgentTierRoutes, SettingsApi } from "@avesd/deskto
 import { AGENT_TIERS } from "@avesd/desktop-contracts/settings";
 import type { AgentTier } from "@avesd/plugin-api";
 import { Button } from "@avesd/ui-controls";
-import { FrameSection, Grid, GridItem } from "@avesd/ui-grid";
-import { SectionHeading } from "@avesd/ui-layout";
+import { Grid, GridItem } from "@avesd/ui-grid";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function AgentTierSettings({ api, providersApi }: {
@@ -54,12 +53,14 @@ export function AgentTierSettings({ api, providersApi }: {
         setConflict,
     ] = useState(false);
     const dirty = useRef(false);
+    const loadedRevision = useRef<number | undefined>(undefined);
     const savingRef = useRef(false);
     const reload = useCallback(async () => {
 
         const snapshot = await api.read();
         setRoutes(snapshot.routes);
         setRevision(snapshot.revision);
+        loadedRevision.current = snapshot.revision;
         dirty.current = false;
         setConflict(false);
     }, [api]);
@@ -82,6 +83,9 @@ export function AgentTierSettings({ api, providersApi }: {
                     return;
                 }
                 setProviders(items);
+                if (loadedRevision.current === snapshot.revision) {
+                    return;
+                }
                 if (dirty.current) {
                     setConflict(true);
 
@@ -89,6 +93,7 @@ export function AgentTierSettings({ api, providersApi }: {
                 }
                 setRoutes(snapshot.routes);
                 setRevision(snapshot.revision);
+                loadedRevision.current = snapshot.revision;
             } catch (cause) {
                 if (active) {
                     setMessage(ipcErrorMessage(cause, "Settings could not be loaded."));
@@ -135,16 +140,29 @@ export function AgentTierSettings({ api, providersApi }: {
         });
     }, []);
 
-    return <FrameSection
-        decoration="none"
+    return <section
         aria-label="Agent tiers"
         className="agent-tier-settings"
     >
-        <SectionHeading
-            eyebrow="02 / INTELLIGENCE"
-            title="Agent tiers"
-            description="Choose the models behind your workspace. Changes apply to new conversations."
-        />
+        <header
+            className="settings-section-heading"
+        >
+            <p
+                className="type-eyebrow text-muted"
+            >
+                INTELLIGENCE
+            </p>
+            <h2
+                className="type-title"
+            >
+                Agent tiers
+            </h2>
+            <p
+                className="type-supporting text-muted"
+            >
+                Choose the models behind your workspace. Changes apply to new conversations.
+            </p>
+        </header>
         <p
             className="settings-note"
         >
@@ -170,7 +188,7 @@ export function AgentTierSettings({ api, providersApi }: {
         <Grid
             columns={{
                 base: 1,
-                lg: 3,
+
             }}
             frame="internal"
             fillLastRow
@@ -234,5 +252,5 @@ export function AgentTierSettings({ api, providersApi }: {
                 {message}
             </p>}
         </div>
-    </FrameSection>;
+    </section>;
 }
