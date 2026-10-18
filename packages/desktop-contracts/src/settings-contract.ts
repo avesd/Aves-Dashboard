@@ -77,7 +77,35 @@ export interface SettingsSnapshot {
     readonly revision: number;
     readonly routes: AgentTierRoutes;
 }
+export const API_KEY_PROVIDERS = [
+    "deepseek",
+    "openai",
+] as const;
+export type ApiKeyProvider = typeof API_KEY_PROVIDERS[number];
+export interface ApiKeyStatus {
+    readonly id: ApiKeyProvider;
+    readonly revision: number;
+    readonly source: "saved" | "missing" | "unavailable";
+    readonly hasSavedKey: boolean;
+    readonly message?: string;
+}
+export interface ApiKeySnapshot {
+    readonly secureStorageAvailable: boolean;
+    readonly providers: readonly ApiKeyStatus[];
+}
+export interface ApiKeyTestResult {
+    readonly ok: boolean;
+    readonly message: string;
+}
+export interface ApiKeysApi {
+    read(): Promise<ApiKeySnapshot>;
+    save(id: ApiKeyProvider, key: string, revision: number): Promise<void>;
+    remove(id: ApiKeyProvider, revision: number): Promise<void>;
+    test(id: ApiKeyProvider, revision: number): Promise<ApiKeyTestResult>;
+}
+
 export interface SettingsApi {
+    readonly apiKeys: ApiKeysApi;
     readonly providers: Pick<AgentProvidersApi, "list" | "openSetup">;
     read(): Promise<SettingsSnapshot>;
     configure(routes: AgentTierRoutes, revision: number): Promise<void>;

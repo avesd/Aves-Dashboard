@@ -11,7 +11,7 @@ import type { CanvasDocument, CanvasListing, CanvasReceipt, CanvasRequest } from
 import type { DesktopView, viewRequestSchema } from "./canvas/views";
 import type { IpcResult } from "./ipc-result";
 import type { AgentProvidersApi, SettingsApi } from "./settings-contract";
-import { AGENT_TIERS } from "./settings-contract";
+import { AGENT_TIERS, API_KEY_PROVIDERS } from "./settings-contract";
 import type { liveRequestSchema, LiveVoiceApi } from "./voice/live";
 import * as z from "zod";
 
@@ -102,7 +102,31 @@ export const agentSessionCommandSchema = z.discriminatedUnion("type", [
         id: sessionId,
     }),
 ]);
+const apiKeyRevision = z.number().int()
+    .min(0)
+    .max(Number.MAX_SAFE_INTEGER);
+export const apiKeyValueSchema = z.string().max(4096)
+    .trim()
+    .min(1)
+    .regex(/^[!-~]+$/u);
 export const settingsCommandSchema = z.discriminatedUnion("type", [
+    z.strictObject({ type: z.literal("apiKeys") }),
+    z.strictObject({
+        type: z.literal("saveApiKey"),
+        id: z.enum(API_KEY_PROVIDERS),
+        key: apiKeyValueSchema,
+        revision: apiKeyRevision,
+    }),
+    z.strictObject({
+        type: z.literal("removeApiKey"),
+        id: z.enum(API_KEY_PROVIDERS),
+        revision: apiKeyRevision,
+    }),
+    z.strictObject({
+        type: z.literal("testApiKey"),
+        id: z.enum(API_KEY_PROVIDERS),
+        revision: apiKeyRevision,
+    }),
     z.strictObject({ type: z.literal("read") }),
     z.strictObject({ type: z.literal("providers") }),
     z.strictObject({
@@ -128,6 +152,10 @@ export type SettingsCommand = z.infer<typeof settingsCommandSchema>;
 type ResultOf<T> = T extends (...args: never[]) => infer R ? Awaited<R> : never;
 export type AgentSessionResults = { [K in AgentSessionCommand["type"]]: ResultOf<AgentSessionsApi[K]> };
 export interface SettingsResults {
+    apiKeys: ResultOf<SettingsApi["apiKeys"]["read"]>;
+    saveApiKey: void;
+    removeApiKey: void;
+    testApiKey: ResultOf<SettingsApi["apiKeys"]["test"]>;
     read: ResultOf<SettingsApi["read"]>;
     providers: ResultOf<AgentProvidersApi["list"]>;
     setup: void;
