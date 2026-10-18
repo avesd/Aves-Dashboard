@@ -354,3 +354,52 @@ void test("cancelling during a tool fences its work and repairs pending tool mes
         host.dispose();
     }
 });
+
+void test("existing DeepSeek hosts resolve replacement and deletion before each new request", async () => {
+
+    let key: string | undefined = "synthetic-first-key";
+    const headers: string[] = [];
+    const host = new DeepSeekAgentHost({
+        key: () => {
+
+            return key;
+        },
+        authorize: () => {
+
+            return () => {
+
+                return true;
+            };
+        },
+        invoke: async () => {
+
+            throw new Error("No tools expected.");
+        },
+        request: async (_url, init) => {
+
+            headers.push(new Headers(init?.headers).get("Authorization") ?? "");
+
+            return new Response(JSON.stringify({
+                choices: [
+                    {
+                        finish_reason: "stop",
+                        message: { content: "OK" },
+                    },
+                ],
+            }));
+        },
+    });
+    try {
+        await host.prompt("First", "first");
+        key = "synthetic-replaced-key";
+        await host.prompt("Next", "next");
+        key = undefined;
+        await assert.rejects(host.prompt("Deleted", "deleted"), /not configured/);
+        assert.deepEqual(headers, [
+            "Bearer synthetic-first-key",
+            "Bearer synthetic-replaced-key",
+        ]);
+    } finally {
+        host.dispose();
+    }
+});

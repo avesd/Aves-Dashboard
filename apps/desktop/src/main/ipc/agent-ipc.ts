@@ -12,6 +12,7 @@ import type { AgentPreferences } from "../agent/agent-preferences";
 import type { AgentTaskBridge } from "../agent/agent-task-bridge";
 import { deepSeekProviders, probeDeepSeek, requireDeepSeek } from "../agent/deepseek-provider";
 import type { AgentSessions } from "../agent/sessions/agent-sessions";
+import type { ApiKeyService } from "../credentials/api-key-service";
 import { dispatchCommand } from "./dispatch-command";
 import { handleWindow } from "./ipc-result";
 import type { AgentSessionCommand, AgentSessionResults, CommandHandlers } from "@avesd/desktop-contracts/ipc-commands";
@@ -20,6 +21,7 @@ import { IpcErrorCode, OperationError } from "@avesd/desktop-contracts/ipc-resul
 import type { IpcMain, IpcMainInvokeEvent } from "electron";
 
 interface AgentServices {
+    readonly apiKeys: ApiKeyService | undefined;
     readonly authorizeController: (event: IpcMainInvokeEvent) => void;
     readonly getAgentSessions: () => AgentSessions;
     readonly agentPreferences: AgentPreferences;
@@ -35,7 +37,10 @@ export function registerAgentIpc(ipc: Pick<IpcMain, "handle">, getServices: () =
 
         authorizeController(event);
 
-        return deepSeekProviders();
+        return deepSeekProviders(() => {
+
+            return getServices().apiKeys?.key("deepseek");
+        });
     });
 
     ipc.handle(agentProvidersChannels.configure, (event) => {
@@ -97,7 +102,10 @@ export function registerAgentIpc(ipc: Pick<IpcMain, "handle">, getServices: () =
 
                 requireDeepSeek(request.route.providerId);
 
-                return probeDeepSeek(request.route, request.test);
+                return probeDeepSeek(request.route, request.test, () => {
+
+                    return getServices().apiKeys?.key("deepseek");
+                });
             },
             read: request => {
 

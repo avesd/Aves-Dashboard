@@ -13,17 +13,38 @@ external changes require reloading a dirty draft before saving. Existing Agent
 sessions retain their pinned configuration.
 
 
-Copy `env/.env.local.example` to `env/.env.development.local` and set
-`DEEPSEEK_API_KEY` for tasks and `OPENAI_API_KEY` for optional voice.
-Never commit actual keys. Development defaults live in `env/.env.development`;
-production defaults live in `env/.env.production`. Local files are ignored.
+Use **Settings → Models & services** to save, replace, delete and test DeepSeek
+and OpenAI keys. API keys have one source: local secure settings. Environment
+variables and `.env` files are never used for credentials. The password field is
+write-only; saved keys are never returned to the renderer. The transient field is
+cleared on submission or cancellation. Keys never enter messages, tools or logs.
 
-The main process uses dotenv to load stage defaults, then `.env.local`, then
-`.env.<stage>.local`. Existing process variables take precedence, including empty
-values. Only DEEPSEEK_API_KEY, DEEPSEEK_MODEL and OPENAI_API_KEY are imported.
-Restart after changes. Packaged apps read from `<userData>/env`; AVESD_ENV_DIR
-can explicitly select a configuration directory. Credentials never enter preload,
-renderer settings, model messages, tools, or logs.
+The main process encrypts each key through Electron safeStorage and atomically
+replaces an owner-only ciphertext file under `<userData>/credentials-v1`. macOS
+uses Keychain-backed encryption, Windows uses DPAPI, and Linux requires an
+available supported secret store. Plaintext fallback is rejected. If secure
+storage is unavailable, saving fails without replacing an existing key. Corrupt
+or locked keys are reported safely and can be replaced or deleted. See the
+[Electron safeStorage contract](https://www.electronjs.org/docs/latest/api/safe-storage/).
+
+Only the settings window main frame can manage keys. Revisions reject stale
+writes and stale test results. Tests send a request to the provider's models
+endpoint with a timeout and no redirects; provider response bodies are not
+exposed. This checks authentication and connectivity, not generation, billing,
+model permissions or GPT-Live access. See the [OpenAI models endpoint](https://developers.openai.com/api/reference/resources/models/methods/list)
+and [DeepSeek models endpoint](https://api-docs.deepseek.com/api/list-models/).
+
+Every new Agent HTTP request and voice connection resolves the current saved key.
+Deletion prevents later requests; an already authenticated voice connection
+continues until disconnected. Existing in-flight HTTP requests may finish. Saving
+does not automatically test a key or interrupt running work. Provider and voice
+availability refresh across windows without restarting.
+
+Non-secret model defaults still support `DEEPSEEK_MODEL` through the local
+stage environment files. The loader reads stage defaults, `.env.local`, then
+`.env.<stage>.local`; process values take precedence. Packaged apps use
+`<userData>/env`; `AVESD_ENV_DIR` selects an alternate directory. These defaults
+require restart; per-tier model selections are managed in Settings.
 
 DEEPSEEK_MODEL defaults to deepseek-flash. The initial runtime explicitly disables
 thinking and uses bounded non-streaming requests. See the
@@ -91,10 +112,9 @@ These checks do not prove access to the paid DeepSeek or GPT-Live services.
 ## GPT-Live voice entry point
 
 The controller's **Start voice** button connects `gpt-live-1` using WebRTC and
-`delegation: { type: "client" }`. Set `OPENAI_API_KEY` in the desktop process
-environment before launching Avesd. The project must have GPT-Live access and
+`delegation: { type: "client" }`. Save an OpenAI key in Settings. The project must have GPT-Live access and
 billing enabled. The optional voice connection does not affect offline canvas
-or text Agent functionality. No API key reaches the renderer.
+or text Agent functionality. Saved API keys are not returned to the controller renderer.
 
 The main process exchanges the renderer's SDP offer at
 `POST https://api.openai.com/v1/live/sessions`. Audio travels on WebRTC tracks;

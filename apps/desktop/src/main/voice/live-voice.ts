@@ -26,15 +26,16 @@ export class LiveVoice {
         bridge: LiveAgentBridge;
         ready: boolean;
     };
-    constructor(private readonly sessions: AgentSessions, private readonly send: (id: string, command: LiveCommand) => void, private readonly key = () => {
-
-        return process.env.OPENAI_API_KEY;
-    }, private readonly request: typeof fetch = fetch) {}
+    constructor(private readonly sessions: AgentSessions, private readonly send: (id: string, command: LiveCommand) => void, private readonly key: () => string | undefined, private readonly request: typeof fetch = fetch) {}
     availability(): {
         configured: boolean;
     } {
 
-        return { configured: !!this.key()?.trim() };
+        try {
+            return { configured: !!this.key()?.trim() };
+        } catch {
+            return { configured: false };
+        }
     }
     async start(id: string, agentId: string, sdp: string): Promise<{
         sdp: string;
@@ -45,7 +46,7 @@ export class LiveVoice {
         }
         const key = this.key();
         if (!key?.trim()) {
-            throw new OperationError(IpcErrorCode.ServiceNotReady, "Set OPENAI_API_KEY in the Avesd process environment, then restart Avesd.");
+            throw new OperationError(IpcErrorCode.ServiceNotReady, "Add an OpenAI API key in Settings → Models & services.");
         }
         const agent = this.sessions.read(agentId);
         if (agent.kind !== "interactive" || agent.status === "stopped") {

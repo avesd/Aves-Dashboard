@@ -9,11 +9,7 @@ import { parse } from "dotenv";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const keys = [
-    "DEEPSEEK_API_KEY",
-    "DEEPSEEK_MODEL",
-    "OPENAI_API_KEY",
-] as const;
+const keys = ["DEEPSEEK_MODEL"] as const;
 /** Load only server-owned settings. Never pass secrets to Vite or renderer definitions. */
 export function loadEnvironment(directory: string, stage: "development" | "production", target: NodeJS.ProcessEnv = process.env): void {
 

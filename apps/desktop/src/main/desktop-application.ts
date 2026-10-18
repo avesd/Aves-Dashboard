@@ -25,6 +25,9 @@ import { WebSurfaceManager } from "./browser/web-surface-manager";
 import { DashboardBlockRuntime } from "./canvas/blocks/block-runtime";
 import { CanvasService } from "./canvas/canvas-service";
 import { canvasToolDefinitions, invokeCanvasTool } from "./canvas/canvas-tools";
+import { ApiKeyService } from "./credentials/api-key-service";
+import { credentialFiles } from "./credentials/credential-file";
+import { systemCredentialCipher } from "./credentials/system-credential-cipher";
 import { registerAgentIpc } from "./ipc/agent-ipc";
 import { registerBrowserIpc } from "./ipc/browser-ipc";
 import { registerCanvasIpc } from "./ipc/canvas-ipc";
@@ -64,6 +67,7 @@ export function startDesktop() {
     let agentPreferences = new AgentPreferences();
     let agentHost: AgentSessions | undefined;
     let voice: LiveVoice | undefined;
+    let apiKeys: ApiKeyService | undefined;
     let settingsWindow: SettingsWindow | undefined;
     let mainWindow: BrowserWindow | undefined;
     protocol.registerSchemesAsPrivileged([
@@ -197,6 +201,7 @@ export function startDesktop() {
     registerSettingsIpc(ipcMain, () => {
 
         return {
+            apiKeys,
             authorizeController,
             settingsWindow,
             agentPreferences,
@@ -209,6 +214,7 @@ export function startDesktop() {
     registerAgentIpc(ipcMain, () => {
 
         return {
+            apiKeys,
             authorizeController,
             getAgentSessions,
             agentPreferences,
@@ -263,6 +269,13 @@ export function startDesktop() {
         }
         workbenchPreferences = await WorkbenchPreferences.open(join(storagePaths.dataDirectory, "workbench-preferences.json"));
         agentPreferences = await AgentPreferences.open(join(storagePaths.dataDirectory, "agent-preferences.json"));
+        apiKeys = new ApiKeyService(credentialFiles(join(app.getPath("userData"), "credentials-v1")), systemCredentialCipher, () => {
+
+            settingsWindow?.changed();
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send(settingsChannels.changed);
+            }
+        });
         agentPreferences.subscribe(() => {
 
             settingsWindow?.changed();
@@ -465,6 +478,10 @@ export function startDesktop() {
             requireDeepSeek(route.providerId);
             const interactive = origin.kind === "interactive" && !origin.widgetId;
             const host = new DeepSeekAgentHost({
+                key: () => {
+
+                    return apiKeys?.key("deepseek");
+                },
                 tools: interactive ? canvasToolDefinitions : {},
                 authorize: executionId => {
 
@@ -503,6 +520,9 @@ export function startDesktop() {
                     command,
                 });
             }
+        }, () => {
+
+            return apiKeys?.key("openai");
         });
         agentHost.subscribe(event => {
 

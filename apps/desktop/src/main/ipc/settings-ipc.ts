@@ -7,6 +7,7 @@
 
 import type { AgentPreferences } from "../agent/agent-preferences";
 import { deepSeekProviders, probeDeepSeek, requireDeepSeek } from "../agent/deepseek-provider";
+import type { ApiKeyService } from "../credentials/api-key-service";
 import type { SettingsWindow } from "../windows/settings-window";
 import { dispatchCommand } from "./dispatch-command";
 import { handleWindow } from "./ipc-result";
@@ -17,6 +18,7 @@ import { settingsChannels } from "@avesd/desktop-contracts/settings";
 import type { IpcMain, IpcMainInvokeEvent } from "electron";
 
 interface SettingsServices {
+    readonly apiKeys: ApiKeyService | undefined;
     readonly authorizeController: (event: IpcMainInvokeEvent) => void;
     readonly settingsWindow: SettingsWindow | undefined;
     readonly agentPreferences: AgentPreferences;
@@ -38,14 +40,42 @@ export function registerSettingsIpc(ipc: Pick<IpcMain, "handle">, getServices: (
 
     handleWindow(ipc, settingsChannels.command, async (event, input: unknown) => {
 
-        const { settingsWindow, agentPreferences, openExternal } = getServices();
+        const { settingsWindow, agentPreferences, openExternal, apiKeys } = getServices();
 
         if (!settingsWindow) {
             throw new OperationError(IpcErrorCode.ServiceNotReady, "Settings are not ready.");
         }
         settingsWindow.authorize(event);
         const request = settingsCommandSchema.parse(input);
+        const credentials = () => {
+
+            if (!apiKeys) {
+                throw new OperationError(IpcErrorCode.ServiceNotReady, "API key settings are not ready.");
+            }
+
+            return apiKeys;
+        };
+        const authorize = () => {
+
+            settingsWindow.authorize(event);
+        };
         const handlers: CommandHandlers<SettingsCommand, SettingsResults> = {
+            apiKeys: () => {
+
+                return credentials().snapshot();
+            },
+            saveApiKey: request => {
+
+                return void credentials().save(request.id, request.key, request.revision, authorize);
+            },
+            removeApiKey: request => {
+
+                return void credentials().remove(request.id, request.revision, authorize);
+            },
+            testApiKey: request => {
+
+                return credentials().test(request.id, request.revision, authorize);
+            },
             read: () => {
 
                 return {
@@ -55,7 +85,10 @@ export function registerSettingsIpc(ipc: Pick<IpcMain, "handle">, getServices: (
             },
             providers: () => {
 
-                return deepSeekProviders();
+                return deepSeekProviders(() => {
+
+                    return getServices().apiKeys?.key("deepseek");
+                });
             },
             setup: request => {
 
@@ -67,7 +100,10 @@ export function registerSettingsIpc(ipc: Pick<IpcMain, "handle">, getServices: (
 
                 requireDeepSeek(request.route.providerId);
 
-                return probeDeepSeek(request.route, request.test);
+                return probeDeepSeek(request.route, request.test, () => {
+
+                    return getServices().apiKeys?.key("deepseek");
+                });
             },
             configure: request => {
 

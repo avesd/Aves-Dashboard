@@ -22,6 +22,37 @@ import { contextBridge, ipcRenderer } from "electron";
 const invoke: WindowWireInvoke = ipcRenderer.invoke.bind(ipcRenderer);
 
 const api: WireApi<SettingsApi> = {
+    apiKeys: {
+        read: () => {
+
+            return invoke(settingsChannels.command, { type: "apiKeys" });
+        },
+        save: (id, key, revision) => {
+
+            return invoke(settingsChannels.command, {
+                type: "saveApiKey",
+                id,
+                key,
+                revision,
+            });
+        },
+        remove: (id, revision) => {
+
+            return invoke(settingsChannels.command, {
+                type: "removeApiKey",
+                id,
+                revision,
+            });
+        },
+        test: (id, revision) => {
+
+            return invoke(settingsChannels.command, {
+                type: "testApiKey",
+                id,
+                revision,
+            });
+        },
+    },
     providers: {
         list: () => {
 

@@ -16,9 +16,14 @@ export function requireDeepSeek(id: unknown): void {
         throw new OperationError(IpcErrorCode.InvalidArgument, "Only the direct DeepSeek provider is enabled.");
     }
 }
-export function deepSeekProviders(): readonly AgentProviderInstallation[] {
+export function deepSeekProviders(key: () => string | undefined): readonly AgentProviderInstallation[] {
 
-    const configured = !!process.env.DEEPSEEK_API_KEY?.trim();
+    let configured: boolean;
+    try {
+        configured = !!key()?.trim();
+    } catch {
+        configured = false;
+    }
 
     return [
         {
@@ -31,11 +36,11 @@ export function deepSeekProviders(): readonly AgentProviderInstallation[] {
             bundledAvailable: false,
             loginCommand: "",
             setupUrl: "https://api-docs.deepseek.com/",
-            message: configured ? "API key configured. Use Check access to verify a request." : "Set DEEPSEEK_API_KEY in env/.env.development.local and restart Avesd.",
+            message: configured ? "API key configured. Use Check access to verify a request." : "Add or unlock the DeepSeek API key in Settings → Models & services.",
         },
     ];
 }
-export async function probeDeepSeek(route: AgentTierRoute, test: boolean): Promise<AgentRouteProbeResult> {
+export async function probeDeepSeek(route: AgentTierRoute, test: boolean, key: () => string | undefined): Promise<AgentRouteProbeResult> {
 
     requireDeepSeek(route.providerId);
     const model = route.modelId || defaultDeepSeekModel();
@@ -48,6 +53,7 @@ export async function probeDeepSeek(route: AgentTierRoute, test: boolean): Promi
     if (test) {
         const host = new DeepSeekAgentHost({
             model,
+            key,
             authorize: () => {
 
                 return () => {

@@ -46,7 +46,7 @@ export interface DeepSeekTool {
 }
 export interface DeepSeekOptions {
     readonly model?: string;
-    readonly key?: () => string | undefined;
+    readonly key: () => string | undefined;
     readonly request?: typeof fetch;
     readonly tools?: Readonly<Record<string, DeepSeekTool>>;
     readonly authorize: (executionId: string) => () => boolean;
@@ -72,10 +72,7 @@ export class DeepSeekAgentHost implements SessionHost {
     }
     #key(): string | undefined {
 
-        return (this.options.key ?? (() => {
-
-            return process.env.DEEPSEEK_API_KEY;
-        }))()?.trim();
+        return this.options.key()?.trim();
     }
     async connect(): Promise<void> {
 
@@ -86,7 +83,7 @@ export class DeepSeekAgentHost implements SessionHost {
             this.#emit({
                 type: "status",
                 status: "error",
-                message: "Configure DEEPSEEK_API_KEY in the local environment file and restart Avesd.",
+                message: "Add a DeepSeek API key in Settings → Models & services.",
             });
             throw new OperationError(IpcErrorCode.ServiceNotReady, "DeepSeek API key is not configured.");
         }
@@ -116,7 +113,7 @@ export class DeepSeekAgentHost implements SessionHost {
                     id: "deepseek",
                     name: "DeepSeek",
                     available: !!this.#key(),
-                    unavailableReason: this.#key() ? undefined : "Set DEEPSEEK_API_KEY and restart Avesd.",
+                    unavailableReason: this.#key() ? undefined : "Add a DeepSeek API key in Settings.",
                 },
             ],
         };
@@ -200,10 +197,14 @@ export class DeepSeekAgentHost implements SessionHost {
                     },
                     ...this.#history,
                 ];
+                const key = this.#key();
+                if (!key) {
+                    throw new OperationError(IpcErrorCode.ServiceNotReady, "Add a DeepSeek API key in Settings.");
+                }
                 const response = await (this.options.request ?? fetch)("https://api.deepseek.com/chat/completions", {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${this.#key()}`,
+                        Authorization: `Bearer ${key}`,
                         "Content-Type": "application/json",
                     },
                     signal: AbortSignal.any([

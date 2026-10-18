@@ -555,3 +555,100 @@ void test("recorded block action failures become typed IPC failures", async () =
         code: IpcErrorCode.PermissionDenied,
     });
 });
+
+void test("API key IPC authorizes before parsing, bounds secrets, and exposes no read-key command", async () => {
+
+    const { ipc, invoke } = registry();
+    let allowed = true;
+    let writes = 0;
+    registerSettingsIpc(ipc, () => {
+
+        return {
+            settingsWindow: {
+                authorize: () => {
+
+                    if (!allowed) {
+                        throw new OperationError(IpcErrorCode.PermissionDenied, "Untrusted sender");
+                    }
+                },
+            },
+            apiKeys: {
+                save: (id: string, key: string, revision: number, authorize: () => void) => {
+
+                    authorize();
+                    assert.equal(id, "openai");
+                    assert.equal(key, "synthetic-key");
+                    assert.equal(revision, 0);
+                    writes += 1;
+                },
+                snapshot: () => {
+
+                    return {
+                        secureStorageAvailable: true,
+                        providers: [
+                            {
+                                id: "openai",
+                                revision: 1,
+                                source: "saved",
+                                hasSavedKey: true,
+                            },
+                        ],
+                    };
+                },
+            },
+        } as unknown as ReturnType<Parameters<typeof registerSettingsIpc>[1]>;
+    });
+    await invoke(settingsChannels.command, {
+        type: "saveApiKey",
+        id: "openai",
+        key: "  synthetic-key  ",
+        revision: 0,
+    });
+    assert.equal(writes, 1);
+    assert.equal(JSON.stringify(await invoke(settingsChannels.command, { type: "apiKeys" })).includes("synthetic-key"), false);
+    for (const request of [
+        {
+            type: "saveApiKey",
+            id: "unknown",
+            key: "synthetic-key",
+            revision: 0,
+        },
+        {
+            type: "saveApiKey",
+            id: "openai",
+            key: "synthetic\nkey",
+            revision: 0,
+        },
+        {
+            type: "saveApiKey",
+            id: "openai",
+            key: " ",
+            revision: 0,
+        },
+        {
+            type: "saveApiKey",
+            id: "openai",
+            key: "x".repeat(4097),
+            revision: 0,
+        },
+        {
+            type: "readApiKey",
+            id: "openai",
+        },
+    ]) {
+        await assert.rejects(invoke(settingsChannels.command, request), {
+            code: IpcErrorCode.InvalidArgument,
+            message: "Invalid request parameters.",
+        });
+    }
+    assert.equal(writes, 1);
+    allowed = false;
+    for (const type of [
+        "apiKeys",
+        "saveApiKey",
+        "removeApiKey",
+        "testApiKey",
+    ]) {
+        await assert.rejects(invoke(settingsChannels.command, { type }), { code: IpcErrorCode.PermissionDenied });
+    }
+});

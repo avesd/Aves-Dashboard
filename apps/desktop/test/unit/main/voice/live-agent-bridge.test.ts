@@ -401,7 +401,7 @@ void test("missing credentials fail before network access and provider errors do
     });
     try {
         assert.equal(unavailable.availability().configured, false);
-        await assert.rejects(unavailable.start("one", id, "offer"), /OPENAI_API_KEY/);
+        await assert.rejects(unavailable.start("one", id, "offer"), /OpenAI API key/);
         await assert.rejects(denied.start("two", id, "offer"), error => {
 
             assert.ok(error instanceof Error);
@@ -413,6 +413,49 @@ void test("missing credentials fail before network access and provider errors do
     } finally {
         unavailable.stop();
         denied.stop();
+        sessions.dispose();
+    }
+});
+
+void test("voice availability and new connections resolve current credentials without recreating the service", async () => {
+
+    const { sessions, id } = await setup();
+    let key: string | undefined;
+    const headers: string[] = [];
+    const voice = new LiveVoice(sessions, () => {
+    }, () => {
+
+        return key;
+    }, async (_url, init) => {
+
+        headers.push(new Headers(init?.headers).get("Authorization") ?? "");
+
+        return new Response(JSON.stringify({
+            session: { id: "synthetic-live" },
+            transport: {
+                type: "webrtc",
+                sdp: "synthetic-answer",
+            },
+        }));
+    });
+    try {
+        assert.equal(voice.availability().configured, false);
+        key = "synthetic-first-key";
+        assert.equal(voice.availability().configured, true);
+        await voice.start("first", id, "synthetic-offer");
+        voice.stop();
+        key = "synthetic-replaced-key";
+        await voice.start("next", id, "synthetic-offer");
+        voice.stop();
+        key = undefined;
+        assert.equal(voice.availability().configured, false);
+        await assert.rejects(voice.start("deleted", id, "synthetic-offer"), /OpenAI API key/);
+        assert.deepEqual(headers, [
+            "Bearer synthetic-first-key",
+            "Bearer synthetic-replaced-key",
+        ]);
+    } finally {
+        voice.stop();
         sessions.dispose();
     }
 });

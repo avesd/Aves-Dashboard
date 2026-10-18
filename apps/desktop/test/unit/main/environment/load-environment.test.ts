@@ -24,7 +24,6 @@ void test("dotenv loads stage overrides, preserves process values, and ignores u
         assert.deepEqual(env, {
             DEEPSEEK_API_KEY: "process",
             DEEPSEEK_MODEL: "stage",
-            OPENAI_API_KEY: "synthetic",
         });
     } finally {
         rmSync(root, {
