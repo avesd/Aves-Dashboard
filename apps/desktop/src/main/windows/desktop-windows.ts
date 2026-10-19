@@ -29,8 +29,8 @@ export class DesktopWindows {
             return this.#controller;
         }
         const window = new BrowserWindow({
-            width: 204,
-            height: 48,
+            width: 380,
+            height: 240,
             show: false,
             frame: false,
             transparent: true,
@@ -83,8 +83,8 @@ export class DesktopWindows {
             return;
         }
         const area = screen.getDisplayMatching(window.getBounds()).workArea;
-        const width = Math.min(this.#expanded ? 420 : 204, area.width - 24);
-        const height = Math.min(this.#expanded ? 640 : 48, area.height - 24);
+        const width = Math.min(this.#expanded ? 440 : 380, area.width - 24);
+        const height = Math.min(this.#expanded ? 720 : 240, area.height - 24);
         window.setBounds({
             x: area.x + area.width - width - 12,
             y: area.y + area.height - height - 12,

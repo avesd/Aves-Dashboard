@@ -5,10 +5,8 @@
  * @description ChatComposer
  */
 
-import { useControllerApi } from "../controller-context";
-import type { AgentSessionSnapshot } from "@avesd/desktop-contracts/agent/sessions";
 import { Button, Textarea } from "@avesd/ui-controls";
-import { ArrowUp, Square } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import type { RefObject } from "react";
 
 interface Props {
@@ -17,14 +15,10 @@ interface Props {
     readonly setDraft: (draft: string) => void;
     readonly busy: boolean;
     readonly changingAgent: boolean;
-    readonly session: AgentSessionSnapshot | null;
     readonly send: () => Promise<void>;
-    readonly fail: (cause: unknown) => void;
 }
 
-export function ChatComposer({ composer, draft, setDraft, busy, changingAgent, session, send, fail }: Props) {
-
-    const api = useControllerApi();
+export function ChatComposer({ composer, draft, setDraft, busy, changingAgent, send }: Props) {
 
     return <form
         className="controller-composer"
@@ -54,23 +48,7 @@ export function ChatComposer({ composer, draft, setDraft, busy, changingAgent, s
                 }
             }}
         />
-        {busy && !draft.trim() ? <Button
-            layout="icon"
-            variant="primary"
-            size="small"
-            type="button"
-            aria-label="Cancel current turn"
-            onClick={() => {
-
-                if (session) {
-                    void api.agentSessions.cancelTurn(session.id).catch(fail);
-                }
-            }}
-        >
-            <Square
-                size={15}
-            />
-        </Button> : <Button
+        <Button
             layout="icon"
             variant="primary"
             size="small"
@@ -81,6 +59,6 @@ export function ChatComposer({ composer, draft, setDraft, busy, changingAgent, s
             <ArrowUp
                 size={18}
             />
-        </Button>}
+        </Button>
     </form>;
 }

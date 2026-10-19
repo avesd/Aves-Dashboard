@@ -14,21 +14,13 @@ import { AgentRuntimePicker } from "../runtime-picker/AgentRuntimePicker";
 import { SessionsPanel } from "../sessions/SessionsPanel";
 import { useAgentSessions } from "../sessions/useAgentSessions";
 import { VoiceControls } from "../voice/VoiceControls";
+import { controllerTaskLabel } from "./controller-task-label";
 import type { AgentTierRoute } from "@avesd/desktop-contracts/agent/sessions";
 import { ipcErrorMessage } from "@avesd/desktop-contracts/ipc-result";
 import { Button } from "@avesd/ui-controls";
 import { BirdMark } from "@avesd/ui-logo";
-import { ChevronDown, Layers, MessageCircle, Settings2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Keyboard, Layers, MessageCircle, Settings2, Square } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-function controllerStatusLabel(busy: boolean, expanded: boolean): string {
-
-    if (busy) {
-        return "Working…";
-    }
-
-    return expanded ? "Your dashboard agent" : "Ask anything";
-}
 
 export function Controller({ expanded }: {
     readonly expanded: boolean;
@@ -55,6 +47,12 @@ export function Controller({ expanded }: {
         changingAgent,
         setChangingAgent,
     ] = useState(false);
+    const [
+        textVisible,
+        setTextVisible,
+    ] = useState(false);
+    const detailsToggle = useRef<HTMLButtonElement>(null);
+    const textToggle = useRef<HTMLButtonElement>(null);
     const composer = useRef<HTMLTextAreaElement>(null);
     const conversation = useRef<HTMLDivElement>(null);
     const follow = useRef(true);
@@ -65,14 +63,17 @@ export function Controller({ expanded }: {
     const { sessions, session } = useAgentSessions(api, fail);
     const canvases = useCanvases(api, fail);
     const busy = sending || session?.status === "running";
+    const canCancel = session?.kind === "interactive" && session.status !== "stopped"
+        && (session.status === "running" || session.waitingForAnswer || session.queuedPrompts.length > 0);
     useEffect(() => {
 
-        if (expanded && panel === "chat") {
+        if (expanded && panel === "chat" && textVisible) {
             composer.current?.focus();
         }
     }, [
         expanded,
         panel,
+        textVisible,
     ]);
     useEffect(() => {
 
@@ -128,6 +129,32 @@ export function Controller({ expanded }: {
         void api.agentSessions.create("flagship").catch(fail);
     };
 
+    const toggleDetails = () => {
+
+        void api.views.controller(!expanded).then(() => {
+
+            detailsToggle.current?.focus();
+        })
+            .catch(fail);
+    };
+    const toggleText = () => {
+
+        if (expanded && panel === "chat" && textVisible) {
+            setTextVisible(false);
+            textToggle.current?.focus();
+
+            return;
+        }
+        setPanel("chat");
+        setTextVisible(true);
+        if (!expanded) {
+            void api.views.controller(true).catch(fail);
+        } else {
+            composer.current?.focus();
+        }
+    };
+    const showingText = expanded && panel === "chat" && textVisible;
+
     return <main
         className={`controller ${expanded ? "is-expanded" : "is-collapsed"}`}
         aria-label="Avesd controller"
@@ -135,54 +162,125 @@ export function Controller({ expanded }: {
         <header
             className="controller-header"
         >
-            <span
-                className={`controller-status ${busy ? "is-busy" : ""}`}
-                aria-label={busy ? "Agent working" : "Agent idle"}
+            <BirdMark
+                detail="compact"
+                width={22}
+                height={22}
             />
+            <strong>Avesd</strong>
+            <span
+                className="controller-mode"
+            >
+                Voice workspace
+            </span>
             <Button
                 variant="quiet"
                 size="small"
-                className="controller-toggle flex-1 min-w-0 justify-start gap-avesd-8 border-0 rounded-none p-0 bg-transparent"
+                layout="icon"
+                aria-label="Settings"
                 onClick={() => {
 
-                    void api.views.controller(!expanded).catch(fail);
-                }}
-                aria-label={expanded ? "Collapse controller" : "Open controller"}
-            >
-                <BirdMark
-                    detail="compact"
-                    width={20}
-                    height={20}
-                />
-                <strong>Avesd</strong>
-                <span>
-                    {controllerStatusLabel(busy, expanded)}
-                </span>
-            </Button>
-            {expanded && <Button
-                variant="quiet"
-                size="small"
-                className="controller-icon w-[28px] min-h-[28px] border-0 p-0"
-                aria-label="Collapse"
-                onClick={() => {
-
-                    void api.views.controller(false).catch(fail);
+                    void api.settings.open().catch(fail);
                 }}
             >
-                <ChevronDown
+                <Settings2
                     size={16}
                 />
-            </Button>}
+            </Button>
         </header>
-        {expanded && <>
+        <VoiceControls
+            agentId={session?.kind === "interactive" && session.status !== "stopped" ? session.id : undefined}
+            disabled={changingAgent}
+            expanded={expanded}
+        />
+        <div
+            className="controller-task"
+            role="status"
+        >
+            <span
+                className={`controller-status ${busy ? "is-busy" : ""}`}
+            />
+            <span>
+                {controllerTaskLabel(session, sending)}
+            </span>
+            {canCancel && <Button
+                variant="quiet"
+                size="small"
+                onClick={() => {
+
+                    void api.agentSessions.cancelTurn(session.id).catch(fail);
+                }}
+            >
+                <Square
+                    size={13}
+                />
+                Cancel task
+            </Button>}
+        </div>
+        <div
+            className="controller-input-actions"
+        >
+            <Button
+                ref={textToggle}
+                variant="quiet"
+                size="small"
+                aria-expanded={showingText}
+                aria-controls="controller-text-input"
+                onClick={toggleText}
+            >
+                <Keyboard
+                    size={16}
+                />
+                {showingText ? "Hide text input" : "Text input"}
+            </Button>
+            <Button
+                ref={detailsToggle}
+                variant="quiet"
+                size="small"
+                aria-label={expanded ? "Collapse controller" : "Open controller"}
+                aria-expanded={expanded}
+                aria-controls="controller-details"
+                onClick={toggleDetails}
+            >
+                {expanded ? <ChevronDown
+                    size={16}
+                /> : <ChevronUp
+                    size={16}
+                />}
+                {expanded ? "Hide details" : "View details"}
+            </Button>
+        </div>
+        {error && <div
+            className="controller-error"
+            role="alert"
+        >
+            {error}
+            <Button
+                variant="quiet"
+                size="small"
+                aria-label="Dismiss error"
+                onClick={() => {
+
+                    setError(undefined);
+                }}
+            >
+                ×
+            </Button>
+        </div>}
+        <section
+            id="controller-details"
+            className="controller-details"
+            hidden={!expanded}
+            aria-label="Workspace details"
+        >
             <nav
                 className="controller-nav"
                 aria-label="Controller panels"
             >
                 <Button
-                    className="w-full min-w-0 min-h-[44px] rounded-none border-0 border-l border-border first:border-l-0 px-avesd-4 py-avesd-8 text-muted aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
                     variant="quiet"
                     size="small"
+                    className="aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
                     aria-pressed={panel === "chat"}
                     onClick={() => {
 
@@ -192,12 +290,12 @@ export function Controller({ expanded }: {
                     <MessageCircle
                         size={15}
                     />
-                    Chat
+                    Conversation
                 </Button>
                 <Button
-                    className="w-full min-w-0 min-h-[44px] rounded-none border-0 border-l border-border first:border-l-0 px-avesd-4 py-avesd-8 text-muted aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
                     variant="quiet"
                     size="small"
+                    className="aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
                     aria-pressed={panel === "canvases"}
                     onClick={() => {
 
@@ -207,12 +305,12 @@ export function Controller({ expanded }: {
                     <Layers
                         size={15}
                     />
-                    Dashboards
+                    Canvases
                 </Button>
                 <Button
-                    className="w-full min-w-0 min-h-[44px] rounded-none border-0 border-l border-border first:border-l-0 px-avesd-4 py-avesd-8 text-muted aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
                     variant="quiet"
                     size="small"
+                    className="aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
                     aria-pressed={panel === "sessions"}
                     onClick={() => {
 
@@ -221,31 +319,16 @@ export function Controller({ expanded }: {
                 >
                     Sessions
                 </Button>
-                <Button
-                    className="w-full min-w-0 min-h-[44px] rounded-none border-0 border-l border-border first:border-l-0 px-avesd-4 py-avesd-8 text-muted aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
-                    variant="quiet"
-                    size="small"
-                    aria-label="Settings"
-                    onClick={() => {
-
-                        void api.settings.open().catch(fail);
-                    }}
-                >
-                    <Settings2
-                        size={15}
-                    />
-                </Button>
             </nav>
-            {panel === "chat" && <>
+            <div
+                className="controller-chat"
+                hidden={panel !== "chat"}
+            >
                 <ChatTranscript
                     session={session}
                     busy={busy}
                     conversation={conversation}
                     follow={follow}
-                />
-                <VoiceControls
-                    agentId={session?.kind === "interactive" && session.status !== "stopped" ? session.id : undefined}
-                    disabled={changingAgent}
                 />
                 {!!session?.queuedPrompts.length && <p
                     className="controller-activity"
@@ -254,6 +337,19 @@ export function Controller({ expanded }: {
                     {" "}
                     additional request(s) queued
                 </p>}
+                <div
+                    id="controller-text-input"
+                    hidden={!textVisible}
+                >
+                    <ChatComposer
+                        composer={composer}
+                        draft={draft}
+                        setDraft={setDraft}
+                        busy={busy}
+                        changingAgent={changingAgent}
+                        send={send}
+                    />
+                </div>
                 <AgentRuntimePicker
                     api={api.agentSessions}
                     providersApi={api.agentProviders}
@@ -267,17 +363,7 @@ export function Controller({ expanded }: {
                         void api.settings.open().catch(fail);
                     }}
                 />
-                <ChatComposer
-                    composer={composer}
-                    draft={draft}
-                    setDraft={setDraft}
-                    busy={busy}
-                    changingAgent={changingAgent}
-                    session={session}
-                    send={send}
-                    fail={fail}
-                />
-            </>}
+            </div>
             {panel === "canvases" && <CanvasesPanel
                 canvases={canvases}
                 fail={fail}
@@ -290,23 +376,6 @@ export function Controller({ expanded }: {
                     setPanel("chat");
                 }}
             />}
-            {error && <div
-                className="controller-error"
-                role="alert"
-            >
-                {error}
-                <Button
-                    variant="quiet"
-                    size="small"
-                    aria-label="Dismiss error"
-                    onClick={() => {
-
-                        setError(undefined);
-                    }}
-                >
-                    ×
-                </Button>
-            </div>}
-        </>}
+        </section>
     </main>;
 }

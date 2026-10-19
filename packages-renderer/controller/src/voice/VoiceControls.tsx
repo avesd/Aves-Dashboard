@@ -13,8 +13,9 @@ import { Button } from "@avesd/ui-controls";
 import { Mic, MicOff, PhoneOff, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-export function VoiceControls({ agentId, disabled = false }: {
+export function VoiceControls({ agentId, disabled = false, expanded }: {
     readonly agentId?: string;
+    readonly expanded: boolean;
     readonly disabled?: boolean;
 }) {
 
@@ -109,16 +110,33 @@ export function VoiceControls({ agentId, disabled = false }: {
         }
     };
 
+    let statusMessage = "Checking voice availability…";
+    if (configured === true) {
+        statusMessage = "Start a conversation · microphone is off.";
+    } else if (configured === false) {
+        statusMessage = "Set up voice in Settings, or use text input.";
+    }
+    if (state) {
+        statusMessage = state.message;
+        if (state.status === "connected" && state.muted && state.message === "Listening · GPT-Live 1") {
+            statusMessage = "Microphone muted · still connected";
+        }
+    }
+    if (error) {
+        statusMessage = error;
+    }
+
     return <section
         className="voice-controls"
         aria-label="Live voice"
+        data-active={active}
     >
         <div
             className="voice-toolbar"
         >
             {!active ? <Button
-                className="min-h-[32px] px-avesd-8 py-avesd-4 type-caption"
-                variant="quiet"
+                className="voice-start w-full min-h-[40px]"
+                variant="primary"
                 size="small"
                 type="button"
                 disabled={!configured || disabled}
@@ -150,6 +168,11 @@ export function VoiceControls({ agentId, disabled = false }: {
                     /> : <Mic
                         size={14}
                     />}
+                    <span
+                        className="voice-mic-label"
+                    >
+                        {state.muted ? "Mic off" : "Mic on"}
+                    </span>
                 </Button>
                 <Button
                     className="min-h-[32px] px-avesd-8 py-avesd-4 type-caption"
@@ -185,44 +208,26 @@ export function VoiceControls({ agentId, disabled = false }: {
                     />
                     End voice
                 </Button>
-                <Button
-                    className="min-h-[32px] px-avesd-8 py-avesd-4 type-caption"
-                    variant="quiet"
-                    size="small"
-                    type="button"
-                    disabled={state.status !== "connected"}
-                    onClick={() => {
-
-                        const id = connection.current?.id;
-                        if (id) {
-                            void api.voice.cancelTask(id).catch((cause) => {
-
-                                return void setError(ipcErrorMessage(cause, "Could not cancel the task."));
-                            });
-                        }
-                    }}
-                >
-                    Cancel task
-                </Button>
             </>}
         </div>
         <p
+            className="voice-status"
             role="status"
         >
-            {error ?? (configured === false ? "Add an OpenAI API key in Settings → Models & services to enable voice." : state?.message ?? "AI voice via OpenAI · Tools via DeepSeek.")}
+            {statusMessage}
         </p>
-        {active && <p
+        {expanded && active && <p
             className="voice-hint"
         >
             Interrupt speech freely. Task additions wait for the current turn.
         </p>}
-        {active && state.input && <p
+        {expanded && active && state.input && <p
             className="voice-caption"
         >
             <strong>You: </strong>
             {state.input}
         </p>}
-        {active && state.output && <p
+        {expanded && active && state.output && <p
             className="voice-caption"
         >
             <strong>Voice: </strong>

@@ -11,24 +11,28 @@
 @layer components {
     :root[data-surface="controller"], :root[data-surface="controller"] body { background: transparent; }
     :root[data-surface="controller"] body { min-width: 0; overflow: hidden; }
-    .controller { height: 100dvh; width: 100%; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--avesd-border); border-radius: var(--avesd-control-radius); color: var(--avesd-foreground); background: var(--avesd-background); font: var(--avesd-type-ui); }
-    .controller-header { min-height: 46px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding-inline: 12px; }
+    .controller { height: 100dvh; width: 100%; display: flex; flex-direction: column; overflow: auto; border: 1px solid var(--avesd-border); border-radius: var(--avesd-control-radius); color: var(--avesd-foreground); background: var(--avesd-background); font: var(--avesd-type-ui); }
+    .controller-header { min-height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding-inline: 16px; }
+    .controller-header strong { font-size: 14px; letter-spacing: -.025em; }
+    .controller-header > button { margin-left: auto; }
+    .controller-mode { color: var(--avesd-muted); font: var(--avesd-type-caption); }
     .controller-status { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: var(--avesd-accent-background); }
     .controller-status.is-busy { background: var(--avesd-warning-accent-background); }
-    .controller-toggle { flex: 1; min-width: 0; justify-content: flex-start; gap: 8px; padding: 0; text-align: left; border: 0; border-radius: 0; white-space: nowrap; }
-    .controller-toggle strong { font-size: 14px; letter-spacing: -.03em; }
-    .controller-toggle span { color: var(--avesd-muted); font: var(--avesd-type-caption); overflow: hidden; text-overflow: ellipsis; }
-    .controller-icon { width: 28px; min-height: 28px; padding: 0; }
-    .controller-nav { display: grid; grid-template-columns: 1fr 1.2fr 1fr 44px; border-block: 1px solid var(--avesd-border); flex-shrink: 0; }
-    .controller-nav button { min-width: 0; width: 100%; min-height: 44px; padding: 8px 4px; gap: 6px; border: 0; border-radius: 0; font-size: 12px; color: var(--avesd-muted); }
-    .controller-nav button + button { border-left: 1px solid var(--avesd-border); }
-    .controller-nav button[aria-pressed="true"] { background: var(--avesd-brand-tint); color: var(--avesd-accent-background); box-shadow: inset 0 -2px var(--avesd-accent-background); }
+    .controller-task { display: flex; align-items: center; gap: 8px; padding: 6px 16px; min-height: 40px; flex-shrink: 0; background: var(--avesd-surface); color: var(--avesd-muted); font: var(--avesd-type-caption); }
+    .controller.is-collapsed .controller-task { margin-top: auto; }
+    .controller.is-collapsed .controller-input-actions { border-bottom: 0; }
+    .controller-task > span:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .controller-task button { flex-shrink: 0; font: var(--avesd-type-caption); padding: 4px 8px; min-height: 28px; gap: 6px; }
+    .controller-details:not([hidden]), .controller-chat:not([hidden]) { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+    .controller-nav { display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--avesd-border); flex-shrink: 0; }
+    .controller-nav button { flex: 1; min-width: 0; min-height: 32px; padding: 4px 8px; gap: 6px; font-size: 12px; color: var(--avesd-muted); white-space: nowrap; }
+    .controller-nav button[aria-pressed="true"] { background: var(--avesd-brand-tint); color: var(--avesd-accent-background); }
     .controller-conversation, .controller-content { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
     .controller-conversation { padding: 24px; }
     .controller-content { padding: 0; }
     .controller-section-title { min-height: 72px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--avesd-border); }
     .controller-section-title h1 { font: var(--avesd-type-subheading); }
-    .controller-welcome { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; padding-block: 24px; color: var(--avesd-accent-background); }
+    .controller-welcome { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding-block: 16px; color: var(--avesd-accent-background); }
     .controller-welcome h1 { font: var(--avesd-type-title); letter-spacing: -.025em; color: var(--avesd-foreground); max-width: 280px; }
     .controller-welcome p { font: var(--avesd-type-supporting); color: var(--avesd-muted); max-width: 280px; }
     .controller-welcome > span { font: var(--avesd-type-caption); color: var(--avesd-muted); }
@@ -70,14 +74,22 @@
     .controller-runtime-popover footer span { flex: 1; color: var(--avesd-muted); font: var(--avesd-type-caption); }
     .controller-runtime-failure { color: var(--avesd-danger-foreground); font: var(--avesd-type-caption); }
     .controller-runtime-success { color: var(--avesd-accent-background); font: var(--avesd-type-caption); }
-    .voice-controls { flex: none; padding: 8px 12px; border-top: 1px solid var(--avesd-border); font: var(--avesd-type-caption); }
-    .voice-toolbar { display: flex; flex-wrap: wrap; gap: 4px; }
-    .voice-toolbar button { gap: 4px; min-height: 32px; padding: 4px 8px; font-size: 12px; }
+    .controller-input-actions { display: flex; justify-content: space-between; gap: 8px; padding: 6px 12px; flex-shrink: 0; border-bottom: 1px solid var(--avesd-border); }
+    .controller-input-actions button { gap: 8px; font-size: 12px; min-height: 32px; }
+    #controller-text-input { flex-shrink: 0; }
+    .voice-controls { flex: none; padding: 4px 16px 12px; font: var(--avesd-type-caption); }
+    .voice-toolbar { display: flex; flex-wrap: wrap; gap: 6px; }
+    .voice-toolbar button { gap: 6px; min-height: 36px; padding: 6px 10px; font-size: 12px; }
+    .voice-toolbar .voice-start { width: 100%; min-height: 40px; font: var(--avesd-type-supporting); }
     .voice-controls p { margin-top: 8px; overflow-wrap: anywhere; }
+    .voice-status { color: var(--avesd-muted); max-height: 36px; overflow: auto; }
     .voice-hint { color: var(--avesd-muted); }
     .voice-caption { max-height: 34px; overflow: auto; }
+    .controller-error { flex-shrink: 0; max-height: 90px; overflow: auto; }
     @media (max-width: 350px) {
-        .controller-nav button { font-size: 11px; gap: 4px; }
+        .controller-nav button { font-size: 11px; gap: 4px; padding-inline: 4px; }
+        .controller-mode, .voice-mic-label { display: none; }
+        .voice-toolbar button { padding-inline: 6px; }
         .controller-conversation { padding: 16px; }
         .controller-runtime-effort { display: none; }
     }

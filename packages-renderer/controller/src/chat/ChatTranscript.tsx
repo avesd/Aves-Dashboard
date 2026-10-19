@@ -41,9 +41,9 @@ export function ChatTranscript({ session, busy, conversation, follow }: Props) {
             <MessageCircle
                 size={28}
             />
-            <h1>What are we working on?</h1>
-            <p>Ask me to create, find, or organize your dashboards.</p>
-            <span>I’ll find the right dashboard.</span>
+            <h1>Your workspace, in conversation.</h1>
+            <p>Speak to work on your canvas, or open text input for a precise request.</p>
+            <span>Requests, results, and follow-up questions appear here.</span>
         </div>}
         {messages.map(entry => {
 
@@ -92,7 +92,7 @@ export function ChatTranscript({ session, busy, conversation, follow }: Props) {
             className="controller-activity"
             role="status"
         >
-            Working across your dashboards…
+            Working on your canvas…
         </p>}
     </div>;
 }
