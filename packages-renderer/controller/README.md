@@ -1,6 +1,6 @@
 # Controller renderer
 
-Owns the floating controller UI, view bootstrap, transcript, runtime picker,
+Owns the compact voice controller and its expandable work panel, view bootstrap, transcript, runtime picker,
 voice controls and styles. The desktop supplies its HTML shell and injected
 ControllerApi. Native positioning, window lifecycle, credentials, persistence
 and Agent execution remain in the desktop main process.
@@ -28,3 +28,9 @@ Source is grouped into `chat/`, `sessions/`, `canvases/`, `runtime-picker/`, and
 `voice/`. The Controller composes these features. Subscription hooks retain
 request-generation guards and cleanup; the runtime picker owns one draft/probe
 state shared by its fields and dialog.
+
+The compact window keeps voice, task feedback, cancellation, text and detail entry
+points available. Expanding or hiding details and navigating their panels do not
+unmount voice. Selecting a different Agent conversation still ends the old call.
+The main process sizes compact and expanded windows to 380 × 240 and 440 × 720
+logical pixels respectively, bounded by the current display work area.

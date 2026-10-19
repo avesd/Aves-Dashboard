@@ -106,12 +106,13 @@ deletes its contents nor cancels an Agent session. Window geometry, pan, zoom,
 and selection are local view state and are not shared canvas mutations; viewport
 state currently resets when a view reopens.
 
-The controller starts as a 204 by 48 DIP toolbar at the bottom-right edge of the
-current display's work area, with a 12 DIP inset. Expanding opens a 420 by 640 DIP
-conversation panel, clamped to the available display. It stays above ordinary
+The controller starts as a 380 by 240 DIP voice controller at the bottom-right edge of the
+current display's work area, with a 12 DIP inset. Expanding opens a 440 by 720 DIP
+work panel, clamped to the available display. It stays above ordinary
 windows and is configured to appear across macOS workspaces, including fullscreen
-spaces. Startup and collapse use inactive display; explicit expansion focuses
-the composer. Display removal and work-area changes reposition the toolbar.
+spaces. Startup and collapse use inactive display; explicit expansion activates
+the window. Text input explicitly opens and focuses the composer. Hiding details
+or closing the native window returns to compact mode without ending voice. Display removal and work-area changes reposition the toolbar.
 Native fullscreen and multiple-display behavior still needs verification on
 those configurations. Drag-to-edge placement and persisted window positions are
 not implemented.

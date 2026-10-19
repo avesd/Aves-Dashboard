@@ -111,6 +111,15 @@ These checks do not prove access to the paid DeepSeek or GPT-Live services.
 
 ## GPT-Live voice entry point
 
+The controller starts as a compact voice surface with microphone controls, task
+feedback, cancellation, and explicit **Text input** and **View details** actions.
+**View details** expands the conversation, canvas list, and sessions; **Text input**
+opens the conversation composer. Hiding details preserves the draft, transcript,
+and active voice connection. Switching detail panels also leaves voice running.
+**Cancel task** remains available for running work, pending answers, and queued
+requests independently of text input visibility and the voice connection. It does
+not undo completed changes. Settings are accessible in both window sizes.
+
 The controller's **Start voice** button connects `gpt-live-1` using WebRTC and
 `delegation: { type: "client" }`. Save an OpenAI key in Settings. The project must have GPT-Live access and
 billing enabled. The optional voice connection does not affect offline canvas
@@ -122,8 +131,9 @@ the authenticated controller forwards an allowlist of data-channel events over
 IPC. This MVP uses the data channel, not a second sideband connection. The main
 process is the sole delegation executor. Microphone permission is restricted to
 audio capture by the controller's main frame. Start is an explicit user action;
-ending voice, leaving the chat panel, collapsing the controller, or a transport
-failure releases the microphone. Switching Agent conversations ends the old
+ending voice or a transport failure releases the microphone. Hiding details or
+closing the controller window returns it to compact mode without ending voice.
+Quitting the application, reloading, or losing the renderer releases the connection. Switching Agent conversations ends the old
 voice connection rather than retargeting it.
 
 Semantics:
