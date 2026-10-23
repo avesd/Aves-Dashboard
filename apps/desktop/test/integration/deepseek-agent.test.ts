@@ -11,7 +11,9 @@ import { AgentSessions } from "../../src/main/agent/sessions/agent-sessions";
 import type { DashboardBlockRuntime } from "../../src/main/canvas/blocks/block-runtime";
 import { CanvasService } from "../../src/main/canvas/canvas-service";
 import { canvasToolDefinitions, invokeCanvasTool } from "../../src/main/canvas/canvas-tools";
+import { captureIpcResult } from "../../src/main/ipc/ipc-result";
 import type { WorkspaceFile } from "../../src/main/storage/workspace-file";
+import { IpcErrorCode } from "@avesd/desktop-contracts/ipc-result";
 import type { DashboardScope } from "@avesd/workspace-model";
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -51,6 +53,134 @@ const call = () => {
         ],
     });
 };
+
+async function errorSession(request: typeof fetch) {
+
+    const sessions: AgentSessions = new AgentSessions(new AgentPreferences(), async () => {
+
+        return {
+            workspaceId: "synthetic-workspace" as DashboardScope["workspaceId"],
+            dashboardId: "synthetic-canvas" as DashboardScope["dashboardId"],
+            kind: "interactive",
+            source: "test",
+        };
+    }, async (_origin, _route, id) => {
+
+        return {
+            host: new DeepSeekAgentHost({
+                key: () => {
+
+                    return "synthetic-key";
+                },
+                authorize: executionId => {
+
+                    return sessions.authorizeExecution(id, executionId);
+                },
+                request,
+                invoke: async () => {
+
+                    throw new Error("No tools expected.");
+                },
+            }),
+            release() {},
+        };
+    }, () => {
+    });
+    const { id } = await sessions.create();
+
+    return {
+        sessions,
+        id,
+    };
+}
+
+void test("history exhaustion retains its safe code and recovery guidance through session IPC", async () => {
+
+    let requests = 0;
+    const { sessions, id } = await errorSession(async () => {
+
+        requests++;
+
+        return answer();
+    });
+    try {
+        for (let turn = 0; turn < 5; turn++) {
+            await sessions.prompt("x".repeat(32000), id);
+        }
+
+        const exhausted = await captureIpcResult(() => {
+
+            return sessions.prompt("x".repeat(32000), id);
+        });
+        const retried = await captureIpcResult(() => {
+
+            return sessions.prompt("Synthetic short retry", id);
+        });
+
+        const expected = {
+            ok: false,
+            error: {
+                code: IpcErrorCode.Busy,
+                message: "Conversation limit reached. Start a new conversation.",
+            },
+        };
+        assert.deepEqual(exhausted, expected);
+        assert.deepEqual(retried, expected);
+        assert.equal(requests, 5);
+        const lastStatus = sessions.read(id).events.filter(({ event }) => {
+
+            return event.type === "status";
+        }).at(-1)?.event;
+        assert.deepEqual(lastStatus, {
+            type: "status",
+            status: "error",
+            message: expected.error.message,
+        });
+
+        const next = await sessions.create();
+        await sessions.prompt("Synthetic new conversation", next.id);
+
+        assert.equal(requests, 6);
+        assert.equal(sessions.read(next.id).status, "completed");
+    } finally {
+        sessions.dispose();
+    }
+});
+
+void test("unexpected DeepSeek failures remain sanitized and allow a later turn", async () => {
+
+    let fail = true;
+    const { sessions, id } = await errorSession(async () => {
+
+        if (fail) {
+            throw new Error("synthetic-private-provider-detail");
+        }
+
+        return answer();
+    });
+    try {
+        const result = await captureIpcResult(() => {
+
+            return sessions.prompt("Synthetic failure", id);
+        });
+
+        assert.deepEqual(result, {
+            ok: false,
+            error: {
+                code: IpcErrorCode.Internal,
+                message: "Agent task failed. Please try again.",
+            },
+        });
+        assert.equal(JSON.stringify(sessions.read(id).events).includes("synthetic-private-provider-detail"), false);
+
+        fail = false;
+        await sessions.prompt("Synthetic recovery", id);
+
+        assert.equal(sessions.read(id).status, "completed");
+    } finally {
+        sessions.dispose();
+    }
+});
 
 void test("direct DeepSeek loop executes a real canvas tool and returns its result", async () => {
 

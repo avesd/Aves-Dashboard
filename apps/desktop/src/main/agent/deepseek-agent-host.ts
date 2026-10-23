@@ -334,7 +334,7 @@ export class DeepSeekAgentHost implements SessionHost {
                 }
             }
             throw new Error("Agent tool-round limit reached.");
-        } catch {
+        } catch (cause) {
             for (const call of pending) {
                 this.#history.push({
                     role: "tool",
@@ -347,12 +347,16 @@ export class DeepSeekAgentHost implements SessionHost {
                 content: "This turn was interrupted or failed. Do not assume unfinished work completed; inspect existing state before retrying mutations.",
             });
             if (!run.signal.aborted) {
+                const failure = cause instanceof OperationError ? cause : undefined;
                 this.#emit({
                     type: "status",
                     status: "error",
-                    message: "DeepSeek task failed. Check API configuration, quota, or start a new conversation if its limit was reached.",
+                    message: failure?.message ?? "DeepSeek task failed. Check API configuration, quota, or start a new conversation if its limit was reached.",
                 });
-                throw new Error("DeepSeek task failed.");
+                if (failure) {
+                    throw failure;
+                }
+                throw new Error("DeepSeek task failed.", { cause });
             }
         } finally {
             if (this.#run === run) {

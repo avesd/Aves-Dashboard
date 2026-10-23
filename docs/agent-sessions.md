@@ -66,6 +66,9 @@ request timeout, and bounded history/results. There are no automatic request
 retries. Screenshot image payloads are omitted from this text-only MVP; the model
 receives inspection metadata and an explicit omission flag. Saved state is not
 visual verification.
+Reaching the history limit preserves its safe `BUSY` error and asks for a new
+conversation. Retrying the same exhausted conversation does not send another
+provider request. Unexpected failures remain sanitized.
 
 The local AgentSessions layer retains the existing session directory, canvas
 question continuations, widget ownership, concurrency limits, transcripts and
