@@ -120,7 +120,9 @@ optional `collapsedContent` for a compact footer. Groups own their lists; place
 items directly inside them. Items require an icon and text label. Buttons select
 local sections; links preserve native anchor behavior. Active items expose
 `aria-current="page"`. Consumers own selection, routing, labels, data and drafts.
-Keep draft-bearing panels mounted with `hidden` when switching local sections.
+Group labels are optional; omit them for a single obvious group and use
+`aria-label` or `aria-labelledby` when it needs an accessible name. Keep
+draft-bearing panels mounted with `hidden` when switching local sections.
 
 The expanded width defaults to 216px, bounded by 192–360px. `defaultWidth`,
 `minWidth` and `maxWidth` customize it. Left and right sidebars use direction-aware

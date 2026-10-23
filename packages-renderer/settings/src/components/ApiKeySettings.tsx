@@ -73,11 +73,6 @@ export function ApiKeySettings({ api }: {
         <header
             className="settings-section-heading"
         >
-            <p
-                className="type-eyebrow text-muted"
-            >
-                CONNECTIONS
-            </p>
             <div
                 className="settings-section-title"
             >
@@ -103,7 +98,7 @@ export function ApiKeySettings({ api }: {
             <p
                 className="type-supporting text-muted"
             >
-                Connect the services your workspace uses. Saved keys apply to new requests immediately.
+                Saved keys apply to new requests immediately.
             </p>
         </header>
         {loading && <p

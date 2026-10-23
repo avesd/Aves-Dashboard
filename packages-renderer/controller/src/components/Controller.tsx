@@ -192,11 +192,6 @@ export function Controller({ expanded }: {
                 height={22}
             />
             <strong>Avesd</strong>
-            <span
-                className="controller-mode"
-            >
-                Voice workspace
-            </span>
             <Button
                 variant="quiet"
                 size="small"
@@ -350,7 +345,6 @@ export function Controller({ expanded }: {
             >
                 <ChatTranscript
                     session={session}
-                    busy={busy}
                     conversation={conversation}
                     follow={follow}
                 />

@@ -25,7 +25,7 @@ export function CanvasesPanel({ canvases, fail }: Props) {
         <div
             className="controller-section-title"
         >
-            <h1>Your dashboards</h1>
+            <h1>Canvases</h1>
         </div>
         {canvases.map(canvas => {
 
@@ -49,10 +49,6 @@ export function CanvasesPanel({ canvases, fail }: Props) {
                         {canvas.title}
                     </span>
                 </Button>
-                <span>
-                    r
-                    {canvas.revision}
-                </span>
             </div>;
         })}
     </section>;

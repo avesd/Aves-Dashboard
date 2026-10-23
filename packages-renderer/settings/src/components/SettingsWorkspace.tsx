@@ -8,9 +8,9 @@
 import { AgentTierSettings } from "./AgentTierSettings";
 import { ApiKeySettings } from "./ApiKeySettings";
 import type { SettingsApi } from "@avesd/desktop-contracts/settings";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarItem, SidebarLayout, SidebarMain, SidebarResizeHandle, SidebarToggle } from "@avesd/ui-layout";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarItem, SidebarLayout, SidebarMain, SidebarResizeHandle, SidebarToggle } from "@avesd/ui-layout";
 import { BirdMark } from "@avesd/ui-logo";
-import { Bot, KeyRound, LockKeyhole } from "lucide-react";
+import { Bot, KeyRound } from "lucide-react";
 import { useState } from "react";
 
 type SettingsSection = "services" | "tiers";
@@ -40,11 +40,6 @@ export function SettingsWorkspace({ api }: {
                 />
                 <strong>Avesd</strong>
             </div>
-            <span
-                className="type-eyebrow text-muted"
-            >
-                WORKSPACE / PREFERENCES
-            </span>
         </header>
         <SidebarLayout
             className="settings-layout"
@@ -68,7 +63,7 @@ export function SettingsWorkspace({ api }: {
                     aria-label="Settings sections"
                 >
                     <SidebarGroup
-                        label="Intelligence"
+                        aria-label="Intelligence"
                     >
                         <SidebarItem
                             label="Models & services"
@@ -92,18 +87,6 @@ export function SettingsWorkspace({ api }: {
                         />
                     </SidebarGroup>
                 </SidebarContent>
-                <SidebarFooter
-                    collapsedContent={<LockKeyhole
-                        size={16}
-                        aria-label="Local workspace"
-                    />}
-                >
-                    <span
-                        className="settings-local-label"
-                    >
-                        LOCAL FIRST · AVESD
-                    </span>
-                </SidebarFooter>
                 <SidebarResizeHandle
                     label="Resize settings sidebar"
                 />

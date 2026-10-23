@@ -147,11 +147,6 @@ export function AgentTierSettings({ api, providersApi }: {
         <header
             className="settings-section-heading"
         >
-            <p
-                className="type-eyebrow text-muted"
-            >
-                INTELLIGENCE
-            </p>
             <h2
                 className="type-title"
             >
@@ -160,7 +155,7 @@ export function AgentTierSettings({ api, providersApi }: {
             <p
                 className="type-supporting text-muted"
             >
-                Choose the models behind your workspace. Changes apply to new conversations.
+                Changes apply to new conversations.
             </p>
         </header>
         <p

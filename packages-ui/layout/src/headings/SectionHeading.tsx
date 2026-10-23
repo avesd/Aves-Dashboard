@@ -17,15 +17,17 @@ export interface SectionHeadingProps {
 
 export function SectionHeading({ eyebrow, title, description, actions }: SectionHeadingProps) {
 
+    const hasEyebrow = Boolean(eyebrow?.trim());
+
     return <Grid
         columns={{
             base: 1,
-            md: 4,
+            md: hasEyebrow ? 4 : 1,
         }}
         frame="internal"
         className="avesd-section-heading"
     >
-        <GridItem
+        {hasEyebrow && <GridItem
             padding={{
                 base: 16,
                 md: 24,
@@ -36,11 +38,11 @@ export function SectionHeading({ eyebrow, title, description, actions }: Section
             >
                 {eyebrow}
             </p>
-        </GridItem>
+        </GridItem>}
         <GridItem
             span={{
                 base: 1,
-                md: 3,
+                md: hasEyebrow ? 3 : 1,
             }}
             padding={{
                 base: 16,

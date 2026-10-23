@@ -39,10 +39,7 @@ export function RuntimePickerDialog({ picker, applying, session, manage }: Props
         }}
     >
         <header>
-            <div>
-                <strong>Choose your agent</strong>
-                <span>Agent · model · reasoning effort</span>
-            </div>
+            <strong>Choose your agent</strong>
             <Button
                 layout="icon"
                 variant="quiet"

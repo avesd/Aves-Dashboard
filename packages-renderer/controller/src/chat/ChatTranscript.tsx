@@ -14,12 +14,11 @@ import type { RefObject } from "react";
 
 interface Props {
     readonly session: AgentSessionSnapshot | null;
-    readonly busy: boolean;
     readonly conversation: RefObject<HTMLDivElement | null>;
     readonly follow: RefObject<boolean>;
 }
 
-export function ChatTranscript({ session, busy, conversation, follow }: Props) {
+export function ChatTranscript({ session, conversation, follow }: Props) {
 
     const messages = session?.events.reduce<readonly TranscriptEntry[]>((entries, { event, sequence }) => {
 
@@ -41,9 +40,7 @@ export function ChatTranscript({ session, busy, conversation, follow }: Props) {
             <MessageCircle
                 size={28}
             />
-            <h1>Your workspace, in conversation.</h1>
-            <p>Speak to work on your canvas, or open text input for a precise request.</p>
-            <span>Requests, results, and follow-up questions appear here.</span>
+            <h1>What would you like to work on?</h1>
         </div>}
         {messages.map(entry => {
 
@@ -88,11 +85,5 @@ export function ChatTranscript({ session, busy, conversation, follow }: Props) {
                 />
             </article>;
         })}
-        {busy && <p
-            className="controller-activity"
-            role="status"
-        >
-            Working on your canvas…
-        </p>}
     </div>;
 }

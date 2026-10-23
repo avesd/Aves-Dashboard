@@ -53,25 +53,26 @@ export function SidebarFooter({ className, children, collapsedContent, ...props 
 }
 
 export interface SidebarGroupProps extends ComponentPropsWithRef<"div"> {
-    readonly label: string;
+    readonly label?: string;
 }
 
 export function SidebarGroup({ label, children, className, ...props }: SidebarGroupProps) {
 
     const labelId = useId();
+    const hasLabel = Boolean(label?.trim());
 
     return <div
         {...props}
         role="group"
-        aria-labelledby={labelId}
+        aria-labelledby={hasLabel ? labelId : props["aria-labelledby"]}
         className={cn("avesd-sidebar-group", className)}
     >
-        <div
+        {hasLabel && <div
             id={labelId}
             className="avesd-sidebar-group-label"
         >
             {label}
-        </div>
+        </div>}
         <ul
             className="avesd-sidebar-menu"
         >

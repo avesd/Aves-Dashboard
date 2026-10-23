@@ -69,6 +69,61 @@ afterEach(() => {
     cleanup();
 });
 
+void test("optional group labels preserve accessible names and navigation", async () => {
+
+    const user = userEvent.setup();
+    const navigation = <SidebarLink
+        label="Guide"
+        icon={<span>G</span>}
+        href="/guide"
+    />;
+    const view = render(<SidebarLayout>
+        <Sidebar>
+            <SidebarGroup
+                label="Workspace"
+            >
+                {navigation}
+            </SidebarGroup>
+        </Sidebar>
+    </SidebarLayout>);
+    const group = screen.getByRole("group", { name: "Workspace" });
+    equal(group.getAttribute("aria-labelledby"), screen.getByText("Workspace").id);
+
+    view.rerender(<SidebarLayout>
+        <Sidebar>
+            <SidebarGroup
+                aria-label="Workspace"
+            >
+                {navigation}
+            </SidebarGroup>
+        </Sidebar>
+    </SidebarLayout>);
+
+    equal(screen.queryByText("Workspace"), null);
+    equal(screen.getByRole("group", { name: "Workspace" }).hasAttribute("aria-labelledby"), false);
+    await user.tab();
+    equal(document.activeElement, screen.getByRole("link", { name: "Guide" }));
+    equal(screen.getByRole("link", { name: "Guide" }).getAttribute("href"), "/guide");
+
+    view.rerender(<SidebarLayout>
+        <Sidebar>
+            <span
+                id="navigation-title"
+            >
+                Navigation
+            </span>
+            <SidebarGroup
+                label=" "
+                aria-labelledby="navigation-title"
+            >
+                {navigation}
+            </SidebarGroup>
+        </Sidebar>
+    </SidebarLayout>);
+
+    equal(screen.getByRole("group", { name: "Navigation" }).getAttribute("aria-labelledby"), "navigation-title");
+});
+
 void test("collapse retains toggle focus, current navigation and expanded width", async () => {
 
     const user = userEvent.setup();
