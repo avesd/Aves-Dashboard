@@ -40,9 +40,12 @@ export function Controller({ expanded }: {
         setError,
     ] = useState<string>();
     const [
-        sending,
-        setSending,
-    ] = useState(false);
+        pendingRequests,
+        setPendingRequests,
+    ] = useState<readonly {
+        sessionId: string | undefined;
+    }[]>([]);
+    const submissions = useRef(pendingRequests);
     const [
         changingAgent,
         setChangingAgent,
@@ -62,6 +65,11 @@ export function Controller({ expanded }: {
     }, []);
     const { sessions, session } = useAgentSessions(api, fail);
     const canvases = useCanvases(api, fail);
+    const targetId = session?.kind === "interactive" && session.status !== "stopped" ? session.id : undefined;
+    const sending = pendingRequests.some(request => {
+
+        return request.sessionId === targetId;
+    });
     const busy = sending || session?.status === "running";
     const canCancel = session?.kind === "interactive" && session.status !== "stopped"
         && (session.status === "running" || session.waitingForAnswer || session.queuedPrompts.length > 0);
@@ -87,13 +95,25 @@ export function Controller({ expanded }: {
     const send = async () => {
 
         const text = draft.trim();
-        if (!text || changingAgent || (sending && session?.status !== "running")) {
+        const pending = submissions.current.some(request => {
+
+            return request.sessionId === targetId;
+        });
+        if (!text || changingAgent || (pending && session?.status !== "running")) {
             return;
         }
-        setSending(true);
+        const request = { sessionId: targetId };
+        // Keep admission synchronous while React schedules the corresponding render.
+        submissions.current = [
+            ...submissions.current,
+            request,
+        ];
+        setPendingRequests(submissions.current);
         setError(undefined);
         try {
-            const id = session && session.kind === "interactive" && session.status !== "stopped" ? session.id : (await api.agentSessions.create("flagship")).id;
+            const id = targetId ?? (await api.agentSessions.create("flagship")).id;
+            request.sessionId = id;
+            setPendingRequests([...submissions.current]);
             setDraft("");
             follow.current = true;
             if (session?.status === "running" || session?.waitingForAnswer) {
@@ -104,7 +124,11 @@ export function Controller({ expanded }: {
         } catch (cause) {
             fail(cause);
         } finally {
-            setSending(false);
+            submissions.current = submissions.current.filter(pending => {
+
+                return pending !== request;
+            });
+            setPendingRequests(submissions.current);
         }
     };
 

@@ -76,6 +76,10 @@ supplement queue. Sessions remain in memory until exit. Changing models is
 allowed only while idle without a pending canvas question. Local canvases remain
 usable without any account or API connection.
 
+Text submission state belongs to its target conversation. A pending request in
+one conversation does not block another idle conversation; switching selection
+shows the selected conversation's own pending state.
+
 ## Cancellation, supplements and authorization
 
 - Stop speaking affects audio only.
