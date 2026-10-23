@@ -26,6 +26,8 @@ renderer's read also contains source/data block documents; the canvas MCP read
 returns only block summaries. Renaming and source/layout block changes increment
 the canvas revision. Data and saved view-state changes have independent revisions.
 Existing legacy view-state remains stored alongside the new `blocks` array.
+Strictly data-only render batches preserve the canvas revision. Mixed batches
+that also change source, layout, or block metadata increment it once.
 
 
 The controller can access all local canvases. A canvas renderer can access only
@@ -86,6 +88,8 @@ After a revision conflict, reread and reconsider the edit before issuing a new
 command. Canvas and Agent data are not logged by this service.
 
 After successful persistence the service publishes `canvas.created`, `canvas.changed`, or `canvas.renamed` with the canvas ID, revision, and request ID.
+Data-only renders still publish `canvas.changed`, carrying the unchanged canvas
+revision; consumers use the event sequence to invalidate their reads.
 The HTTP stream starts with `reset`; register a subscription before the initial
 read. Events have a process epoch and stream sequence. They invalidate reads,
 not replace them. Reconnect or a sequence gap requires rereading; no durable event

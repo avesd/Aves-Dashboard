@@ -253,7 +253,14 @@ export class CanvasService {
                 if (state.revision !== request.expectedRevision) {
                     throw new CanvasServiceError("REVISION_CONFLICT", "Canvas changed. Read it again before making a new command.", state.revision);
                 }
-                if (!Number.isSafeInteger(state.revision + 1)) {
+                const changesCanvas = request.type !== "render" || request.changes.some(change => {
+
+                    return change.type !== "update" || change.data === undefined
+                        || change.description !== undefined || change.source !== undefined || change.bounds !== undefined
+                        || change.bindings !== undefined || change.actions !== undefined || change.question !== undefined;
+                });
+                const revision = state.revision + (changesCanvas ? 1 : 0);
+                if (!Number.isSafeInteger(revision)) {
                     throw new CanvasServiceError("INVALID_ARGUMENT", "Canvas revision is exhausted.");
                 }
                 if (request.type === "render") {
@@ -284,7 +291,7 @@ export class CanvasService {
                         readDashboardBlocks(next);
                         dashboard = {
                             ...next,
-                            viewState: writeCanvasMetadata(next, { revision: state.revision + 1 }),
+                            viewState: writeCanvasMetadata(next, { revision }),
                         };
                     } catch {
                         throw new CanvasServiceError("INVALID_ARGUMENT", "Invalid block change, binding, or data revision. Inspect the blocks and retry.");
@@ -293,7 +300,7 @@ export class CanvasService {
                     dashboard = {
                         ...dashboard,
                         name: request.title,
-                        viewState: writeCanvasMetadata(dashboard, { revision: state.revision + 1 }),
+                        viewState: writeCanvasMetadata(dashboard, { revision }),
                     };
                 }
             }
