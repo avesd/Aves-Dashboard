@@ -50,6 +50,9 @@ updates increment the source revision and preserve data and saved view state.
 A replacement document loads before becoming visible; a failed update leaves
 the previous display in place, with its older displayed revision identified.
 That older document cannot continue invoking actions after replacement.
+Superseded failed candidates release their host leases before another version
+mounts. A rejected mount can retry the same saved source version on a later
+synchronization.
 
 There are at most 64 blocks per canvas and 50 changes per mutation. Bounds use
 world coordinates with widths from 40–4000 and heights from 30–4000. Source

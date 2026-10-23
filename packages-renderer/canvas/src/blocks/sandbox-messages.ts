@@ -17,7 +17,7 @@ interface MessageContext {
     readonly connected: () => void;
     readonly interact: (event: CanvasSandboxInteraction) => void;
     readonly report: (id: string, status: MountedBlock["status"], failure?: "SCRIPT_ERROR" | "LOAD_TIMEOUT") => void;
-    readonly release: (id: string) => void;
+    readonly release: (id: string) => Promise<void>;
     readonly refresh: () => Promise<void>;
     readonly send: (message: unknown) => void;
 }
@@ -53,12 +53,20 @@ export function createSandboxMessageHandler({ api, isActive, versions, connected
             clearTimeout(version.timeout);
             report(token, data.type === "ready" ? "ready" : "error", data.type === "error" ? "SCRIPT_ERROR" : undefined);
             if (data.type === "ready") {
+                version.displayed = true;
                 for (const [
                     id,
                     older,
-                ] of versions) {
-                    if (id !== token && older.block.id === version.block.id) {
-                        release(id);
+                ] of [...versions]) {
+                    // Mount insertion order keeps a later candidate out of this cleanup.
+                    if (id === token) {
+                        break;
+                    }
+                    if (older.block.id === version.block.id) {
+                        older.displayed = false;
+                        // Retain failed releases so the next synchronization can retry cleanup.
+                        await release(id).catch(() => {
+                        });
                     }
                 }
             }

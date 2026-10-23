@@ -86,6 +86,7 @@ const runtime = String.raw`(() => {
   const create = message => {
     const previous = blocks.get(message.id);
     if(previous?.candidate) dispose(previous.candidate);
+    previous?.errorHost?.remove();
     const host = realDocument.createElement('div');
     host.className = 'block'; host.dataset.blockId = message.id; host.style.visibility = 'hidden';
     world.append(host);

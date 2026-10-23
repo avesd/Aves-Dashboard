@@ -11,6 +11,7 @@ import type { DashboardBlock } from "@avesd/workspace-model";
 export interface MountedBlock {
     readonly block: DashboardBlock;
     readonly mount: BlockMount;
+    displayed: boolean;
     status: "loading" | "ready" | "error";
     timeout?: ReturnType<typeof setTimeout>;
 }

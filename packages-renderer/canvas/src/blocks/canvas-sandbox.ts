@@ -43,18 +43,31 @@ export function createCanvasSandbox({ api, canvasId, frame, view, sandbox, error
     let refreshAgain = false;
     let geometryTimer: ReturnType<typeof setTimeout> | undefined;
     const versions = new Map<string, MountedBlock>();
+    const releases = new Map<string, Promise<void>>();
     const requested = new Map<string, string>();
     const layouts = new Map<string, string>();
-    const release = (id: string) => {
+    const release = (id: string): Promise<void> => {
 
+        const pending = releases.get(id);
+        if (pending) {
+            return pending;
+        }
         const version = versions.get(id);
         clearTimeout(version?.timeout);
-        versions.delete(id);
-        void api.invoke({
+        const operation = api.invoke({
             type: "release",
             leaseId: id,
-        }).catch(() => {
-        });
+        }).then(() => {
+
+            versions.delete(id);
+        })
+            .finally(() => {
+
+                releases.delete(id);
+            });
+        releases.set(id, operation);
+
+        return operation;
     };
     const report = (id: string, status: "loading" | "ready" | "error", failure?: "SCRIPT_ERROR" | "LOAD_TIMEOUT") => {
 
@@ -161,6 +174,19 @@ export function createCanvasSandbox({ api, canvasId, frame, view, sandbox, error
         }
         synchronizing = true;
         try {
+            for (const [
+                token,
+                version,
+            ] of versions) {
+                const current = view().blocks.find(block => {
+
+                    return block.id === version.block.id;
+                });
+                if (!current || (!version.displayed
+                    && (current.generation !== version.block.generation || current.revision !== version.block.revision))) {
+                    await release(token);
+                }
+            }
             for (const [id] of requested) {
                 if (!view().blocks.some(block => {
 
@@ -177,7 +203,7 @@ export function createCanvasSandbox({ api, canvasId, frame, view, sandbox, error
                         version,
                     ] of versions) {
                         if (version.block.id === id) {
-                            release(token);
+                            await release(token);
                         }
                     }
                 }
@@ -197,13 +223,19 @@ export function createCanvasSandbox({ api, canvasId, frame, view, sandbox, error
                     continue;
                 }
                 requested.set(block.id, key);
-                const mount = await api.invoke({
-                    type: "mount",
-                    canvasId,
-                    blockId: block.id,
-                    generation: block.generation,
-                    revision: block.revision,
-                }) as BlockMount;
+                let mount: BlockMount;
+                try {
+                    mount = await api.invoke({
+                        type: "mount",
+                        canvasId,
+                        blockId: block.id,
+                        generation: block.generation,
+                        revision: block.revision,
+                    }) as BlockMount;
+                } catch (cause) {
+                    requested.delete(block.id);
+                    throw cause;
+                }
                 const current = view().blocks.find(candidate => {
 
                     return candidate.id === block.id;
@@ -223,6 +255,7 @@ export function createCanvasSandbox({ api, canvasId, frame, view, sandbox, error
                     block,
                     mount,
                     status: "loading",
+                    displayed: false,
                 };
                 versions.set(mount.leaseId, version);
                 version.timeout = setTimeout(() => {
@@ -240,6 +273,7 @@ export function createCanvasSandbox({ api, canvasId, frame, view, sandbox, error
                     snapshot: mount.snapshot,
                 });
             }
+            error(undefined);
             moveViewport();
         } catch (cause) {
             if (isActive()) {
