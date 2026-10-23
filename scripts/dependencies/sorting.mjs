@@ -6,7 +6,7 @@
  */
 
 import { repositoryRoot } from "./process.mjs";
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { isMap, isScalar, isSeq, parseDocument, Scalar } from "yaml";
 
@@ -71,15 +71,33 @@ export const sortFiles = (mode, dryRun, root = repositoryRoot) => {
     const workspacePath = join(root, "pnpm-workspace.yaml");
     let files = [workspacePath];
     if (mode === "sort-dependencies") {
+        const workspace = parseDocument(readFileSync(workspacePath, "utf8"));
+        if (workspace.errors.length) {
+            throw workspace.errors[0];
+        }
+        const packages = workspace.get("packages", true);
+        if (!isSeq(packages)) {
+            throw new Error("pnpm-workspace.yaml must declare workspace packages");
+        }
+        const groups = packages.items.map(pattern => {
+
+            if (!isScalar(pattern) || typeof pattern.value !== "string" || !/^[a-z][a-z-]*\/\*$/.test(pattern.value)) {
+                throw new Error("Dependency sorting requires immediate workspace patterns such as packages/*");
+            }
+
+            return pattern.value.slice(0, -2);
+        });
         files = [join(root, "package.json")];
-        files.push(...[
-            "apps",
-            "packages",
-        ].flatMap((parent) => {
+        files.push(...groups.flatMap((parent) => {
+
+            if (!existsSync(join(root, parent))) {
+                return [];
+            }
 
             return readdirSync(join(root, parent), { withFileTypes: true }).filter((entry) => {
 
-                return entry.isDirectory();
+                return entry.isDirectory() && !entry.name.startsWith(".")
+                    && existsSync(join(root, parent, entry.name, "package.json"));
             })
                 .map((entry) => {
 

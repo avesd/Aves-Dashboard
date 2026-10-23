@@ -27,6 +27,7 @@
     "check:file-headers": "node scripts/validation/file-headers.ts check",
     "fix:file-headers": "node scripts/validation/file-headers.ts fix",
     "test:file-headers": "node --test scripts/test/unit/validation/file-headers.test.ts",
+    "test:dependency-sorting": "node --test scripts/test/unit/dependencies/sorting.test.ts",
     "check:workflows": "node scripts/validation/workflows.mjs",
     "changeset": "node scripts/release/release-changesets.ts add",
     "version-dry-run": "node scripts/release/release-changesets.ts plan",

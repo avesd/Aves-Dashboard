@@ -119,6 +119,10 @@ support TypeScript 7.
   with `@` use double quotes; other dependency keys use plain YAML syntax. Comments
   and version values are preserved.
 
+Manifest sorting discovers immediate workspace groups from `pnpm-workspace.yaml`,
+including renderer and UI packages. It skips symlinked workspaces and directories
+without a package manifest. Run `pnpm test:dependency-sorting` for its fixture tests.
+
 All maintenance commands above except `depcheck` support `--dry-run`. Previews
 make no repository writes or installations. Update previews may query the
 registry; they report candidates, not a resolved replacement lockfile. The
