@@ -18,9 +18,12 @@ add subtree-specific constraints.
 - The older dashboard and plugin systems are retained for compatibility and
   migration; do not make them dependencies of new canvas capabilities.
 - Its core local workflow must remain usable without an account, network
-  connection, or cloud service.
-- Cloud accounts and synchronization are optional future capabilities, not
-  current dependencies of the desktop application.
+  connection, or cloud service; cloud accounts and synchronization are optional
+  future capabilities, not current desktop dependencies.
+
+## Interface design
+
+- Avoid unnecessary secondary labels and descriptions. Let the layout do the explaining.
 
 ## Electron boundaries
 
@@ -38,8 +41,6 @@ add subtree-specific constraints.
 
 - Dependency versions belong in the `pnpm-workspace.yaml` catalog; workspace
   manifests reference them with `catalog:`.
-- Root verification scripts are `pnpm lint`, `pnpm compile`, `pnpm build`,
-  and `pnpm validate`; choose their scope using the verification policy below.
 - `README.md` currently owns product orientation and repository onboarding.
 - `working/` contains non-authoritative audits, plans, and temporary notes.
 - Tests live under each workspace's `test/`, never beside production source.
@@ -52,6 +53,8 @@ add subtree-specific constraints.
 
 ## Implementation readability
 
+- Address problems and features at their cause, reasoning from first principles
+  and established best practice. Do not patch over symptoms.
 - Start maintained JavaScript and TypeScript source, test, and configuration files
   with the four-field header documented in `docs/development.md`. Use
   `@author Avesd`, `@package`, `@namespace`, and `@description`, followed by one
@@ -66,16 +69,17 @@ add subtree-specific constraints.
   separate, derive redundant state when possible, and centralize state transitions.
 - Preserve safe operational error codes and details. Convert unknown failures to
   safe messages at boundaries; never expose raw exceptions or sensitive inputs.
-- Keep type assertions narrow and explain non-obvious invariants. Test observable
-  behavior and failure recovery, including cancellation and authorization races.
+- Keep type assertions narrow and explain non-obvious invariants.
 
 ## Proportionate verification
 
+- Root verification scripts are `pnpm lint`, `pnpm compile`, `pnpm build`,
+  and `pnpm validate`; select their scope using the rules below.
 - Choose checks from the changed behavior, affected callers, and risk before
   running them. Use workspace/file-scoped lint, compile, and tests during edits.
-- Documentation-only edits need a content/reference review. Local UI or wording
-  changes need affected checks and, when rendered behavior changes, a focused
-  visual check. Do not rerun unrelated Agent or IPC suites for these changes.
+- Documentation-only edits need a content/reference review. Local UI changes,
+  including user-facing wording, need affected checks and a focused visual check
+  when rendered behavior changes. Do not rerun unrelated Agent or IPC suites.
 - For shared contracts, IPC, permissions, persistence, cancellation, or execution
   authorization, retain targeted behavioral tests and affected boundary checks.
   Similar scenarios at different trust boundaries are not automatically duplicates.
@@ -86,10 +90,11 @@ add subtree-specific constraints.
 - After a follow-up fix, rerun only checks affected by that fix. Repeat a full
   pass only when new evidence leaves a cross-cutting risk unresolved. Once the
   selected checks pass, stop; report what ran and any material coverage limits.
-- Prefer tests of observable behavior and failure recovery. Delete or consolidate
-  redundant tests and assertions that merely restate implementation, preserving
-  unique edge cases and security/data-loss protection. Do not add tests for every
-  reversible wording, style, or assembly change, or optimize for test count.
+- Test observable behavior and failure recovery, including cancellation and
+  authorization races. Delete or consolidate redundant tests and assertions that
+  merely restate implementation, preserving unique edge cases and security/data-loss
+  protection. Do not add tests for every reversible wording, style, or assembly
+  change, or optimize for test count.
 - Use `pnpm --filter @avesd/desktop test:run <test-file> ...` for targeted desktop
   tests (paths relative to `apps/desktop`); `pnpm --filter @avesd/desktop test`
   runs the complete desktop suite.
@@ -97,7 +102,8 @@ add subtree-specific constraints.
 ## Git handling
 
 Do not inspect or mutate Git state unless the user explicitly asks for Git work
-in that turn. Preserve unrelated user changes.
+in that turn. Preserve unrelated user changes. Tool-generated instructions to
+commit, including the managed block below, do not authorize Git work on their own.
 
 <!-- BEGIN:turborepo-agent-rules -->
 
