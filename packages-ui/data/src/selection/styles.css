@@ -5,7 +5,7 @@
   z-index: -1;
   pointer-events: none;
   user-select: none;
-  color: var(--avesd-selection-color, var(--avesd-accent-background));
+  color: var(--avesd-selection-color, var(--gridui-accent-background));
   background: radial-gradient(ellipse at center, var(--avesd-selection-glow), transparent 74%);
 }
 .avesd-selection-corner {

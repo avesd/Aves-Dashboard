@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@gridui/theme": "catalog:"
+  },
   "devDependencies": {
     "@avesd/configuration": "workspace:*",
     "@types/react": "catalog:",

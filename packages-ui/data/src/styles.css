@@ -1,2 +1,2 @@
-@import "./display/cells/styles.css";
+@import "@gridui/data/styles.css";
 @import "./selection/styles.css";

@@ -12,9 +12,10 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@gridui/data": "catalog:",
     "react": "catalog:",
     "@avesd/ui-style-utils": "workspace:*",
-    "class-variance-authority": "catalog:"
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@avesd/configuration": "workspace:*",

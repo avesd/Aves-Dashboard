@@ -11,8 +11,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "clsx": "catalog:",
-    "tailwind-merge": "catalog:"
+    "@gridui/style-utils": "catalog:"
   },
   "devDependencies": {
     "@avesd/configuration": "workspace:*",

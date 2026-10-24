@@ -1,18 +1,1 @@
-@import "./dropdown/styles.css";
-@import "./select/styles.css";
-@layer components {
-    .avesd-detail-dialog {
-        width: min(760px, calc(100vw - 32px));
-        max-width: none;
-        max-height: calc(100dvh - 48px);
-        margin: auto;
-        padding: 0;
-        overflow: auto;
-        border: 1px solid var(--avesd-border);
-        color: var(--avesd-foreground);
-        background: var(--avesd-background);
-    }
-    .avesd-detail-dialog::backdrop { background: light-dark(#00000040, #00000099); }
-    .avesd-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px; border-bottom: 1px solid var(--avesd-border); }
-    .avesd-dialog-body { padding: 24px; }
-}
+@import "@gridui/controls/styles.css";

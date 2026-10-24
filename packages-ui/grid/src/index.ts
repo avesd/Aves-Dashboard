@@ -5,5 +5,4 @@
  * @description Index
  */
 
-export * from "./frame/export";
-export * from "./primitives/export";
+export * from "@gridui/grid";

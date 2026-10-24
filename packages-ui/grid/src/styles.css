@@ -1,11 +1,1 @@
-@import "./frame/page/page.css";
-@import "./frame/rail/rail.css";
-@import "./frame/boundary/boundary.css";
-@import "./frame/decoration/decoration.css";
-@import "./frame/texture/texture.css";
-@import "./primitives/geometry.css";
-@import "./primitives/container/styles.css";
-@import "./primitives/grid/styles.css";
-@import "./primitives/stack/styles.css";
-@import "./frame/chrome/chrome.css";
-@import "./frame/tone.css";
+@import "@gridui/grid/styles.css";

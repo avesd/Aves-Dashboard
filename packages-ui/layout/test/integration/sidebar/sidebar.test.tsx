@@ -5,13 +5,8 @@
  * @description Sidebar keyboard, controlled state, native navigation, and compact recovery
  */
 
-import { Sidebar, SidebarMain } from "../../../src/sidebar/sidebar";
-import type { SidebarLayoutProps } from "../../../src/sidebar/sidebar-layout";
-import { SidebarLayout } from "../../../src/sidebar/sidebar-layout";
-import { SidebarItem, SidebarLink } from "../../../src/sidebar/sidebar-navigation";
-import { SidebarContent, SidebarGroup, SidebarHeader } from "../../../src/sidebar/sidebar-regions";
-import { SidebarResizeHandle } from "../../../src/sidebar/sidebar-resize-handle";
-import { SidebarToggle } from "../../../src/sidebar/sidebar-toggle";
+import type { SidebarLayoutProps } from "../../../src/index";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarItem, SidebarLayout, SidebarLink, SidebarMain, SidebarResizeHandle, SidebarToggle } from "../../../src/index";
 import { resizeContainer } from "../../setup-dom";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -58,6 +53,10 @@ function Example(props: SidebarLayoutProps) {
             </SidebarContent>
             <SidebarResizeHandle
                 label="Resize sidebar"
+                formatWidth={width => {
+
+                    return `${width} pixels`;
+                }}
             />
         </Sidebar>
         <SidebarMain>Content</SidebarMain>

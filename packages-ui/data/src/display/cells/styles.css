@@ -1,6 +1,0 @@
-@layer components {
-    .avesd-data-bar[data-partial="true"] .avesd-data-bar-track > span {
-        background: repeating-linear-gradient(90deg, var(--avesd-accent-background) 0 4px, transparent 4px 8px);
-    }
-
-}

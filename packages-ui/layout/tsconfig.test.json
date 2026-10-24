@@ -7,10 +7,6 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "test/**/*.ts",
-    "test/**/*.tsx",
-    "../controls/src/**/*.ts",
-    "../controls/src/**/*.tsx",
-    "../grid/src/**/*.ts",
-    "../grid/src/**/*.tsx"
+    "test/**/*.tsx"
   ]
 }

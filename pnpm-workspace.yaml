@@ -13,32 +13,37 @@ allowBuilds:
 
 minimumReleaseAge: 4320
 
+minimumReleaseAgeExclude:
+  - "@gridui/*"
+
 # ESLint and repository validators require the TypeScript 6 programmatic API.
 updateConfig:
   ignoreDependencies:
     - typescript
 
 catalog:
+  "@gridui/controls": 0.3.0
+  "@gridui/data": 0.3.0
+  "@gridui/grid": 0.3.0
+  "@gridui/layout": 0.3.0
+  "@gridui/style-utils": 0.3.0
+  "@gridui/theme": 0.3.0
   "@playwright/test": 1.64.1
   "@testing-library/react": 16.3.3
   "@testing-library/user-event": 14.6.8
   "@types/jsdom": 30.0.0
   jsdom: 30.1.2
   tsx: 4.23.15
-  "@base-ui/react": 1.9.0
   "@tailwindcss/vite": 4.3.3
   tailwindcss: 4.3.3
   "@clack/prompts": 1.8.1
   "@eslint/js": 10.0.1
   "@modelcontextprotocol/server": 2.3.1
-  "@radix-ui/react-dropdown-menu": 2.1.25
   "@stylistic/eslint-plugin": 5.10.0
   "@types/node": 26.6.5
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
   "@vitejs/plugin-react": 6.1.2
-  class-variance-authority: 0.7.1
-  clsx: 2.1.1
   cordis: 4.0.0-rc.10
   dotenv: 18.0.4
   electron: 45.0.0-alpha.2
@@ -52,7 +57,6 @@ catalog:
   react-dom: 19.3.0
   react-markdown: 10.1.0
   remark-gfm: 4.0.1
-  tailwind-merge: 3.7.0
   turbo: 2.11.7
   typescript: 6.0.3
   typescript-eslint: 8.71.1

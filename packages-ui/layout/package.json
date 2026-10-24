@@ -13,12 +13,9 @@
     "test": "tsx --tsconfig tsconfig.test.json --import ./test/setup-dom.ts --test 'test/integration/**/*.test.tsx'"
   },
   "dependencies": {
+    "@gridui/layout": "catalog:",
     "react": "catalog:",
-    "@avesd/ui-grid": "workspace:*",
-    "@avesd/ui-controls": "workspace:*",
-    "@avesd/ui-style-utils": "workspace:*",
-    "class-variance-authority": "catalog:",
-    "lucide-react": "catalog:"
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@avesd/configuration": "workspace:*",
@@ -31,7 +28,6 @@
     "@types/jsdom": "catalog:",
     "jsdom": "catalog:",
     "tsx": "catalog:",
-    "react-dom": "catalog:",
     "@types/react-dom": "catalog:"
   },
   "sideEffects": [

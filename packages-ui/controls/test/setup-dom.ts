@@ -18,6 +18,7 @@ const browserGlobals = [
     "navigator",
     "HTMLElement",
     "HTMLInputElement",
+    "HTMLFormElement",
     "HTMLSelectElement",
     "HTMLButtonElement",
     "Element",
@@ -74,4 +75,13 @@ Object.defineProperty(window, "matchMedia", {
 Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
     configurable: true,
     value() {},
+});
+
+// jsdom cannot capture pointers; the native Electron suite covers pointer behavior.
+Object.defineProperty(window.HTMLElement.prototype, "hasPointerCapture", {
+    configurable: true,
+    value() {
+
+        return false;
+    },
 });

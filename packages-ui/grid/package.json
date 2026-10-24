@@ -10,19 +10,20 @@
     "compile": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "node --experimental-strip-types --test test/unit/**/*.test.ts"
+    "test": "node --experimental-strip-types --test 'test/integration/**/*.test.ts'"
   },
   "dependencies": {
+    "@gridui/grid": "catalog:",
     "react": "catalog:",
-    "@avesd/ui-style-utils": "workspace:*",
-    "class-variance-authority": "catalog:"
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@avesd/configuration": "workspace:*",
     "@types/react": "catalog:",
     "eslint": "catalog:",
     "typescript": "catalog:",
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "@types/react-dom": "catalog:"
   },
   "sideEffects": [
     "**/*.css"

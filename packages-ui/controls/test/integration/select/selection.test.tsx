@@ -5,9 +5,8 @@
  * @description Selection, search, dismissal, disabled recovery, and browser form contracts
  */
 
-import { Combobox } from "../../../src/select/combobox";
-import { Select } from "../../../src/select/select";
-import type { SelectionProps, SelectOption } from "../../../src/select/types";
+import type { SelectOption, SelectProps } from "../../../src/index";
+import { Combobox, Select } from "../../../src/index";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { deepStrictEqual, equal, ok } from "node:assert/strict";
@@ -33,10 +32,11 @@ const options: readonly SelectOption[] = [
 ];
 type ControlKind = "select" | "combobox";
 
-function choice(kind: ControlKind, props: SelectionProps) {
+function choice(kind: ControlKind, props: Pick<SelectProps, "options" | "name" | "value" | "defaultValue" | "onValueChange" | "disabled" | "required" | "portalContainer">) {
 
     if (kind === "select") {
         return <Select
+            position="item-aligned"
             aria-label="Choice"
             {...props}
         />;
@@ -53,6 +53,56 @@ function choice(kind: ControlKind, props: SelectionProps) {
 afterEach(() => {
 
     cleanup();
+});
+
+void test("Combobox normalizes Unicode queries, preserves disabled choices and restores groups", async () => {
+
+    const changes: string[] = [];
+    const user = userEvent.setup();
+    render(<Combobox
+        searchLabel="Search models"
+        emptyLabel="No matching models"
+        options={[
+            {
+                label: "Available models",
+                options,
+            },
+            {
+                label: "Unavailable models",
+                options: [
+                    {
+                        value: "legacy-id",
+                        label: "Legacy model",
+                        description: "reasoning-v2",
+                        disabled: true,
+                    },
+                ],
+            },
+        ]}
+        onValueChange={value => {
+
+            changes.push(value);
+        }}
+    />);
+    const input = screen.getByRole("combobox", { name: "Search models" });
+
+    await user.type(input, "  ＲＥＡＳＯＮＩＮＧ  ");
+
+    const legacy = await screen.findByRole("option", { name: /^Legacy model/ });
+    equal(legacy.getAttribute("aria-disabled"), "true");
+    equal(screen.queryByRole("group", { name: "Available models" }), null);
+
+    await user.click(legacy);
+
+    deepStrictEqual(changes, []);
+
+    await user.clear(input);
+
+    await screen.findByRole("group", { name: "Available models" });
+    await user.type(input, "missing");
+
+    await screen.findByText("No matching models");
+    equal(screen.queryByRole("option"), null);
 });
 
 for (const position of [

@@ -10,15 +10,12 @@
     "compile": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "node --import tsx --import ./test/setup-dom.ts --test 'test/unit/**/*.test.ts' 'test/integration/**/*.test.tsx'"
+    "test": "node --import tsx --import ./test/setup-dom.ts --test 'test/integration/**/*.test.tsx'"
   },
   "dependencies": {
-    "@base-ui/react": "catalog:",
+    "@gridui/controls": "catalog:",
     "react": "catalog:",
-    "@avesd/ui-style-utils": "workspace:*",
-    "class-variance-authority": "catalog:",
-    "@radix-ui/react-dropdown-menu": "catalog:",
-    "lucide-react": "catalog:"
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@avesd/configuration": "workspace:*",
@@ -31,7 +28,6 @@
     "@types/jsdom": "catalog:",
     "jsdom": "catalog:",
     "tsx": "catalog:",
-    "react-dom": "catalog:",
     "@types/react-dom": "catalog:"
   },
   "sideEffects": [
