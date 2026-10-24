@@ -9,16 +9,18 @@ import { AgentMarkdown } from "./agent-markdown";
 import type { TranscriptEntry } from "./agent-transcript";
 import { appendAgentEvent } from "./agent-transcript";
 import type { AgentSessionSnapshot } from "@avesd/desktop-contracts/agent/sessions";
+import { Disclosure } from "@avesd/ui-controls";
+import { CodeView } from "@avesd/ui-data";
 import { MessageCircle } from "lucide-react";
 import type { RefObject } from "react";
 
 interface Props {
     readonly session: AgentSessionSnapshot | null;
     readonly conversation: RefObject<HTMLDivElement | null>;
-    readonly follow: RefObject<boolean>;
+    readonly content: RefObject<HTMLDivElement | null>;
 }
 
-export function ChatTranscript({ session, conversation, follow }: Props) {
+export function ChatTranscript({ session, conversation, content }: Props) {
 
     const messages = session?.events.reduce<readonly TranscriptEntry[]>((entries, { event, sequence }) => {
 
@@ -28,62 +30,68 @@ export function ChatTranscript({ session, conversation, follow }: Props) {
     return <div
         className="controller-conversation"
         ref={conversation}
-        onScroll={event => {
-
-            const node = event.currentTarget;
-            follow.current = node.scrollHeight - node.scrollTop - node.clientHeight < 60;
-        }}
     >
-        {!messages.length && <div
-            className="controller-welcome"
+        <div
+            className="controller-transcript-content"
+            ref={content}
         >
-            <MessageCircle
-                size={28}
-            />
-            <h1>What would you like to work on?</h1>
-        </div>}
-        {messages.map(entry => {
+            {!messages.length && <div
+                className="controller-welcome"
+            >
+                <MessageCircle
+                    size={28}
+                />
+                <h1>What would you like to work on?</h1>
+            </div>}
+            {messages.map(entry => {
 
-            if (entry.kind === "tool") {
-                return <details
-                    className="controller-tool"
+                if (entry.kind === "tool") {
+                    return <Disclosure
+                        className="controller-tool type-caption"
+                        summaryClassName="min-h-0 text-inherit"
+                        summaryPaddingBlock={0}
+                        summaryPaddingInline={0}
+                        contentPadding={0}
+                        key={entry.id}
+                        label={`${entry.title} · ${entry.status}`}
+                    >
+                        {entry.input && <CodeView
+                            code={entry.input}
+                            label={`${entry.title} input`}
+                            className="border-0 bg-transparent p-0 text-inherit text-[length:inherit] whitespace-pre-wrap"
+                        />}
+                        {entry.output && <CodeView
+                            code={entry.output}
+                            label={`${entry.title} output`}
+                            className="border-0 bg-transparent p-0 text-inherit text-[length:inherit] whitespace-pre-wrap"
+                        />}
+                    </Disclosure>;
+                }
+                if (entry.kind === "thought") {
+                    return <Disclosure
+                        className="controller-tool type-caption"
+                        summaryClassName="min-h-0 text-inherit"
+                        summaryPaddingBlock={0}
+                        summaryPaddingInline={0}
+                        contentPadding={0}
+                        key={entry.id}
+                        label="Reasoning"
+                    >
+                        <AgentMarkdown
+                            text={entry.text}
+                        />
+                    </Disclosure>;
+                }
+
+                return <article
+                    className={`controller-message is-${entry.kind}`}
                     key={entry.id}
                 >
-                    <summary>
-                        {entry.title}
-                        {" "}
-                        ·
-                        {" "}
-                        {entry.status}
-                    </summary>
-                    {entry.input && <pre>
-                        {entry.input}
-                    </pre>}
-                    {entry.output && <pre>
-                        {entry.output}
-                    </pre>}
-                </details>;
-            }
-            if (entry.kind === "thought") {
-                return <details
-                    className="controller-tool"
-                    key={entry.id}
-                >
-                    <summary>Reasoning</summary>
                     <AgentMarkdown
                         text={entry.text}
                     />
-                </details>;
-            }
-
-            return <article
-                className={`controller-message is-${entry.kind}`}
-                key={entry.id}
-            >
-                <AgentMarkdown
-                    text={entry.text}
-                />
-            </article>;
-        })}
+                </article>;
+            })}
+        </div>
     </div>;
 }

@@ -5,13 +5,13 @@
 .agent-markdown p, .agent-markdown ul, .agent-markdown ol { margin: 0.65em 0; }
 .agent-markdown ul, .agent-markdown ol { padding-inline-start: 1.6em; }
 .agent-markdown h1, .agent-markdown h2, .agent-markdown h3 { font-size: 1.18em; line-height: 1.4; margin: 1em 0 0.5em; }
-.agent-markdown a { color: var(--avesd-link); text-decoration: underline; text-underline-offset: 3px; }
-.agent-markdown code { font-family: ui-monospace, monospace; font-size: 0.9em; background: var(--avesd-surface); border-radius: 4px; padding: 2px 4px; }
-.agent-markdown pre, .agent-trace pre { overflow: auto; max-height: 320px; padding: 12px; border: 1px solid var(--avesd-border); border-radius: var(--avesd-control-radius); background: var(--avesd-surface); white-space: pre; font-size: 12px; line-height: 1.6; }
+.agent-markdown a { color: var(--gridui-link); text-decoration: underline; text-underline-offset: 3px; }
+.agent-markdown code { font-family: ui-monospace, monospace; font-size: 0.9em; background: var(--gridui-surface); border-radius: 4px; padding: 2px 4px; }
+.agent-markdown pre, .agent-trace pre { overflow: auto; max-height: 320px; padding: 12px; border: 1px solid var(--gridui-border); border-radius: var(--gridui-control-radius); background: var(--gridui-surface); white-space: pre; font-size: 12px; line-height: 1.6; }
 .agent-markdown pre code { background: none; padding: 0; }
 .agent-markdown table { display: block; overflow-x: auto; border-collapse: collapse; max-width: 100%; margin-block: 12px; }
-.agent-markdown th, .agent-markdown td { border: 1px solid var(--avesd-border); padding: 6px 10px; text-align: start; }
-.agent-markdown th { background: var(--avesd-surface); }
-.agent-markdown blockquote { border-inline-start: 3px solid var(--avesd-control-border); margin-inline: 0; padding-inline-start: 12px; color: var(--avesd-muted); }
+.agent-markdown th, .agent-markdown td { border: 1px solid var(--gridui-border); padding: 6px 10px; text-align: start; }
+.agent-markdown th { background: var(--gridui-surface); }
+.agent-markdown blockquote { border-inline-start: 3px solid var(--gridui-control-border); margin-inline: 0; padding-inline-start: 12px; color: var(--gridui-muted); }
 
 }

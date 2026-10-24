@@ -89,6 +89,10 @@ export function SettingsWorkspace({ api }: {
                 </SidebarContent>
                 <SidebarResizeHandle
                     label="Resize settings sidebar"
+                    formatWidth={width => {
+
+                        return `${width} pixels`;
+                    }}
                 />
             </Sidebar>
             <SidebarMain

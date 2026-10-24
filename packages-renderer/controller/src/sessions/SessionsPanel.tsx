@@ -8,6 +8,7 @@
 import { useControllerApi } from "../controller-context";
 import type { AgentSessionSummary } from "@avesd/desktop-contracts/agent/sessions";
 import { Button } from "@avesd/ui-controls";
+import { CollectionItem, CollectionItemButton } from "@avesd/ui-layout";
 import { Plus } from "lucide-react";
 
 interface Props {
@@ -46,47 +47,53 @@ export function SessionsPanel({ sessions, fail, openChat }: Props) {
                 />
             </Button>
         </div>
-        {sessions.map(item => {
+        <ul
+            className="m-0 list-none p-0"
+            aria-label="Conversations"
+        >
+            {sessions.map(item => {
 
-            return <div
-                className="controller-session"
-                key={item.id}
-            >
-                <Button
-                    className="flex-1 min-w-0 justify-start min-h-[64px] border-0 rounded-none text-left"
-                    variant="quiet"
-                    size="small"
-                    onClick={() => {
+                const status = item.waitingForAnswer && item.status !== "running" ? "Waiting for answer" : item.status;
 
-                        void api.agentSessions.select(item.id).then(() => {
+                return <CollectionItem
+                    className="px-gridui-16"
+                    key={item.id}
+                    actions={<Button
+                        variant="quiet"
+                        size="small"
+                        layout="icon"
+                        aria-label="Remove conversation"
+                        onClick={() => {
 
-                            openChat();
-                        })
-                            .catch(fail);
-                    }}
+                            void api.agentSessions.remove(item.id).catch(fail);
+                        }}
+                    >
+                        ×
+                    </Button>}
                 >
-                    {item.route.providerId}
-                    {" "}
-                    ·
-                    {" "}
-                    {item.waitingForAnswer && item.status !== "running" ? "Waiting for answer" : item.status}
-                    <small>
-                        {new Date(item.createdAt).toLocaleTimeString()}
-                    </small>
-                </Button>
-                <Button
-                    variant="quiet"
-                    size="small"
-                    layout="icon"
-                    aria-label="Remove conversation"
-                    onClick={() => {
+                    <CollectionItemButton
+                        className="min-h-[64px] flex-wrap rounded-none px-gridui-8 py-[12px] type-ui"
+                        title={<span
+                            className="flex flex-wrap items-center gap-[12px]"
+                        >
+                            {`${item.route.providerId} · ${status}`}
+                            <small
+                                className="text-muted type-caption"
+                            >
+                                {new Date(item.createdAt).toLocaleTimeString()}
+                            </small>
+                        </span>}
+                        onClick={() => {
 
-                        void api.agentSessions.remove(item.id).catch(fail);
-                    }}
-                >
-                    ×
-                </Button>
-            </div>;
-        })}
+                            void api.agentSessions.select(item.id).then(() => {
+
+                                openChat();
+                            })
+                                .catch(fail);
+                        }}
+                    />
+                </CollectionItem>;
+            })}
+        </ul>
     </section>;
 }

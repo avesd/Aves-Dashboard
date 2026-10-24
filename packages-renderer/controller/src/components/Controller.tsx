@@ -18,6 +18,7 @@ import { controllerTaskLabel } from "./controller-task-label";
 import type { AgentTierRoute } from "@avesd/desktop-contracts/agent/sessions";
 import { ipcErrorMessage } from "@avesd/desktop-contracts/ipc-result";
 import { Button } from "@avesd/ui-controls";
+import { InlineNotice, useFollowScroll } from "@avesd/ui-layout";
 import { BirdMark } from "@avesd/ui-logo";
 import { ChevronDown, ChevronUp, Keyboard, Layers, MessageCircle, Settings2, Square } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -57,8 +58,7 @@ export function Controller({ expanded }: {
     const detailsToggle = useRef<HTMLButtonElement>(null);
     const textToggle = useRef<HTMLButtonElement>(null);
     const composer = useRef<HTMLTextAreaElement>(null);
-    const conversation = useRef<HTMLDivElement>(null);
-    const follow = useRef(true);
+    const { viewportRef: conversation, contentRef: conversationContent, scrollToEnd } = useFollowScroll({ threshold: 60 });
     const fail = useCallback((cause: unknown) => {
 
         setError(ipcErrorMessage(cause, "Operation failed."));
@@ -83,15 +83,6 @@ export function Controller({ expanded }: {
         panel,
         textVisible,
     ]);
-    useEffect(() => {
-
-        if (follow.current && conversation.current) {
-            conversation.current.scrollTop = conversation.current.scrollHeight;
-        }
-    }, [
-        session,
-        expanded,
-    ]);
     const send = async () => {
 
         const text = draft.trim();
@@ -115,7 +106,7 @@ export function Controller({ expanded }: {
             request.sessionId = id;
             setPendingRequests([...submissions.current]);
             setDraft("");
-            follow.current = true;
+            scrollToEnd();
             if (session?.status === "running" || session?.waitingForAnswer) {
                 await api.agentSessions.enqueue(id, text);
             } else {
@@ -269,12 +260,11 @@ export function Controller({ expanded }: {
                 {expanded ? "Hide details" : "View details"}
             </Button>
         </div>
-        {error && <div
-            className="controller-error"
-            role="alert"
-        >
-            {error}
-            <Button
+        {error && <InlineNotice
+            className="controller-error rounded-none border-0 border-t"
+            tone="danger"
+            announcement="assertive"
+            actions={<Button
                 variant="quiet"
                 size="small"
                 aria-label="Dismiss error"
@@ -284,8 +274,10 @@ export function Controller({ expanded }: {
                 }}
             >
                 ×
-            </Button>
-        </div>}
+            </Button>}
+        >
+            {error}
+        </InlineNotice>}
         <section
             id="controller-details"
             className="controller-details"
@@ -346,7 +338,7 @@ export function Controller({ expanded }: {
                 <ChatTranscript
                     session={session}
                     conversation={conversation}
-                    follow={follow}
+                    content={conversationContent}
                 />
                 {!!session?.queuedPrompts.length && <p
                     className="controller-activity"

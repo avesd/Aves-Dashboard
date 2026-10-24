@@ -163,7 +163,19 @@ test("pending conversation submissions remain independent and preserve supplemen
     };
 
     await input.fill("Synthetic request A");
-    await send.click();
+    await input.press("End");
+    await input.press("Shift+Enter");
+    await expect(input).toHaveValue("Synthetic request A\n");
+    await input.dispatchEvent("keydown", {
+        key: "Enter",
+        isComposing: true,
+    });
+    expect(await state.evaluate(value => {
+
+        return value.calls.length;
+    })).toBe(0);
+
+    await input.press("Enter");
     await expect.poll(() => {
 
         return state.evaluate(value => {
@@ -225,8 +237,9 @@ test("pending conversation submissions remain independent and preserve supplemen
         return void value.running("b");
     });
     await expect(controller.getByRole("button", { name: "Cancel task" })).toBeVisible();
+    await expect(input).toBeEditable();
     await input.fill("Synthetic supplement B");
-    await send.click();
+    await input.press("Enter");
     await expect.poll(() => {
 
         return state.evaluate(value => {

@@ -1,4 +1,5 @@
-@import "tailwindcss";
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 @import "@avesd/ui-theme/styles.css";
 @import "@avesd/ui-controls/styles.css";
 @import "@avesd/ui-grid/styles.css";
@@ -11,82 +12,70 @@
 @layer components {
     :root[data-surface="controller"], :root[data-surface="controller"] body { background: transparent; }
     :root[data-surface="controller"] body { min-width: 0; overflow: hidden; }
-    .controller { height: 100dvh; width: 100%; display: flex; flex-direction: column; overflow: auto; border: 1px solid var(--avesd-border); border-radius: var(--avesd-control-radius); color: var(--avesd-foreground); background: var(--avesd-background); font: var(--avesd-type-ui); }
+    .controller { height: 100dvh; width: 100%; display: flex; flex-direction: column; overflow: auto; border: 1px solid var(--gridui-border); border-radius: var(--gridui-control-radius); color: var(--gridui-foreground); background: var(--gridui-background); font: var(--gridui-type-ui); }
     .controller-header { min-height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding-inline: 16px; }
     .controller-header strong { font-size: 14px; letter-spacing: -.025em; }
     .controller-header > button { margin-left: auto; }
-    .controller-status { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: var(--avesd-accent-background); }
-    .controller-status.is-busy { background: var(--avesd-warning-accent-background); }
-    .controller-task { display: flex; align-items: center; gap: 8px; padding: 6px 16px; min-height: 40px; flex-shrink: 0; background: var(--avesd-surface); color: var(--avesd-muted); font: var(--avesd-type-caption); }
+    .controller-status { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: var(--gridui-accent-background); }
+    .controller-status.is-busy { background: var(--gridui-warning-accent-background); }
+    .controller-task { display: flex; align-items: center; gap: 8px; padding: 6px 16px; min-height: 40px; flex-shrink: 0; background: var(--gridui-surface); color: var(--gridui-muted); font: var(--gridui-type-caption); }
     .controller.is-collapsed .controller-task { margin-top: auto; }
     .controller.is-collapsed .controller-input-actions { border-bottom: 0; }
     .controller-task > span:nth-child(2) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-    .controller-task button { flex-shrink: 0; font: var(--avesd-type-caption); padding: 4px 8px; min-height: 28px; gap: 6px; }
+    .controller-task button { flex-shrink: 0; font: var(--gridui-type-caption); padding: 4px 8px; min-height: 28px; gap: 6px; }
     .controller-details:not([hidden]), .controller-chat:not([hidden]) { display: flex; flex: 1; flex-direction: column; min-height: 0; }
-    .controller-nav { display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--avesd-border); flex-shrink: 0; }
-    .controller-nav button { flex: 1; min-width: 0; min-height: 32px; padding: 4px 8px; gap: 6px; font-size: 12px; color: var(--avesd-muted); white-space: nowrap; }
-    .controller-nav button[aria-pressed="true"] { background: var(--avesd-brand-tint); color: var(--avesd-accent-background); }
+    .controller-nav { display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--gridui-border); flex-shrink: 0; }
+    .controller-nav button { flex: 1; min-width: 0; min-height: 32px; padding: 4px 8px; gap: 6px; font-size: 12px; color: var(--gridui-muted); white-space: nowrap; }
+    .controller-nav button[aria-pressed="true"] { background: var(--gridui-brand-tint); color: var(--gridui-accent-background); }
     .controller-conversation, .controller-content { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
-    .controller-conversation { padding: 24px; }
+    .controller-transcript-content { display: flow-root; padding: 24px; }
     .controller-content { padding: 0; }
-    .controller-section-title { min-height: 72px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--avesd-border); }
-    .controller-section-title h1 { font: var(--avesd-type-subheading); }
-    .controller-welcome { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding-block: 16px; color: var(--avesd-accent-background); }
-    .controller-welcome h1 { font: var(--avesd-type-title); letter-spacing: -.025em; color: var(--avesd-foreground); max-width: 280px; }
+    .controller-section-title { min-height: 72px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--gridui-border); }
+    .controller-section-title h1 { font: var(--gridui-type-subheading); }
+    .controller-welcome { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding-block: 16px; color: var(--gridui-accent-background); }
+    .controller-welcome h1 { font: var(--gridui-type-title); letter-spacing: -.025em; color: var(--gridui-foreground); max-width: 280px; }
     .controller-message { overflow-wrap: anywhere; margin-bottom: 24px; }
-    .controller-message.is-user { padding: 16px; border-left: 2px solid var(--avesd-accent-background); background: var(--avesd-surface); }
-    .controller-message .agent-markdown { font: var(--avesd-type-supporting); }
-    .controller-tool { margin-block: 12px; color: var(--avesd-muted); font: var(--avesd-type-caption); overflow-wrap: anywhere; }
-    .controller-tool summary { cursor: pointer; }
-    .controller-tool pre { overflow: auto; white-space: pre-wrap; }
-    .controller-activity, .controller-muted { padding-inline: 24px; color: var(--avesd-muted); font: var(--avesd-type-caption); }
-    .controller-composer { display: grid; grid-template-columns: minmax(0, 1fr) 36px; align-items: end; gap: 8px; padding: 12px; border-top: 1px solid var(--avesd-border); background: var(--avesd-background); flex-shrink: 0; }
-    .controller-composer textarea { resize: none; height: 72px; min-height: 0; min-width: 0; padding: 8px; border-color: transparent; border-radius: 0; background: transparent; font: var(--avesd-type-supporting); }
-    .controller-composer > button { width: 36px; height: 36px; padding: 0; }
-    .controller-canvas, .controller-session { display: flex; align-items: center; border-bottom: 1px solid var(--avesd-border); padding-inline: 16px; gap: 8px; }
-    .controller-canvas > button, .controller-session > button:first-child { flex: 1; min-width: 0; min-height: 64px; justify-content: flex-start; gap: 12px; padding: 12px 8px; text-align: left; }
-    .controller-canvas > button > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .controller-session small { color: var(--avesd-muted); font: var(--avesd-type-caption); }
-    .controller-session > button:first-child { flex-wrap: wrap; }
-    .controller-error { padding: 12px 16px; border-top: 1px solid var(--avesd-danger-border); color: var(--avesd-danger-foreground); background: var(--avesd-danger-background); font: var(--avesd-type-caption); overflow-wrap: anywhere; }
-    .controller-error button { float: right; }
-    .controller-runtime { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 44px; flex-shrink: 0; border-top: 1px solid var(--avesd-border); }
-    .controller-runtime-trigger { width: 100%; min-width: 0; justify-content: flex-start; gap: 8px; padding: 8px 12px; min-height: 44px; border: 0; border-radius: 0; font-size: 12px; }
-    .controller-runtime-provider { color: var(--avesd-accent-background); flex-shrink: 0; }
-    .controller-runtime-model { min-width: 0; color: var(--avesd-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    .controller-runtime-effort { margin-left: auto; color: var(--avesd-muted); font-size: 11px; text-transform: capitalize; }
-    .controller-runtime-new { width: 44px; height: 44px; border: 0; border-left: 1px solid var(--avesd-border); border-radius: 0; padding: 0; }
-    .controller-runtime-popover { position: absolute; z-index: 20; left: 0; right: 0; bottom: 100%; max-height: min(480px, calc(100dvh - 154px)); overflow: auto; padding: 24px; border: 1px solid var(--avesd-border); background: var(--avesd-background); }
+    .controller-message.is-user { padding: 16px; border-left: 2px solid var(--gridui-accent-background); background: var(--gridui-surface); }
+    .controller-message .agent-markdown { font: var(--gridui-type-supporting); }
+    .controller-tool { margin-block: 12px; color: var(--gridui-muted); }
+    .controller-activity, .controller-muted { padding-inline: 24px; color: var(--gridui-muted); font: var(--gridui-type-caption); }
+    .controller-composer { flex-shrink: 0; }
+    .controller-error { padding: 12px 16px; border-top: 1px solid var(--gridui-danger-border); color: var(--gridui-danger-foreground); background: var(--gridui-danger-background); font: var(--gridui-type-caption); overflow-wrap: anywhere; flex-shrink: 0; max-height: 90px; overflow: auto; }
+    .controller-runtime { display: grid; grid-template-columns: minmax(0, 1fr) 44px; flex-shrink: 0; border-top: 1px solid var(--gridui-border); }
+    .controller-runtime-trigger { font-size: 12px; }
+    .controller-runtime-provider { color: var(--gridui-accent-background); flex-shrink: 0; }
+    .controller-runtime-model { min-width: 0; color: var(--gridui-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .controller-runtime-effort { margin-left: auto; color: var(--gridui-muted); font-size: 11px; text-transform: capitalize; }
+    .controller-runtime-popover { max-height: min(480px, calc(100dvh - 154px), var(--radix-popover-content-available-height)); }
     .controller-runtime-popover header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 24px; }
-    .controller-runtime-popover header strong { display: block; font: var(--avesd-type-subheading); }
+    .controller-runtime-popover header strong { display: block; font: var(--gridui-type-subheading); }
     .controller-runtime-popover header button { width: 28px; min-height: 28px; padding: 0; }
     .controller-runtime-popover fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: 16px; min-width: 0; }
-    .controller-runtime-popover label { display: grid; gap: 8px; font: var(--avesd-type-caption); }
-    .controller-runtime-status, .controller-runtime-note { color: var(--avesd-muted); font: var(--avesd-type-caption); }
+    .controller-runtime-popover label { display: grid; gap: 8px; font: var(--gridui-type-caption); }
+    .controller-runtime-status, .controller-runtime-note { color: var(--gridui-muted); font: var(--gridui-type-caption); }
     .controller-runtime-note { margin-block: 12px; }
     .controller-runtime-tools { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 16px; }
     .controller-runtime-tools button { font-size: 12px; padding-inline: 8px; }
-    .controller-runtime-popover footer { display: flex; align-items: center; gap: 16px; padding-top: 16px; border-top: 1px solid var(--avesd-border); }
-    .controller-runtime-popover footer span { flex: 1; color: var(--avesd-muted); font: var(--avesd-type-caption); }
-    .controller-runtime-failure { color: var(--avesd-danger-foreground); font: var(--avesd-type-caption); }
-    .controller-runtime-success { color: var(--avesd-accent-background); font: var(--avesd-type-caption); }
-    .controller-input-actions { display: flex; justify-content: space-between; gap: 8px; padding: 6px 12px; flex-shrink: 0; border-bottom: 1px solid var(--avesd-border); }
+    .controller-runtime-popover footer { display: flex; align-items: center; gap: 16px; padding-top: 16px; border-top: 1px solid var(--gridui-border); }
+    .controller-runtime-popover footer span { flex: 1; color: var(--gridui-muted); font: var(--gridui-type-caption); }
+    .controller-runtime-failure { color: var(--gridui-danger-foreground); font: var(--gridui-type-caption); }
+    .controller-runtime-success { color: var(--gridui-accent-background); font: var(--gridui-type-caption); }
+    .controller-input-actions { display: flex; justify-content: space-between; gap: 8px; padding: 6px 12px; flex-shrink: 0; border-bottom: 1px solid var(--gridui-border); }
     .controller-input-actions button { gap: 8px; font-size: 12px; min-height: 32px; }
     #controller-text-input { flex-shrink: 0; }
-    .voice-controls { flex: none; padding: 4px 16px 12px; font: var(--avesd-type-caption); }
+    .voice-controls { flex: none; padding: 4px 16px 12px; font: var(--gridui-type-caption); }
     .voice-toolbar { display: flex; flex-wrap: wrap; gap: 6px; }
     .voice-toolbar button { gap: 6px; min-height: 36px; padding: 6px 10px; font-size: 12px; }
-    .voice-toolbar .voice-start { width: 100%; min-height: 40px; font: var(--avesd-type-supporting); }
+    .voice-toolbar .voice-start { width: 100%; min-height: 40px; font: var(--gridui-type-supporting); }
     .voice-controls p { margin-top: 8px; overflow-wrap: anywhere; }
-    .voice-status { color: var(--avesd-muted); max-height: 36px; overflow: auto; }
-    .voice-hint { color: var(--avesd-muted); }
+    .voice-status { color: var(--gridui-muted); max-height: 36px; overflow: auto; }
+    .voice-hint { color: var(--gridui-muted); }
     .voice-caption { max-height: 34px; overflow: auto; }
-    .controller-error { flex-shrink: 0; max-height: 90px; overflow: auto; }
     @media (max-width: 350px) {
         .controller-nav button { font-size: 11px; gap: 4px; padding-inline: 4px; }
         .voice-mic-label { display: none; }
         .voice-toolbar button { padding-inline: 6px; }
-        .controller-conversation { padding: 16px; }
+        .controller-transcript-content { padding: 16px; }
         .controller-runtime-effort { display: none; }
     }
 }

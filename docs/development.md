@@ -6,7 +6,7 @@ The root pnpm scripts are the source of truth for repository tasks.
 
 `pnpm validate` runs lint, type checks, and the production build across all
 workspaces, including `packages-ui/*`. Run `pnpm --filter @avesd/ui-grid test`
-for responsive geometry and row planning. The desktop has its own `test` and
+for GridUI's public responsive geometry and row-rendering contract. The desktop has its own `test` and
 `test:run` commands; select checks according to the repository verification policy.
 
 Use Playwright against the real Electron application for routine UI regression:

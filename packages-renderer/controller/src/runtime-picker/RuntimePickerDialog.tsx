@@ -8,8 +8,10 @@
 import type { RuntimePickerProps } from "./runtime-picker-types";
 import { RuntimeRouteFields } from "./RuntimeRouteFields";
 import type { useRuntimePicker } from "./useRuntimePicker";
-import { Button } from "@avesd/ui-controls";
+import { Button, PopoverPanel } from "@avesd/ui-controls";
+import { InlineNotice } from "@avesd/ui-layout";
 import { RefreshCw, X } from "lucide-react";
+import { useState } from "react";
 
 interface Props {
     readonly picker: ReturnType<typeof useRuntimePicker>;
@@ -20,23 +22,22 @@ interface Props {
 
 export function RuntimePickerDialog({ picker, applying, session, manage }: Props) {
 
+    const [
+        portalContainer,
+        setPortalContainer,
+    ] = useState<HTMLDivElement | null>(null);
     const { draft, close, loading, missingModel, missingEffort, waiting, optionsError, message, failed, testing, options, setRefresh, test, setOpen, unavailable, save } = picker;
     if (!draft) {
         return null;
     }
 
-    return <section
-        className="controller-runtime-popover"
-        role="dialog"
+    return <PopoverPanel
+        ref={setPortalContainer}
+        side="top"
+        sideOffset={0}
+        collisionPadding={0}
+        className="controller-runtime-popover w-(--radix-popover-trigger-width) max-w-[100vw] rounded-none"
         aria-label="Agent configuration"
-        onKeyDown={event => {
-
-            if (event.key === "Escape") {
-                event.preventDefault();
-                event.stopPropagation();
-                close();
-            }
-        }}
     >
         <header>
             <strong>Choose your agent</strong>
@@ -55,34 +56,41 @@ export function RuntimePickerDialog({ picker, applying, session, manage }: Props
         </header>
         <RuntimeRouteFields
             picker={picker}
+            portalContainer={portalContainer}
             applying={applying}
         />
-        {loading && <p
-            role="status"
+        {loading && <InlineNotice
+            className="border-0 rounded-none bg-transparent p-0"
+            announcement="polite"
         >
             Loading models from Agent…
-        </p>}
-        {missingModel && <p
-            role="alert"
+        </InlineNotice>}
+        {missingModel && <InlineNotice
+            className="border-0 rounded-none bg-transparent p-0"
+            tone="danger"
+            announcement="assertive"
         >
             Choose an offered model or the Agent default.
-        </p>}
-        {missingEffort && <p
-            role="alert"
+        </InlineNotice>}
+        {missingEffort && <InlineNotice
+            className="border-0 rounded-none bg-transparent p-0"
+            tone="danger"
+            announcement="assertive"
         >
             Choose an available effort or the Agent default.
-        </p>}
+        </InlineNotice>}
         {waiting && <p
             className="controller-runtime-note"
         >
             Answer the pending canvas question before changing its model. Another Agent opens a separate conversation.
         </p>}
-        {(optionsError || message) && <p
-            className={optionsError || failed ? "controller-runtime-failure" : "controller-runtime-success"}
-            role={optionsError || failed ? "alert" : "status"}
+        {(optionsError || message) && <InlineNotice
+            className={`border-0 rounded-none bg-transparent p-0 ${optionsError || failed ? "controller-runtime-failure" : "controller-runtime-success"}`}
+            tone={optionsError || failed ? "danger" : "success"}
+            announcement={optionsError || failed ? "assertive" : "polite"}
         >
             {optionsError || message}
-        </p>}
+        </InlineNotice>}
         <div
             className="controller-runtime-tools"
         >
@@ -152,5 +160,5 @@ export function RuntimePickerDialog({ picker, applying, session, manage }: Props
                 {applying ? "Connecting…" : "Apply"}
             </Button>
         </footer>
-    </section>;
+    </PopoverPanel>;
 }

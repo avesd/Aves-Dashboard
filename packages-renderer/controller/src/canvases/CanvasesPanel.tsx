@@ -7,7 +7,7 @@
 
 import { useControllerApi } from "../controller-context";
 import type { CanvasSummary } from "@avesd/desktop-contracts/canvas/contracts";
-import { Button } from "@avesd/ui-controls";
+import { CollectionItem, CollectionItemButton } from "@avesd/ui-layout";
 import { Layers } from "lucide-react";
 
 interface Props {
@@ -27,29 +27,33 @@ export function CanvasesPanel({ canvases, fail }: Props) {
         >
             <h1>Canvases</h1>
         </div>
-        {canvases.map(canvas => {
+        <ul
+            className="m-0 list-none p-0"
+            aria-label="Canvases"
+        >
+            {canvases.map(canvas => {
 
-            return <div
-                className="controller-canvas"
-                key={canvas.id}
-            >
-                <Button
-                    className="flex-1 min-w-0 justify-start min-h-[64px] border-0 rounded-none text-left"
-                    variant="quiet"
-                    size="small"
-                    onClick={() => {
-
-                        void api.views.open(canvas.id).catch(fail);
-                    }}
+                return <CollectionItem
+                    className="px-gridui-16"
+                    key={canvas.id}
                 >
-                    <Layers
-                        size={17}
+                    <CollectionItemButton
+                        className="min-h-[64px] rounded-none px-gridui-8 py-[12px] type-ui"
+                        title={<span
+                            className="block truncate"
+                        >
+                            {canvas.title}
+                        </span>}
+                        icon={<Layers
+                            size={16}
+                        />}
+                        onClick={() => {
+
+                            void api.views.open(canvas.id).catch(fail);
+                        }}
                     />
-                    <span>
-                        {canvas.title}
-                    </span>
-                </Button>
-            </div>;
-        })}
+                </CollectionItem>;
+            })}
+        </ul>
     </section>;
 }

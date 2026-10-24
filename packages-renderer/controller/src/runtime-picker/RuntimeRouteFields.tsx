@@ -19,11 +19,12 @@ const providerSourceLabels: Record<AgentProviderInstallation["source"], string> 
 interface Props {
     readonly picker: ReturnType<typeof useRuntimePicker>;
     readonly applying: boolean;
+    readonly portalContainer: HTMLElement | null;
 }
 
-export function RuntimeRouteFields({ picker, applying }: Props) {
+export function RuntimeRouteFields({ picker, applying, portalContainer }: Props) {
 
-    const { draft, providers, provider, unavailable, loading, options, waiting, defaultModel, defaultEffort, missingModel, setDraft, setMessage, testing, container } = picker;
+    const { draft, providers, provider, unavailable, loading, options, waiting, defaultModel, defaultEffort, missingModel, setDraft, setMessage, testing } = picker;
     if (!draft) {
         return null;
     }
@@ -34,12 +35,13 @@ export function RuntimeRouteFields({ picker, applying }: Props) {
         <label>
             Agent
             <Select
+                position="item-aligned"
                 controlSize="small"
                 autoFocus
                 aria-label="Conversation Agent"
                 value={draft.providerId}
                 disabled={applying || testing}
-                portalContainer={container.current}
+                portalContainer={portalContainer}
                 options={providerSelectOptions(providers, draft.providerId)}
                 onValueChange={providerId => {
 
@@ -68,7 +70,7 @@ export function RuntimeRouteFields({ picker, applying }: Props) {
                 emptyLabel="No matching models"
                 value={draft.modelId}
                 disabled={applying || testing || loading || !options || waiting}
-                portalContainer={container.current}
+                portalContainer={portalContainer}
                 options={routeSelectOptions(options?.models, draft.modelId, `Agent default${defaultModel ? ` · ${defaultModel}` : ""}`, "not offered")}
                 onValueChange={modelId => {
 
@@ -84,11 +86,12 @@ export function RuntimeRouteFields({ picker, applying }: Props) {
         <label>
             Effort
             <Select
+                position="item-aligned"
                 controlSize="small"
                 aria-label="Conversation effort"
                 value={draft.effortId}
                 disabled={applying || testing || loading || !options || !options.efforts.length || missingModel || waiting}
-                portalContainer={container.current}
+                portalContainer={portalContainer}
                 options={routeSelectOptions(options?.efforts, draft.effortId, options && !options.efforts.length ? "Not exposed by this Agent" : `Agent default${defaultEffort ? ` · ${defaultEffort}` : ""}`)}
                 onValueChange={effortId => {
 

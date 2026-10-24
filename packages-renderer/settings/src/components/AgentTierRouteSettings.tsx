@@ -113,6 +113,7 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
         <label>
             Agent
             <Select
+                position="item-aligned"
                 controlSize="small"
                 aria-label={`${label} Agent`}
                 value={route.providerId}
@@ -151,6 +152,7 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
         <label>
             Effort
             <Select
+                position="item-aligned"
                 controlSize="small"
                 aria-label={`${label} effort`}
                 value={route.effortId}

@@ -1,7 +1,7 @@
 # Avesd design language
 
 Status: Updated visual direction, October 16, 2026. Trusted application surfaces
-use the Tips-derived grid and theme system. The current canvas uses a quiet
+use GridUI's grid and theme system with Avesd identity overrides. The current canvas uses a quiet
 neutral field and independent Agent-authored HTML/CSS/SVG blocks. The fixed
 content renderers and their selection and relationship presentation have been
 removed. Content examples below are visual guidance, not fixed component
@@ -206,7 +206,7 @@ its own background may use a bounded surface. Such surfaces need a clear
 purpose, reliable contrast, restrained edges, and correct stacking.
 
 Focused object details use square outer frames and continuous thin internal
-boundaries, migrated from Tips' layout and grid language. The frame owns the outer
+boundaries supplied by GridUI's layout and grid language. The frame owns the outer
 edge, sections own horizontal boundaries, and grids own internal cell seams.
 Adjacent regions share one line instead of stacking independent card borders.
 Detail inspection uses an opaque readable surface, retains the field palette,
@@ -226,13 +226,14 @@ disabled.
 
 ## Implementation ownership and open calibration
 
-`packages-ui/*` owns shared Theme, Controls, Grid, Data, Layout, class utilities,
-and the Avesd mark. Foundations remain independent of domain contracts and
-renderer packages. Layout combines foundations. Desktop renderers own state,
+`packages-ui/*` exposes GridUI's shared Theme, Controls, Grid, Data, Layout and
+class utilities, and owns Avesd identity overrides and the Avesd mark. Generic
+component capabilities are maintained in GridUI. Foundations remain independent
+of domain contracts and renderer packages. Desktop renderers own state,
 requests, spatial composition, and domain behavior. The shared model-option hook
 lives in `packages-renderer/agent`; transcript presentation belongs to the controller.
 
-Settings, controller regions, menus, and detail surfaces use Tips-derived
+Settings, controller regions, menus, and detail surfaces use GridUI
 semantic colors, typography, spacing, modest control radii, and thin grid seams.
 Replace repeated rounded cards with continuous regions where content shares a
 structure. The free canvas retains stable object positions and no permanent

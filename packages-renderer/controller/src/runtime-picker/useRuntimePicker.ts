@@ -11,7 +11,7 @@ import type { AgentProviderInstallation } from "@avesd/desktop-contracts/agent/p
 import type { AgentTierRoute } from "@avesd/desktop-contracts/agent/sessions";
 import { ipcErrorMessage } from "@avesd/desktop-contracts/ipc-result";
 import { useAgentRouteOptions } from "@avesd/renderer-agent/use-agent-route-options";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export function useRuntimePicker({ api, providersApi, session, apply }: RuntimePickerProps) {
 
@@ -48,8 +48,6 @@ export function useRuntimePicker({ api, providersApi, session, apply }: RuntimeP
         failed,
         setFailed,
     ] = useState(false);
-    const container = useRef<HTMLDivElement>(null);
-    const trigger = useRef<HTMLButtonElement>(null);
     const selected = session?.settings ? {
         providerId: session.settings.providerId,
         modelId: session.settings.modelId ?? session.route.modelId,
@@ -80,7 +78,6 @@ export function useRuntimePicker({ api, providersApi, session, apply }: RuntimeP
     const close = () => {
 
         setOpen(false);
-        trigger.current?.focus();
     };
 
     useEffect(() => {
@@ -127,24 +124,6 @@ export function useRuntimePicker({ api, providersApi, session, apply }: RuntimeP
         refresh,
         open,
     ]);
-    useEffect(() => {
-
-        if (!open) {
-            return;
-        }
-        const outside = (event: PointerEvent) => {
-
-            if (!container.current?.contains(event.target as Node)) {
-                setOpen(false);
-            }
-        };
-        document.addEventListener("pointerdown", outside);
-
-        return () => {
-
-            document.removeEventListener("pointerdown", outside);
-        };
-    }, [open]);
     useEffect(() => {
 
         if (open && providerId && providerKnown && !unavailable) {
@@ -241,8 +220,6 @@ export function useRuntimePicker({ api, providersApi, session, apply }: RuntimeP
         message,
         setMessage,
         failed,
-        container,
-        trigger,
         close,
         initial,
         test,

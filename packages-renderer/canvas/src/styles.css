@@ -1,4 +1,5 @@
-@import "tailwindcss";
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 @import "@avesd/ui-theme/styles.css";
 @import "@avesd/ui-controls/styles.css";
 @import "@avesd/ui-grid/styles.css";
@@ -9,13 +10,13 @@
 
 @layer components {
     body { min-width: 320px; }
-    .canvas-shell { position: relative; width: 100%; height: 100dvh; overflow: hidden; color: var(--avesd-foreground); background: var(--avesd-background); font-family: var(--avesd-font-body); }
+    .canvas-shell { position: relative; width: 100%; height: 100dvh; overflow: hidden; color: var(--gridui-foreground); background: var(--gridui-background); font-family: var(--gridui-font-body); }
     .canvas-surface { position: absolute; inset: 0; overflow: clip; cursor: grab; touch-action: none; }
     .canvas-surface:active { cursor: grabbing; }
     .canvas-surface:focus { outline: none; }
-    .canvas-surface:focus-visible { box-shadow: inset 0 0 0 2px var(--avesd-focus-color); }
-    .canvas-error { position: absolute; z-index: 12; right: 24px; bottom: 24px; max-width: min(420px, calc(100% - 48px)); padding: 16px; border: 1px solid var(--avesd-danger-border); background: var(--avesd-danger-background); color: var(--avesd-danger-foreground); font: var(--avesd-type-supporting); overflow-wrap: anywhere; }
-    .dashboard-zoom { position: absolute; right: 24px; bottom: 16px; color: var(--avesd-muted); font: var(--avesd-type-caption); pointer-events: none; animation: dashboard-zoom-fade 1.4s forwards; }
+    .canvas-surface:focus-visible { box-shadow: inset 0 0 0 2px var(--gridui-focus-color); }
+    .canvas-error { position: absolute; z-index: 12; right: 24px; bottom: 24px; max-width: min(420px, calc(100% - 48px)); padding: 16px; border: 1px solid var(--gridui-danger-border); background: var(--gridui-danger-background); color: var(--gridui-danger-foreground); font: var(--gridui-type-supporting); overflow-wrap: anywhere; }
+    .dashboard-zoom { position: absolute; right: 24px; bottom: 16px; color: var(--gridui-muted); font: var(--gridui-type-caption); pointer-events: none; animation: dashboard-zoom-fade 1.4s forwards; }
     .canvas-blocks-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; }
     @media (prefers-reduced-motion: reduce) { .dashboard-zoom { animation: none; opacity: 0; } }
 }

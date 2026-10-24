@@ -151,7 +151,7 @@ export function VoiceControls({ agentId, disabled = false, expanded }: {
                 Start voice
             </Button> : <>
                 <Button
-                    className="min-h-[32px] px-avesd-8 py-avesd-4 type-caption"
+                    className="min-h-[32px] px-gridui-8 py-gridui-4 type-caption"
                     variant="quiet"
                     size="small"
                     type="button"
@@ -175,7 +175,7 @@ export function VoiceControls({ agentId, disabled = false, expanded }: {
                     </span>
                 </Button>
                 <Button
-                    className="min-h-[32px] px-avesd-8 py-avesd-4 type-caption"
+                    className="min-h-[32px] px-gridui-8 py-gridui-4 type-caption"
                     variant="quiet"
                     size="small"
                     type="button"
@@ -193,7 +193,7 @@ export function VoiceControls({ agentId, disabled = false, expanded }: {
                     {state.quiet ? "Resume audio" : "Stop speaking"}
                 </Button>
                 <Button
-                    className="min-h-[32px] px-avesd-8 py-avesd-4 type-caption"
+                    className="min-h-[32px] px-gridui-8 py-gridui-4 type-caption"
                     variant="quiet"
                     size="small"
                     type="button"

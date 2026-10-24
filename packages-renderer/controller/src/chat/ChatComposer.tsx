@@ -5,7 +5,7 @@
  * @description ChatComposer
  */
 
-import { Button, Textarea } from "@avesd/ui-controls";
+import { Composer } from "@avesd/ui-layout";
 import { ArrowUp } from "lucide-react";
 import type { RefObject } from "react";
 
@@ -20,45 +20,46 @@ interface Props {
 
 export function ChatComposer({ composer, draft, setDraft, busy, changingAgent, send }: Props) {
 
-    return <form
-        className="controller-composer"
-        onSubmit={event => {
+    return <Composer
+        className="controller-composer border-0 border-t p-[12px]"
+        layout="inline"
+        value={draft}
+        onValueChange={setDraft}
+        onSubmit={() => {
 
-            event.preventDefault();
             void send();
         }}
-    >
-        <Textarea
-            className="min-w-0 resize-none rounded-none border-0 bg-transparent type-supporting"
-            ref={composer}
-            disabled={changingAgent}
-            aria-label="Message your agent"
-            placeholder={busy ? "Add a requirement for the next turn…" : "Ask anything…"}
-            value={draft}
-            maxLength={32000}
-            onChange={event => {
+        busy={busy}
+        editableWhileBusy
+        submitWhileBusy
+        submitShortcut="enter"
+        disabled={changingAgent}
+        placeholder={busy ? "Add a requirement for the next turn…" : "Ask anything…"}
+        textareaProps={{
+            ref: composer,
+            maxLength: 32000,
+            autoSize: false,
+            className: "h-[72px] min-h-0 min-w-0 resize-none rounded-none border-0 bg-transparent p-gridui-8 type-supporting",
+        }}
+        submitButtonProps={{
+            layout: "icon",
+            variant: "primary",
+            size: "small",
+            className: "h-[36px] w-[36px] min-h-0 p-0",
+        }}
+        submitContent={<ArrowUp
+            size={18}
+        />}
+        labels={{
+            input: "Message your agent",
+            submit: "Send message",
+            stop: "Stop request",
+            attach: "Attach files",
+            attachments: "Attachments",
+            removeAttachment: item => {
 
-                setDraft(event.target.value);
-            }}
-            onKeyDown={event => {
-
-                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-                    event.preventDefault();
-                    void send();
-                }
-            }}
-        />
-        <Button
-            layout="icon"
-            variant="primary"
-            size="small"
-            type="submit"
-            aria-label="Send message"
-            disabled={!draft.trim() || changingAgent}
-        >
-            <ArrowUp
-                size={18}
-            />
-        </Button>
-    </form>;
+                return `Remove ${item.name}`;
+            },
+        }}
+    />;
 }
