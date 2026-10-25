@@ -1,85 +1,100 @@
-# GridUI migration handoff
+# GridUI migration verification
 
-Status: source migration prepared; waiting for the user to publish the GridUI
-changes before installing the new version and performing final validation.
+Status: completed against published GridUI 1.0.0 on 2026-10-24.
+All six catalog entries and the installed dependency lockfile are aligned.
+The scoped minimumReleaseAgeExclude entry remains in place.
 
-## Current scope
+## Ownership and migration
 
-OBJECTIVE: migrate the controller composer, runtime popover, collections, feedback
-and transcript primitives to GridUI while preserving Avesd interactions and identity.
-DONE: source migration and upstream public APIs are prepared for publication,
-with redundant controller mechanics removed and regression scenarios ready.
-NON-GOALS: Markdown extraction, selection decoration, domain/IPC changes.
-CONSTRAINTS: no Git work or publication; defer all validation and visual checks
-until the user publishes the updated GridUI dependency.
+The UI facades consume GridUI controls, geometry, data displays, sidebar,
+composer, collections, notices, disclosure, code display and follow-scroll.
+Generic behavior stays upstream. Avesd retains domain state, request admission,
+IPC, persistence, Markdown policy, branding and canvas decoration.
 
-## Upstream changes
+The previously prepared upstream API changes are included in GridUI 1.0.0.
+No additional GridUI source change or publication was needed during this pass.
+No Git operations were performed.
 
-The GridUI repository at `/Volumes/SN850/Git/GridUI-React-Monorepo` contains:
+## Repairs during verification
 
-- Optional `SidebarGroup.label`, without an empty heading or inaccessible ID
-  reference, preserving caller-provided accessible names.
-- Public Input/Label, Popover and DataBadge/DataBar/DataValue prop type exports.
-- Composer configurable submission shortcuts, independent editing/submission
-  during busy state, native textarea props/ref, inline layout and custom submit
-  button content/props. Existing default behavior remains unchanged.
-- Disclosure summaryClassName for compact transcript presentation.
-- Composer busy/guard unit coverage, inline supplement Storybook example and
-  browser scenarios for Enter, Shift+Enter, IME, event cancellation and ref focus.
-  These scenarios are authored but have not been run.
-- Sidebar tests, an unlabeled Storybook case, documentation and pending minor
-  changeset `0a749d5b-84d5-44fd-961d-3904d534f92e`.
+- Replaced the remaining legacy Button leading prop in ApiKeySettings with
+  the supported icon child composition.
+- Fixed controller navigation text overlapping adjacent buttons at 320px.
+  The navigation scopes the public --gridui-type-ui font token to its existing
+  intended 12px size (11px below 350px), keeping weight 500 and the Avesd font
+  family. Button spacing uses supported className overrides. No compatibility
+  component or copied GridUI behavior was added.
 
-No version bump, publication, Git operation or upstream validation was performed.
+## Validation results
 
-## Avesd changes
+- GridUI make validate passed: build, compile, lint, tooling and package tests.
+- GridUI workflow browser suite passed 160 cases across four widths, two
+  themes and both motion preferences.
+- GridUI follow-scroll browser scenario passed all 16 matrix cases, covering
+  growth, pausing while reading and explicit resume.
+- Avesd pnpm validate completed lint/boundary/header/workflow checks, then found
+  the obsolete Button prop during compile. After its repair, the changed file's
+  ESLint check, root pnpm compile and root pnpm build passed, completing all
+  validation stages without rerunning unrelated successful checks.
+- Avesd affected complete suites passed: Controls 14, Grid 4, Layout 5,
+  Renderer Agent 3 (26 total).
+- Native Electron passed 9 scenarios: runtime popup nested selection and Escape,
+  independent submissions and busy supplements, voice/text draft retention,
+  cancellation, native collapse/expand, settings reopening, sidebar resizing
+  and secure API-key lifecycle with synthetic credentials.
+- The subsequent navigation-only styling fix passed scoped ESLint and the
+  desktop build. Its affected normal/narrow views and both collection views
+  were recaptured and inspected; unrelated suites were not repeated.
 
-Generic controls, geometry, data displays, sidebar behavior and class merging now
-re-export GridUI. Redundant implementations and unused old convenience components
-are removed. Selection and geometry tests exercise the public component contract
-instead of copied private algorithms. Avesd retains its bird mark, canvas
-selection decoration, identity tokens and product interactions.
+## Visual review
 
-Select callers explicitly request item alignment. Settings supplies its resize
-width formatter. No local compatibility components remain. Avesd's theme uses
-GridUI variables with the original green seed and local font stack.
+Inspected real Electron windows using disposable profiles, production assets,
+preload/IPC, and clearly synthetic conversation/provider/canvas content.
+Controller viewports: 380x240 collapsed, 440x720 expanded, 320x680 narrow.
+Settings viewports: 840x768 light and 560x728 dark/compact (native minimum width).
+Reviewed nested model options, tool output disclosure, draft input, sessions,
+long canvas titles, voice states, sidebar compact mode and keyboard focus.
 
-Controller high-priority migration is also prepared:
+No remaining clipping, overlapping navigation or document-level horizontal
+scrolling was observed in these states. The baseline button font remains
+500 14px/19.6px Inter/system. Light foreground remains rgb(36, 42, 51) and the
+settings background remains rgb(252, 252, 250). Scoped navigation is intentionally
+smaller as above. Dark theme remains readable and uses the existing identity.
 
-- Composer replaces the local form/key handling; Avesd still owns request admission.
-- Popover replaces custom positioning, document outside-click and focus handling.
-  Select/Combobox portals mount inside the popup. A new native Electron scenario
-  covers nested selection, layered Escape, close-button focus and outside dismissal.
-- CollectionItem/Button replace Canvas and Session row scaffolding. InlineNotice
-  replaces runtime and error feedback. Disclosure and CodeView render tool output.
-- useFollowScroll replaces the manual scroll flag/effect, using a 60-pixel threshold
-  and resuming on submission. Existing viewport, hidden panels and draft refs remain.
-- Old spacing utilities in the runtime picker and voice buttons are migrated;
-  obsolete composer, collection, popup-positioning and duplicate control CSS is removed.
-- The native submission scenario also covers Shift+Enter, IME and busy Enter submission.
+Review gallery: /tmp/avesd-gridui-final/review.md.
+Metrics: /tmp/avesd-gridui-final/metrics.json and recheck-metrics.json.
+Logs: /tmp/avesd-gridui-{validate,compile,build,tests,native}.log and
+/tmp/gridui-final-{validate,browser,scroll}.log.
 
-## Resume after publication
+## Coverage limits
 
-1. Obtain the published version from the user or registry; do not assume its number.
-2. Update all six GridUI catalog versions together and run `pnpm install` once.
-   The current catalog and installed packages are still 0.3.0. Manifest cleanup
-   is intentionally not yet synchronized to `pnpm-lock.yaml`.
-3. Run GridUI's `make validate` if the release has not already been validated,
-   include GridUI browser Composer scenarios (`ui-workflow-components.spec.ts`),
-   then one Avesd `pnpm validate` plus the complete affected Controls, Grid,
-   Layout and Renderer Agent suites.
-4. Run the native Electron controller (including `controller-runtime-picker.spec.ts`),
-   settings sidebar, selection/menu and submission scenarios. Inspect screenshots for light/dark themes, selected-item
-   alignment, popup focus/Escape, collapsed/expanded/narrow sidebars, controller
-   footprint and chat drafts. Use only disposable synthetic data.
-5. Fix observed regressions in the owning repository; keep generic capability
-   fixes upstream. Rerun only checks affected by a fix.
+The original migration pass used electron-vite 5.0.0 with Vite 8.3.4. The later
+dependency update uses electron-vite 6.0.0 and Vite 8.3.5; the compatibility
+verification below supersedes that earlier peer-range observation.
+Synthetic providers do not verify external ACP/model connectivity, live audio,
+provider billing or OS permission dialogs. No user content or real credentials
+were used for screenshots.
 
-Earlier intermediate checks passed before the final cleanup and upstream API
-changes. They are not final migration verification. At the user's request no
-further checks run until the updated dependency is published and installed.
 
-Temporary baseline/intermediate screenshots and the native capture script are in
-`/tmp/avesd-gridui-visual/` and `/tmp/avesd-gridui-visual.mjs`. Retired source backups
-are under `/tmp/avesd-gridui-retired-source/`. They are review aids, not maintained
-implementations or final acceptance artifacts.
+## Dependency Compatibility Recheck - 2026-10-25
+
+After the dependency update and audit remediation, the user authorized a full
+validation pass and the required compatibility repairs:
+
+- Sandbox preload entries disable dependency externalization and use isolated
+  bundles, restoring native startup under electron-vite 6.
+- Provider readiness uses a controller-authorized availability channel; Settings
+  retains its own command authorization.
+- Electron 45 credential encryption is asynchronous, with stale-write, revoked
+  sender, cancellation, and pending-decryption regression coverage.
+- Test media-query mocks retain their compatibility methods without deprecated
+  contextual declarations; deterministic JSX and test type issues were repaired.
+
+`pnpm validate` passed. The complete affected package suites passed 34 tests,
+the desktop suite passed 84 tests, and all 12 native Electron scenarios passed.
+The native light/dark and normal/narrow views were recaptured and inspected with
+production styles and isolated synthetic data. No layout repair was needed.
+
+Current visual gallery: `/tmp/avesd-validation-20261025/review.html`.
+Metrics: `/tmp/avesd-validation-20261025/metrics.json`. Native checks ran on macOS;
+Linux format admission has unit coverage, not a native secret-service run.
