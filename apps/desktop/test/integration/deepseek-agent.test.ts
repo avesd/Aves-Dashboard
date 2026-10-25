@@ -13,6 +13,7 @@ import { CanvasService } from "../../src/main/canvas/canvas-service";
 import { canvasToolDefinitions, invokeCanvasTool } from "../../src/main/canvas/canvas-tools";
 import { captureIpcResult } from "../../src/main/ipc/ipc-result";
 import type { WorkspaceFile } from "../../src/main/storage/workspace-file";
+import { deferred } from "../helpers/deferred";
 import { IpcErrorCode } from "@avesd/desktop-contracts/ipc-result";
 import type { DashboardScope } from "@avesd/workspace-model";
 import assert from "node:assert/strict";
@@ -93,6 +94,52 @@ async function errorSession(request: typeof fetch) {
         id,
     };
 }
+
+void test("cancellation and overlapping prompts stay fenced while credentials are pending", async () => {
+
+    const entered = deferred<void>();
+    const key = deferred<string>();
+    let requests = 0;
+    const host = new DeepSeekAgentHost({
+        key: () => {
+
+            entered.resolve();
+
+            return key.promise;
+        },
+        authorize: () => {
+
+            return () => {
+
+                return true;
+            };
+        },
+        request: async () => {
+
+            requests++;
+
+            return answer();
+        },
+        invoke: async () => {
+
+            throw new Error("No tool expected.");
+        },
+    });
+    try {
+        const pending = host.prompt("Synthetic pending prompt", "execution-one");
+        await entered.promise;
+
+        await assert.rejects(host.prompt("Cannot overlap", "execution-two"), { code: IpcErrorCode.ServiceNotReady });
+        await host.cancel();
+        key.resolve("synthetic-key");
+        await pending;
+
+        assert.equal(requests, 0);
+    } finally {
+        key.resolve("synthetic-key");
+        host.dispose();
+    }
+});
 
 void test("history exhaustion retains its safe code and recovery guidance through session IPC", async () => {
 
@@ -246,6 +293,55 @@ void test("direct DeepSeek loop executes a real canvas tool and returns its resu
         assert.equal(messages.at(-1)!.tool_call_id, "call-1");
         assert.match(messages.at(-1)!.content, /content/u);
         assert.equal(JSON.stringify(requests).includes("synthetic-key"), false);
+    } finally {
+        host.dispose();
+    }
+});
+
+void test("untyped host calls without execution identity stop before authorization or provider access", async () => {
+
+    let authorizations = 0;
+    let requests = 0;
+    const host = new DeepSeekAgentHost({
+        key: () => {
+
+            return "synthetic-key";
+        },
+        authorize: () => {
+
+            authorizations++;
+
+            return () => {
+
+                return true;
+            };
+        },
+        request: async () => {
+
+            requests++;
+
+            return answer();
+        },
+        invoke: async () => {
+
+            throw new Error("No tool invocation expected.");
+        },
+    });
+    try {
+        const connectionId = host.continuationToken();
+        assert.ok(connectionId);
+
+        // Reflect.apply deliberately exercises calls from outside the TypeScript contract.
+        await assert.rejects(Reflect.apply(host.prompt, host, ["Synthetic missing identity"]), {
+            code: IpcErrorCode.ServiceNotReady,
+        });
+        await assert.rejects(Reflect.apply(host.continuePrompt, host, [
+            "Synthetic missing identity",
+            connectionId,
+        ]), { code: IpcErrorCode.ServiceNotReady });
+
+        assert.equal(authorizations, 0);
+        assert.equal(requests, 0);
     } finally {
         host.dispose();
     }

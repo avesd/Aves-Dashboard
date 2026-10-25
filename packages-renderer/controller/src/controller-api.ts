@@ -13,7 +13,7 @@ import type { LiveVoiceApi } from "@avesd/desktop-contracts/voice/live";
 
 export interface ControllerApi {
     readonly agentSessions: Pick<AgentSessionsApi, "list" | "create" | "select" | "read" | "connect" | "configureSession" | "prompt" | "enqueue" | "cancelTurn" | "remove" | "routes" | "configureFlagship" | "probeRoute" | "subscribe">;
-    readonly agentProviders: Pick<AgentProvidersApi, "list">;
+    readonly agentProviders: Pick<AgentProvidersApi, "availability" | "list">;
     readonly canvases: Pick<CanvasServiceApi, "list" | "subscribe">;
     readonly views: Pick<DesktopViewsApi, "inspect" | "subscribe" | "controller" | "open">;
     readonly voice: LiveVoiceApi;

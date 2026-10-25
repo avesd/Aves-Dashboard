@@ -27,6 +27,25 @@ storage is unavailable, saving fails without replacing an existing key. Corrupt
 or locked keys are reported safely and can be replaced or deleted. See the
 [Electron safeStorage contract](https://www.electronjs.org/docs/latest/api/safe-storage/).
 
+Credential reads and encryption use Electron's asynchronous APIs without retaining
+a plaintext key cache. A save rechecks sender authorization and its configuration
+revision after encryption, immediately before committing. Reads reject a key
+replaced or deleted during decryption. Agent and voice setup reserve admission
+before awaiting credentials and recheck cancellation before sending a request.
+Existing supported ciphertext remains readable; reads do not implicitly rewrite
+files when Electron recommends key rotation. Explicit replacement writes the
+current encryption format.
+
+On Linux, asynchronous availability alone does not prove a secure backend. The
+adapter probes encryption with non-secret text and accepts only the supported
+Secret Service (`v11`) and Secret Portal (`v12`) ciphertext formats. Every write
+checks its own result, and reads reject the fixed-key POSIX fallback (`v10`) and
+unknown formats. This check is tied to Electron 45's Chromium 156 backend and must
+be reviewed on backend upgrades. The upstream implementations are
+[Secret Service](https://github.com/chromium/chromium/blob/156.0.8078.48/components/os_crypt/async/browser/freedesktop_secret_key_provider.cc),
+[Secret Portal](https://github.com/chromium/chromium/blob/156.0.8078.48/components/os_crypt/async/browser/secret_portal_key_provider.h),
+and [POSIX fallback](https://github.com/chromium/chromium/blob/156.0.8078.48/components/os_crypt/async/browser/posix_key_provider.cc).
+
 Only the settings window main frame can manage keys. Revisions reject stale
 writes and stale test results. Tests send a request to the provider's models
 endpoint with a timeout and no redirects; provider response bodies are not
@@ -189,3 +208,7 @@ GPT-Live connectivity require a project key and an on-device voice test.
 
 Protocol references: [WebRTC](https://developers.openai.com/api/docs/guides/voice-webrtc),
 [client delegation](https://developers.openai.com/api/docs/guides/live-delegation).
+
+Voice connection setup preserves typed operational failures through the IPC error
+envelope. Unknown request failures receive a safe recovery message; English
+message prefixes do not grant permission to expose provider response details.

@@ -125,6 +125,10 @@ export function createAgentSessionsApi(ipc: PreloadIpc): WireApi<ControllerApi>[
 export function createAgentProvidersApi(ipc: PreloadIpc): WireApi<ControllerApi>["agentProviders"] {
 
     return {
+        availability: () => {
+
+            return ipc.invoke(agentProvidersChannels.availability);
+        },
         list: (refresh = false) => {
 
             return ipc.invoke(agentProvidersChannels.list, refresh);

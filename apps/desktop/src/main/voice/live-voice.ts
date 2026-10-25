@@ -26,13 +26,13 @@ export class LiveVoice {
         bridge: LiveAgentBridge;
         ready: boolean;
     };
-    constructor(private readonly sessions: AgentSessions, private readonly send: (id: string, command: LiveCommand) => void, private readonly key: () => string | undefined, private readonly request: typeof fetch = fetch) {}
-    availability(): {
+    constructor(private readonly sessions: AgentSessions, private readonly send: (id: string, command: LiveCommand) => void, private readonly key: () => string | undefined | Promise<string | undefined>, private readonly request: typeof fetch = fetch) {}
+    async availability(): Promise<{
         configured: boolean;
-    } {
+    }> {
 
         try {
-            return { configured: !!this.key()?.trim() };
+            return { configured: !!(await this.key())?.trim() };
         } catch {
             return { configured: false };
         }
@@ -43,10 +43,6 @@ export class LiveVoice {
 
         if (this.#connection) {
             throw new OperationError(IpcErrorCode.Busy, "End the current voice conversation first.");
-        }
-        const key = this.key();
-        if (!key?.trim()) {
-            throw new OperationError(IpcErrorCode.ServiceNotReady, "Add an OpenAI API key in Settings → Models & services.");
         }
         const agent = this.sessions.read(agentId);
         if (agent.kind !== "interactive" || agent.status === "stopped") {
@@ -66,6 +62,13 @@ export class LiveVoice {
         };
         this.#connection = connection;
         try {
+            const key = await this.key();
+            if (this.#connection !== connection || connection.abort.signal.aborted) {
+                throw new OperationError(IpcErrorCode.ServiceNotReady, "Voice connection was closed.");
+            }
+            if (!key?.trim()) {
+                throw new OperationError(IpcErrorCode.ServiceNotReady, "Add an OpenAI API key in Settings → Models & services.");
+            }
             const response = await this.request("https://api.openai.com/v1/live/sessions", {
                 method: "POST",
                 headers: {
@@ -101,7 +104,7 @@ export class LiveVoice {
             if (this.#connection === connection) {
                 this.stop(id);
             }
-            if (error instanceof Error && error.message.startsWith("GPT-Live connection failed")) {
+            if (error instanceof OperationError) {
                 throw error;
             }
 

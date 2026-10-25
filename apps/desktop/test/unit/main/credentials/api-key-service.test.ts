@@ -6,8 +6,9 @@
  */
 
 import { ApiKeyService } from "../../../../src/main/credentials/api-key-service";
+import type { CredentialCipher } from "../../../../src/main/credentials/credential-cipher";
 import { credentialFiles } from "../../../../src/main/credentials/credential-file";
-import type { CredentialCipher } from "../../../../src/main/credentials/system-credential-cipher";
+import { deferred } from "../../../helpers/deferred";
 import { IpcErrorCode, OperationError } from "@avesd/desktop-contracts/ipc-result";
 import assert from "node:assert/strict";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
@@ -26,11 +27,11 @@ function setup(request: typeof fetch = async () => {
     let available = true;
     let changes = 0;
     const cipher: CredentialCipher = {
-        available: () => {
+        available: async () => {
 
             return available;
         },
-        encrypt: key => {
+        encrypt: async key => {
 
             const iv = randomBytes(12);
             const encoder = createCipheriv("aes-256-gcm", secret, iv);
@@ -45,7 +46,7 @@ function setup(request: typeof fetch = async () => {
                 content,
             ]);
         },
-        decrypt: encrypted => {
+        decrypt: async encrypted => {
 
             const decoder = createDecipheriv("aes-256-gcm", secret, encrypted.subarray(0, 12));
             decoder.setAuthTag(encrypted.subarray(12, 28));
@@ -87,43 +88,172 @@ function setup(request: typeof fetch = async () => {
 const authorize = () => {
 };
 
-void test("save, replace and delete use ciphertext, live reads and write-only status", () => {
+void test("revoked and stale asynchronous saves retain the last committed key", async () => {
 
     const value = setup();
     try {
-        assert.equal(value.service.key("deepseek"), undefined);
-        value.service.save("deepseek", "synthetic-first-key", 0, authorize);
+        await value.service.save("deepseek", "synthetic-original", 0, authorize);
+        const encrypt = value.cipher.encrypt;
+        let entered = deferred<void>();
+        let resume = deferred<void>();
+        value.cipher.encrypt = async key => {
+
+            const encrypted = await encrypt(key);
+            if (key === "synthetic-pending") {
+                entered.resolve();
+                await resume.promise;
+            }
+
+            return encrypted;
+        };
+        let allowed = true;
+        const pending = value.service.save("deepseek", "synthetic-pending", 1, () => {
+
+            if (!allowed) {
+                throw new OperationError(IpcErrorCode.PermissionDenied, "Synthetic window closed.");
+            }
+        });
+        await entered.promise;
+
+        allowed = false;
+        resume.resolve();
+
+        await assert.rejects(pending, { code: IpcErrorCode.PermissionDenied });
+        assert.equal(await value.service.key("deepseek"), "synthetic-original");
+        assert.equal(value.changes(), 1);
+
+        entered = deferred<void>();
+        resume = deferred<void>();
+        const stale = value.service.save("deepseek", "synthetic-pending", 1, authorize);
+        await entered.promise;
+
+        await value.service.save("deepseek", "synthetic-winner", 1, authorize);
+        resume.resolve();
+
+        await assert.rejects(stale, { code: IpcErrorCode.VersionConflict });
+        assert.equal(await value.service.key("deepseek"), "synthetic-winner");
+        assert.equal(value.changes(), 2);
+    } finally {
+        value.close();
+    }
+});
+
+void test("pending decryption cannot revive deleted or externally replaced keys", async () => {
+
+    for (const change of [
+        "remove",
+        "replace",
+    ] as const) {
+        const value = setup();
+        try {
+            await value.service.save("deepseek", "synthetic-original", 0, authorize);
+            const decrypt = value.cipher.decrypt;
+            const entered = deferred<void>();
+            const resume = deferred<void>();
+            value.cipher.decrypt = async encrypted => {
+
+                const key = await decrypt(encrypted);
+                entered.resolve();
+                await resume.promise;
+
+                return key;
+            };
+            const pending = value.service.key("deepseek");
+            await entered.promise;
+
+            if (change === "remove") {
+                value.service.remove("deepseek", 1, authorize);
+            } else {
+                const other = new ApiKeyService(value.files, value.cipher, authorize);
+                await other.save("deepseek", "synthetic-replacement", 0, authorize);
+            }
+            resume.resolve();
+
+            await assert.rejects(pending, { code: IpcErrorCode.ServiceNotReady });
+        } finally {
+            value.close();
+        }
+    }
+});
+
+void test("credential probes reserve admission before decryption and recheck authorization before network access", async () => {
+
+    let requests = 0;
+    const value = setup(async () => {
+
+        requests++;
+
+        return new Response(null, { status: 200 });
+    });
+    try {
+        await value.service.save("openai", "synthetic-key", 0, authorize);
+        const decrypt = value.cipher.decrypt;
+        const entered = deferred<void>();
+        const resume = deferred<void>();
+        value.cipher.decrypt = async encrypted => {
+
+            entered.resolve();
+            await resume.promise;
+
+            return decrypt(encrypted);
+        };
+        let allowed = true;
+        const pending = value.service.test("openai", 1, () => {
+
+            if (!allowed) {
+                throw new OperationError(IpcErrorCode.PermissionDenied, "Synthetic window closed.");
+            }
+        });
+        await entered.promise;
+
+        await assert.rejects(value.service.test("openai", 1, authorize), { code: IpcErrorCode.Busy });
+        allowed = false;
+        resume.resolve();
+
+        await assert.rejects(pending, { code: IpcErrorCode.PermissionDenied });
+        assert.equal(requests, 0);
+    } finally {
+        value.close();
+    }
+});
+
+void test("save, replace and delete use ciphertext, live reads and write-only status", async () => {
+
+    const value = setup();
+    try {
+        assert.equal(await value.service.key("deepseek"), undefined);
+        await value.service.save("deepseek", "synthetic-first-key", 0, authorize);
         const stored = readFileSync(join(value.directory, "deepseek.enc"));
         assert.equal(stored.includes("synthetic-first-key"), false);
         assert.equal(statSync(join(value.directory, "deepseek.enc")).mode & 0o777, 0o600);
-        assert.equal(value.service.key("deepseek"), "synthetic-first-key");
-        assert.equal(JSON.stringify(value.service.snapshot()).includes("synthetic-first-key"), false);
+        assert.equal(await value.service.key("deepseek"), "synthetic-first-key");
+        assert.equal(JSON.stringify(await value.service.snapshot()).includes("synthetic-first-key"), false);
         assert.deepEqual(readdirSync(value.directory), ["deepseek.enc"]);
 
         const reopened = new ApiKeyService(value.files, value.cipher, authorize);
-        assert.equal(reopened.key("deepseek"), "synthetic-first-key");
-        value.service.save("deepseek", "synthetic-replacement", 1, authorize);
-        assert.equal(value.service.key("deepseek"), "synthetic-replacement");
-        assert.equal(reopened.key("deepseek"), "synthetic-replacement");
+        assert.equal(await reopened.key("deepseek"), "synthetic-first-key");
+        await value.service.save("deepseek", "synthetic-replacement", 1, authorize);
+        assert.equal(await value.service.key("deepseek"), "synthetic-replacement");
+        assert.equal(await reopened.key("deepseek"), "synthetic-replacement");
         assert.throws(() => {
 
             value.service.remove("deepseek", 1, authorize);
         }, { code: IpcErrorCode.VersionConflict });
         value.service.remove("deepseek", 2, authorize);
-        assert.equal(value.service.key("deepseek"), undefined);
-        assert.equal(reopened.key("deepseek"), undefined);
-        assert.equal(value.service.status("deepseek").source, "missing");
+        assert.equal(await value.service.key("deepseek"), undefined);
+        assert.equal(await reopened.key("deepseek"), undefined);
+        assert.equal((await value.service.status("deepseek")).source, "missing");
         assert.equal(value.changes(), 3);
     } finally {
         value.close();
     }
 });
 
-void test("locked storage and write failures preserve saved keys; corrupt keys can be removed", () => {
+void test("locked storage and write failures preserve saved keys; corrupt keys can be removed", async () => {
 
     const value = setup();
     try {
-        value.service.save("openai", "synthetic-old-key", 0, authorize);
+        await value.service.save("openai", "synthetic-old-key", 0, authorize);
         const failing = new ApiKeyService({
             ...value.files,
             write: () => {
@@ -131,22 +261,16 @@ void test("locked storage and write failures preserve saved keys; corrupt keys c
                 throw new Error("synthetic-sensitive-error");
             },
         }, value.cipher, authorize);
-        assert.throws(() => {
-
-            failing.save("openai", "synthetic-new-key", 0, authorize);
-        }, /previous key was retained/);
-        assert.equal(value.service.key("openai"), "synthetic-old-key");
-        assert.equal(failing.status("openai").revision, 0);
+        await assert.rejects(failing.save("openai", "synthetic-new-key", 0, authorize), /previous key was retained/);
+        assert.equal(await value.service.key("openai"), "synthetic-old-key");
+        assert.equal((await failing.status("openai")).revision, 0);
         value.lock();
-        assert.equal(value.service.snapshot().secureStorageAvailable, false);
-        assert.equal(value.service.status("openai").source, "unavailable");
-        assert.throws(() => {
-
-            value.service.save("openai", "synthetic-new-key", 1, authorize);
-        }, /No key was saved/);
+        assert.equal((await value.service.snapshot()).secureStorageAvailable, false);
+        assert.equal((await value.service.status("openai")).source, "unavailable");
+        await assert.rejects(value.service.save("openai", "synthetic-new-key", 1, authorize), /No key was saved/);
         writeFileSync(join(value.directory, "openai.enc"), "synthetic-corruption");
         value.service.remove("openai", 1, authorize);
-        assert.equal(value.service.status("openai").source, "missing");
+        assert.equal((await value.service.status("openai")).source, "missing");
         assert.equal(value.changes(), 2);
     } finally {
         value.close();
@@ -167,11 +291,11 @@ void test("connection tests use current keys and expose only safe status message
     try {
         await assert.rejects(value.service.test("openai", 0, authorize), /Save an API key/);
         assert.equal(headers.length, 0);
-        value.service.save("openai", "synthetic-first", 0, authorize);
+        await value.service.save("openai", "synthetic-first", 0, authorize);
         const result = await value.service.test("openai", 1, authorize);
         assert.equal(result.ok, false);
         assert.equal(JSON.stringify(result).includes("synthetic"), false);
-        value.service.save("openai", "synthetic-next", 1, authorize);
+        await value.service.save("openai", "synthetic-next", 1, authorize);
         await value.service.test("openai", 2, authorize);
         assert.deepEqual(headers, [
             "Bearer synthetic-first",
@@ -197,10 +321,10 @@ void test("replacement aborts an in-flight probe and revoked settings windows ca
         });
     });
     try {
-        value.service.save("deepseek", "synthetic-first", 0, authorize);
+        await value.service.save("deepseek", "synthetic-first", 0, authorize);
         const first = value.service.test("deepseek", 1, authorize);
         await assert.rejects(value.service.test("deepseek", 1, authorize), { code: IpcErrorCode.Busy });
-        value.service.save("deepseek", "synthetic-next", 1, authorize);
+        await value.service.save("deepseek", "synthetic-next", 1, authorize);
         assert.equal(signal?.aborted, true);
         finish(new Response(null, { status: 200 }));
         await assert.rejects(first, { code: IpcErrorCode.VersionConflict });

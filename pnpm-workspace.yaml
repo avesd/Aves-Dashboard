@@ -22,17 +22,17 @@ updateConfig:
     - typescript
 
 catalog:
-  "@gridui/controls": 0.3.0
-  "@gridui/data": 0.3.0
-  "@gridui/grid": 0.3.0
-  "@gridui/layout": 0.3.0
-  "@gridui/style-utils": 0.3.0
-  "@gridui/theme": 0.3.0
+  "@gridui/controls": 1.0.0
+  "@gridui/data": 1.0.0
+  "@gridui/grid": 1.0.0
+  "@gridui/layout": 1.0.0
+  "@gridui/style-utils": 1.0.0
+  "@gridui/theme": 1.0.0
   "@playwright/test": 1.64.1
   "@testing-library/react": 16.3.3
   "@testing-library/user-event": 14.6.8
   "@types/jsdom": 30.0.0
-  jsdom: 30.1.2
+  jsdom: 30.1.3
   tsx: 4.23.15
   "@tailwindcss/vite": 4.3.3
   tailwindcss: 4.3.3
@@ -44,22 +44,22 @@ catalog:
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
   "@vitejs/plugin-react": 6.1.2
-  cordis: 4.0.0-rc.10
-  dotenv: 18.0.4
-  electron: 45.0.0-alpha.2
-  electron-vite: 5.0.0
-  eslint: 10.12.0
+  cordis: 4.0.0-rc.12
+  dotenv: 18.0.8
+  electron: 45.0.0
+  electron-vite: 6.0.0
+  eslint: 10.13.0
   eslint-plugin-react-hooks: 7.1.1
   eslint-plugin-simple-import-sort: 14.0.0
   globals: 17.13.0
-  lucide-react: 1.55.0
-  react: 19.3.0
-  react-dom: 19.3.0
+  lucide-react: 1.61.0
+  react: 19.3.1
+  react-dom: 19.3.1
   react-markdown: 10.1.0
   remark-gfm: 4.0.1
-  turbo: 2.11.7
+  turbo: 2.11.10
   typescript: 6.0.3
-  typescript-eslint: 8.71.1
-  vite: 8.3.4
+  typescript-eslint: 8.72.0
+  vite: 8.3.5
   yaml: 2.9.1
-  zod: 4.6.5
+  zod: 4.6.7

@@ -5,5 +5,5 @@
  * @description Providers
  */
 
-export type { AgentProviderConfiguration, AgentProviderId, AgentProviderInstallation, AgentProvidersApi } from "../settings-contract";
+export type { AgentProviderAvailability, AgentProviderConfiguration, AgentProviderId, AgentProviderInstallation, AgentProvidersApi } from "../settings-contract";
 export { agentProvidersChannels } from "../settings-contract";

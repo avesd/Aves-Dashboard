@@ -7,6 +7,7 @@
 
 import { createControllerApi } from "../../../src/preload/controller-api";
 import type { PreloadIpc } from "../../../src/preload/preload-ipc";
+import { agentProvidersChannels } from "../../../src/shared/agent/providers";
 import { agentSessionsChannels } from "../../../src/shared/agent/sessions";
 import { liveChannels } from "../../../src/shared/voice/live";
 import { createWindowClient } from "@avesd/desktop-contracts/ipc-result";
@@ -37,6 +38,7 @@ void test("controller composes its capabilities without legacy or canvas mutatio
     await api.agentSessions.enqueue("synthetic-session", "addition");
     await api.agentSessions.cancelTurn("synthetic-session");
     await api.voice.availability();
+    await api.agentProviders.availability();
     await api.settings.open();
     assert.deepEqual(calls, [
         [
@@ -66,6 +68,7 @@ void test("controller composes its capabilities without legacy or canvas mutatio
             liveChannels.command,
             { type: "availability" },
         ],
+        [agentProvidersChannels.availability],
         [settingsChannels.open],
     ]);
     assert.deepEqual(Object.keys(api).sort(), [
@@ -80,7 +83,10 @@ void test("controller composes its capabilities without legacy or canvas mutatio
         "list",
         "subscribe",
     ]);
-    assert.deepEqual(Object.keys(api.agentProviders), ["list"]);
+    assert.deepEqual(Object.keys(api.agentProviders).sort(), [
+        "availability",
+        "list",
+    ]);
     assert.equal("configure" in api.agentSessions, false);
     assert.equal("cancel" in api.agentSessions, false);
     assert.equal("close" in api.views, false);

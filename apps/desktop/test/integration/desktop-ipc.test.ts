@@ -15,6 +15,7 @@ import { registerWorkspaceIpc } from "../../src/main/ipc/workspace-ipc";
 import { dashboardBlocksChannels } from "../../src/shared/canvas/blocks";
 import { canvasServiceChannels } from "../../src/shared/canvas/contracts";
 import { desktopViewChannels } from "../../src/shared/canvas/views";
+import { deferred } from "../helpers/deferred";
 import { IpcErrorCode, OperationError, unwrapIpcResult } from "@avesd/desktop-contracts/ipc-result";
 import { settingsChannels } from "@avesd/desktop-contracts/settings";
 import type { IpcMain, IpcMainInvokeEvent } from "electron";
@@ -71,7 +72,7 @@ void test("all extracted controller and settings handlers retain sender authoriz
     install(registerSettingsIpc);
     install(registerVoiceIpc);
     install(registerWorkspaceIpc);
-    assert.equal(handlers.size, 29);
+    assert.equal(handlers.size, 30);
     for (const channel of handlers.keys()) {
         await assert.rejects(invoke(channel, "synthetic-id"), /Untrusted sender/, channel);
     }
@@ -308,10 +309,13 @@ void test("non-Agent commands work before Agent initialization while execution s
     assert.equal(opened, 1);
     assert.deepEqual(await invoke("agent-sessions:command", { type: "routes" }), routes);
     assert.ok(Array.isArray(await invoke("agent-providers:list", false)));
+    const availability = await invoke("agent-providers:availability", undefined);
+    assert.equal(availability[0].readiness, "missing");
+    assert.equal("executablePath" in availability[0], false);
     assert.equal(requestedAgent, 0);
     await assert.rejects(invoke("agent-sessions:command", { type: "list" }), /Agent sessions are unavailable/);
     assert.equal(requestedAgent, 1);
-    assert.equal(authorized, 4);
+    assert.equal(authorized, 5);
 });
 
 void test("Agent IPC validates before service access and forwards normalized execution commands", async () => {
@@ -554,6 +558,38 @@ void test("recorded block action failures become typed IPC failures", async () =
         name: "IpcError",
         code: IpcErrorCode.PermissionDenied,
     });
+});
+
+void test("API key IPC waits for async persistence and returns its operational failure", async () => {
+
+    const { ipc, invoke } = registry();
+    const entered = deferred<void>();
+    const result = deferred<void>();
+    registerSettingsIpc(ipc, () => {
+
+        return {
+            settingsWindow: { authorize() {} },
+            apiKeys: {
+                save: () => {
+
+                    entered.resolve();
+
+                    return result.promise;
+                },
+            },
+        } as unknown as ReturnType<Parameters<typeof registerSettingsIpc>[1]>;
+    });
+    const pending = invoke(settingsChannels.command, {
+        type: "saveApiKey",
+        id: "openai",
+        key: "synthetic-key",
+        revision: 0,
+    });
+    await entered.promise;
+
+    result.reject(new OperationError(IpcErrorCode.ServiceNotReady, "Synthetic secure storage unavailable."));
+
+    await assert.rejects(pending, { code: IpcErrorCode.ServiceNotReady });
 });
 
 void test("API key IPC authorizes before parsing, bounds secrets, and exposes no read-key command", async () => {

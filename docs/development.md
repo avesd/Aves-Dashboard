@@ -2,6 +2,11 @@
 
 The root pnpm scripts are the source of truth for repository tasks.
 
+Sandboxed preload entries disable dependency externalization and use isolated
+bundles. Each entry includes its workspace and third-party dependencies; Electron
+remains external. Recheck native startup after electron-vite upgrades, since a
+successful build alone does not establish sandbox preload compatibility.
+
 ## Validation
 
 `pnpm validate` runs lint, type checks, and the production build across all

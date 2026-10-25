@@ -54,6 +54,10 @@ const api: WireApi<SettingsApi> = {
         },
     },
     providers: {
+        availability: () => {
+
+            return invoke(settingsChannels.command, { type: "providerAvailability" });
+        },
         list: () => {
 
             return invoke(settingsChannels.command, { type: "providers" });

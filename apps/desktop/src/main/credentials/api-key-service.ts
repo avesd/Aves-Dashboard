@@ -5,8 +5,8 @@
  * @description Write-only credential settings with live resolution and revision-bound probes
  */
 
+import type { CredentialCipher } from "./credential-cipher";
 import type { CredentialFiles } from "./credential-file";
-import type { CredentialCipher } from "./system-credential-cipher";
 import { apiKeyValueSchema } from "@avesd/desktop-contracts/ipc-commands";
 import { IpcErrorCode, OperationError } from "@avesd/desktop-contracts/ipc-result";
 import type { ApiKeyProvider, ApiKeySnapshot, ApiKeyStatus, ApiKeyTestResult } from "@avesd/desktop-contracts/settings";
@@ -30,36 +30,43 @@ export class ApiKeyService {
         private readonly request: typeof fetch = fetch,
     ) {}
 
-    #available(): boolean {
+    async #available(): Promise<boolean> {
 
         try {
-            return this.cipher.available();
+            return await this.cipher.available();
         } catch {
             return false;
         }
     }
-    key(id: ApiKeyProvider): string | undefined {
+    async key(id: ApiKeyProvider): Promise<string | undefined> {
 
         try {
+            const revision = this.#revisions[id];
             const encrypted = this.files.read(id);
             if (!encrypted) {
                 return undefined;
             }
-            if (!this.#available()) {
+            if (!await this.#available()) {
                 throw new Error("Secure storage unavailable.");
             }
 
-            return apiKeyValueSchema.parse(this.cipher.decrypt(encrypted));
+            const key = apiKeyValueSchema.parse(await this.cipher.decrypt(encrypted));
+            // Reads must not revive a key replaced or deleted while decryption was pending.
+            if (revision !== this.#revisions[id] || !this.files.read(id)?.equals(encrypted)) {
+                throw new Error("Credential changed during decryption.");
+            }
+
+            return key;
         } catch {
             throw new OperationError(IpcErrorCode.ServiceNotReady, "The saved API key could not be read. Unlock system secure storage or replace the key in Settings.");
         }
     }
-    status(id: ApiKeyProvider): ApiKeyStatus {
+    async status(id: ApiKeyProvider): Promise<ApiKeyStatus> {
 
         let hasSavedKey = false;
         try {
             hasSavedKey = this.files.read(id) !== undefined;
-            const configured = !!this.key(id);
+            const configured = !!await this.key(id);
 
             return {
                 id,
@@ -77,14 +84,14 @@ export class ApiKeyService {
             };
         }
     }
-    snapshot(): ApiKeySnapshot {
+    async snapshot(): Promise<ApiKeySnapshot> {
 
         return {
-            secureStorageAvailable: this.#available(),
-            providers: API_KEY_PROVIDERS.map(id => {
+            secureStorageAvailable: await this.#available(),
+            providers: await Promise.all(API_KEY_PROVIDERS.map(id => {
 
                 return this.status(id);
-            }),
+            })),
         };
     }
     #check(id: ApiKeyProvider, revision: number, authorize: () => void): void {
@@ -100,15 +107,16 @@ export class ApiKeyService {
         this.#tests.get(id)?.abort();
         this.changed();
     }
-    save(id: ApiKeyProvider, input: string, revision: number, authorize: () => void): void {
+    async save(id: ApiKeyProvider, input: string, revision: number, authorize: () => void): Promise<void> {
 
         this.#check(id, revision, authorize);
         const key = apiKeyValueSchema.parse(input);
-        if (!this.#available()) {
+        if (!await this.#available()) {
             throw new OperationError(IpcErrorCode.ServiceNotReady, "System secure storage is unavailable. No key was saved.");
         }
         try {
-            const encrypted = this.cipher.encrypt(key);
+            this.#check(id, revision, authorize);
+            const encrypted = await this.cipher.encrypt(key);
             this.#check(id, revision, authorize);
             this.files.write(id, encrypted);
         } catch (error) {
@@ -132,16 +140,17 @@ export class ApiKeyService {
     async test(id: ApiKeyProvider, revision: number, authorize: () => void): Promise<ApiKeyTestResult> {
 
         this.#check(id, revision, authorize);
-        const key = this.key(id);
-        if (!key) {
-            throw new OperationError(IpcErrorCode.ServiceNotReady, "Save an API key before testing the connection.");
-        }
         if (this.#tests.has(id)) {
             throw new OperationError(IpcErrorCode.Busy, "A connection test is already running.");
         }
         const abort = new AbortController();
         this.#tests.set(id, abort);
         try {
+            const key = await this.key(id);
+            this.#check(id, revision, authorize);
+            if (!key) {
+                throw new OperationError(IpcErrorCode.ServiceNotReady, "Save an API key before testing the connection.");
+            }
             const response = await this.request(endpoints[id], {
                 headers: { Authorization: `Bearer ${key}` },
                 redirect: "error",

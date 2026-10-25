@@ -400,7 +400,7 @@ void test("missing credentials fail before network access and provider errors do
         return new Response("synthetic-private-provider-details", { status: 403 });
     });
     try {
-        assert.equal(unavailable.availability().configured, false);
+        assert.equal((await unavailable.availability()).configured, false);
         await assert.rejects(unavailable.start("one", id, "offer"), /OpenAI API key/);
         await assert.rejects(denied.start("two", id, "offer"), error => {
 
@@ -439,16 +439,16 @@ void test("voice availability and new connections resolve current credentials wi
         }));
     });
     try {
-        assert.equal(voice.availability().configured, false);
+        assert.equal((await voice.availability()).configured, false);
         key = "synthetic-first-key";
-        assert.equal(voice.availability().configured, true);
+        assert.equal((await voice.availability()).configured, true);
         await voice.start("first", id, "synthetic-offer");
         voice.stop();
         key = "synthetic-replaced-key";
         await voice.start("next", id, "synthetic-offer");
         voice.stop();
         key = undefined;
-        assert.equal(voice.availability().configured, false);
+        assert.equal((await voice.availability()).configured, false);
         await assert.rejects(voice.start("deleted", id, "synthetic-offer"), /OpenAI API key/);
         assert.deepEqual(headers, [
             "Bearer synthetic-first-key",

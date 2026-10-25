@@ -31,6 +31,8 @@ export default defineConfig({
     },
     preload: {
         build: {
+            externalizeDeps: false,
+            isolatedEntries: true,
             rollupOptions: {
                 external: ["electron"],
                 input: {

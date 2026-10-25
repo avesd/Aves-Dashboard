@@ -10,7 +10,7 @@ import { agentSessionsChannels } from "../../shared/agent/sessions";
 import { agentIpcChannels, parseAgentPrompt } from "../../shared/desktop-api";
 import type { AgentPreferences } from "../agent/agent-preferences";
 import type { AgentTaskBridge } from "../agent/agent-task-bridge";
-import { deepSeekProviders, probeDeepSeek, requireDeepSeek } from "../agent/deepseek-provider";
+import { deepSeekAvailability, deepSeekProviders, probeDeepSeek, requireDeepSeek } from "../agent/deepseek-provider";
 import type { AgentSessions } from "../agent/sessions/agent-sessions";
 import type { ApiKeyService } from "../credentials/api-key-service";
 import { dispatchCommand } from "./dispatch-command";
@@ -30,6 +30,16 @@ interface AgentServices {
 }
 
 export function registerAgentIpc(ipc: Pick<IpcMain, "handle">, getServices: () => AgentServices): void {
+
+    handleWindow(ipc, agentProvidersChannels.availability, event => {
+
+        getServices().authorizeController(event);
+
+        return deepSeekAvailability(() => {
+
+            return getServices().apiKeys?.key("deepseek");
+        });
+    });
 
     handleWindow(ipc, agentProvidersChannels.list, (event) => {
 

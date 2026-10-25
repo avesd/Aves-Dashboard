@@ -46,7 +46,7 @@ export interface DeepSeekTool {
 }
 export interface DeepSeekOptions {
     readonly model?: string;
-    readonly key: () => string | undefined;
+    readonly key: () => string | undefined | Promise<string | undefined>;
     readonly request?: typeof fetch;
     readonly tools?: Readonly<Record<string, DeepSeekTool>>;
     readonly authorize: (executionId: string) => () => boolean;
@@ -70,16 +70,20 @@ export class DeepSeekAgentHost implements SessionHost {
 
         this.#model = options.model || defaultDeepSeekModel();
     }
-    #key(): string | undefined {
+    async #key(): Promise<string | undefined> {
 
-        return this.options.key()?.trim();
+        return (await this.options.key())?.trim();
     }
-    async connect(): Promise<void> {
+    #requireOpen(): void {
 
         if (this.#disposed) {
             throw new OperationError(IpcErrorCode.ServiceNotReady, "Agent is closed.");
         }
-        if (!this.#key()) {
+    }
+    async connect(): Promise<void> {
+
+        this.#requireOpen();
+        if (!await this.#key()) {
             this.#emit({
                 type: "status",
                 status: "error",
@@ -87,6 +91,7 @@ export class DeepSeekAgentHost implements SessionHost {
             });
             throw new OperationError(IpcErrorCode.ServiceNotReady, "DeepSeek API key is not configured.");
         }
+        this.#requireOpen();
         this.#connected = true;
         this.publishSettings();
         this.#emit({
@@ -95,6 +100,13 @@ export class DeepSeekAgentHost implements SessionHost {
         });
     }
     async getSettings(): Promise<AgentSettings> {
+
+        let configured = false;
+        try {
+            configured = !!await this.#key();
+        } catch {
+            // Settings remain readable when the OS temporarily locks stored credentials.
+        }
 
         return {
             status: this.#connected ? "connected" : "disconnected",
@@ -112,8 +124,8 @@ export class DeepSeekAgentHost implements SessionHost {
                 {
                     id: "deepseek",
                     name: "DeepSeek",
-                    available: !!this.#key(),
-                    unavailableReason: this.#key() ? undefined : "Add a DeepSeek API key in Settings.",
+                    available: configured,
+                    unavailableReason: configured ? undefined : "Add a DeepSeek API key in Settings.",
                 },
             ],
         };
@@ -152,19 +164,18 @@ export class DeepSeekAgentHost implements SessionHost {
 
         return this.#disposed ? undefined : this.#connection;
     }
-    async continuePrompt(text: string, connectionId: string, executionId?: string): Promise<void> {
+    async continuePrompt(text: string, connectionId: string, executionId: string): Promise<void> {
 
         if (connectionId !== this.#connection) {
             throw new OperationError(IpcErrorCode.ServiceNotReady, "The original Agent conversation has ended.");
         }
         await this.prompt(text, executionId);
     }
-    async prompt(text: string, executionId?: string): Promise<void> {
+    async prompt(text: string, executionId: string): Promise<void> {
 
         if (this.#disposed || this.#run || !executionId) {
             throw new OperationError(IpcErrorCode.ServiceNotReady, "Agent execution is unavailable.");
         }
-        await this.connect();
         const run = new AbortController();
         this.#run = run;
         const authorized = this.options.authorize(executionId);
@@ -179,12 +190,15 @@ export class DeepSeekAgentHost implements SessionHost {
             }
         };
         const tools = this.options.tools ?? {};
-        this.#history.push({
-            role: "user",
-            content: text,
-        });
         let pending: ToolCall[] = [];
         try {
+            check();
+            await this.connect();
+            check();
+            this.#history.push({
+                role: "user",
+                content: text,
+            });
             for (let round = 0; round < 8; round++) {
                 check();
                 if (JSON.stringify(this.#history).length > 180000) {
@@ -197,7 +211,8 @@ export class DeepSeekAgentHost implements SessionHost {
                     },
                     ...this.#history,
                 ];
-                const key = this.#key();
+                const key = await this.#key();
+                check();
                 if (!key) {
                     throw new OperationError(IpcErrorCode.ServiceNotReady, "Add a DeepSeek API key in Settings.");
                 }

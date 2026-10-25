@@ -6,6 +6,8 @@
  */
 
 import { expect, test } from "./desktop-fixture";
+import type { WireApi } from "@avesd/desktop-contracts/ipc-result";
+import type { SettingsApi } from "@avesd/desktop-contracts/settings";
 import { existsSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
@@ -22,9 +24,17 @@ test("settings saves, replaces and deletes encrypted API keys without restarting
         exact: true,
     }).click();
     const settings = await opened;
-    const secure = await desktop.evaluate(({ safeStorage }) => {
+    const secure = await settings.evaluate(async () => {
 
-        return safeStorage.isEncryptionAvailable() && (process.platform !== "linux" || safeStorage.getSelectedStorageBackend() !== "basic_text");
+        const api = (globalThis as unknown as {
+            avesdSettings: WireApi<SettingsApi>;
+        }).avesdSettings;
+        const result = await api.apiKeys.read();
+        if (!result.ok) {
+            throw new Error("Synthetic credential status could not be read.");
+        }
+
+        return result.value.secureStorageAvailable;
     });
     const openai = settings.getByRole("article", {
         name: "OpenAI",
@@ -66,9 +76,11 @@ test("settings saves, replaces and deletes encrypted API keys without restarting
         exact: true,
     }).click();
     await expect(openai.getByText("Configured", { exact: true })).toBeVisible();
-    const replacement = await desktop.evaluate(({ safeStorage }, encoded) => {
+    const replacement = await desktop.evaluate(async ({ safeStorage }, encoded) => {
 
-        return safeStorage.decryptString(Buffer.from(encoded, "base64")) === "synthetic-replaced-key";
+        const decrypted = await safeStorage.decryptStringAsync(Buffer.from(encoded, "base64"));
+
+        return decrypted.result === "synthetic-replaced-key";
     }, (await readFile(path)).toString("base64"));
     expect(replacement).toBe(true);
 

@@ -129,6 +129,7 @@ export const settingsCommandSchema = z.discriminatedUnion("type", [
     }),
     z.strictObject({ type: z.literal("read") }),
     z.strictObject({ type: z.literal("providers") }),
+    z.strictObject({ type: z.literal("providerAvailability") }),
     z.strictObject({
         type: z.literal("setup"),
         id: z.string().min(1)
@@ -158,6 +159,7 @@ export interface SettingsResults {
     testApiKey: ResultOf<SettingsApi["apiKeys"]["test"]>;
     read: ResultOf<SettingsApi["read"]>;
     providers: ResultOf<AgentProvidersApi["list"]>;
+    providerAvailability: ResultOf<AgentProvidersApi["availability"]>;
     setup: void;
     probe: ResultOf<SettingsApi["probeRoute"]>;
     configure: void;
@@ -225,10 +227,19 @@ export type CommandRequest<C extends CommandChannel> = WindowCommands[C]["reques
 export type CommandResponse<C extends CommandChannel, R extends CommandRequest<C>> =
     WindowCommands[C]["results"][R["type"] & keyof WindowCommands[C]["results"]];
 
+export type WindowResults = {
+    [C in CommandChannel]: CommandResponse<C, CommandRequest<C>>;
+} & {
+    "agent-providers:availability": ResultOf<AgentProvidersApi["availability"]>;
+    "agent-providers:list": ResultOf<AgentProvidersApi["list"]>;
+    "settings:open": void;
+};
+
 export interface WindowWireInvoke {
     <C extends CommandChannel, R extends CommandRequest<C>>(channel: C, request: R): Promise<IpcResult<CommandResponse<C, R>>>;
-    (channel: "agent-providers:list", refresh?: boolean): Promise<IpcResult<ResultOf<AgentProvidersApi["list"]>>>;
-    (channel: "settings:open"): Promise<IpcResult<void>>;
+    (channel: "agent-providers:list", refresh?: boolean): Promise<IpcResult<WindowResults["agent-providers:list"]>>;
+    (channel: "agent-providers:availability"): Promise<IpcResult<WindowResults["agent-providers:availability"]>>;
+    (channel: "settings:open"): Promise<IpcResult<WindowResults["settings:open"]>>;
 }
 
 /** Each command implementation is checked against its own response, not a broad union. */

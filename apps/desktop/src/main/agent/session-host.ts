@@ -9,8 +9,8 @@ import type { AgentEvent, AgentSettings } from "@avesd/plugin-api";
 
 export interface SessionHost {
     connect(): Promise<void>;
-    prompt(text: string, executionId?: string): Promise<void>;
-    continuePrompt(text: string, connectionId: string, executionId?: string): Promise<void>;
+    prompt(text: string, executionId: string): Promise<void>;
+    continuePrompt(text: string, connectionId: string, executionId: string): Promise<void>;
     continuationToken(): string | undefined;
     cancel(): Promise<void>;
     getSettings(): Promise<AgentSettings>;

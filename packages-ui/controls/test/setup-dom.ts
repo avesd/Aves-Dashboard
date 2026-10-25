@@ -56,7 +56,7 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
 Object.defineProperty(window, "matchMedia", {
     value: (media: string): MediaQueryList => {
 
-        return {
+        const mediaQueryList = {
             media,
             matches: false,
             onchange: null,
@@ -69,6 +69,8 @@ Object.defineProperty(window, "matchMedia", {
                 return true;
             },
         };
+
+        return mediaQueryList;
     },
 });
 // jsdom has no layout or scrolling. Geometry is verified in the real renderer.

@@ -46,6 +46,16 @@ export type AgentRouteProbeResult = {
     readonly message: string;
 };
 export type AgentProviderId = string;
+/** Local configuration only; successful access is reported by an explicit route probe. */
+export interface AgentProviderAvailability {
+    readonly id: string;
+    readonly name: string;
+    readonly kind: "api";
+    readonly enabled: boolean;
+    readonly readiness: "configured" | "missing" | "unavailable";
+    readonly message?: string;
+    readonly setupUrl?: string;
+}
 export interface AgentProviderConfiguration {
     readonly enabled: boolean;
     readonly executablePath: string;
@@ -63,11 +73,13 @@ export interface AgentProviderInstallation extends AgentProviderConfiguration {
     readonly setupUrl?: string;
 }
 export interface AgentProvidersApi {
+    availability(): Promise<readonly AgentProviderAvailability[]>;
     list(refresh?: boolean): Promise<readonly AgentProviderInstallation[]>;
     configure(id: AgentProviderId, configuration: AgentProviderConfiguration): Promise<void>;
     openSetup(id: AgentProviderId): Promise<void>;
 }
 export const agentProvidersChannels = {
+    availability: "agent-providers:availability",
     list: "agent-providers:list",
     configure: "agent-providers:configure",
     setup: "agent-providers:setup",
@@ -106,7 +118,7 @@ export interface ApiKeysApi {
 
 export interface SettingsApi {
     readonly apiKeys: ApiKeysApi;
-    readonly providers: Pick<AgentProvidersApi, "list" | "openSetup">;
+    readonly providers: Pick<AgentProvidersApi, "availability" | "list" | "openSetup">;
     read(): Promise<SettingsSnapshot>;
     configure(routes: AgentTierRoutes, revision: number): Promise<void>;
     probeRoute(route: AgentTierRoute, test: boolean): Promise<AgentRouteProbeResult>;

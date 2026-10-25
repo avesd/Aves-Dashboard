@@ -6,7 +6,7 @@
  */
 
 import type { AgentPreferences } from "../agent/agent-preferences";
-import { deepSeekProviders, probeDeepSeek, requireDeepSeek } from "../agent/deepseek-provider";
+import { deepSeekAvailability, deepSeekProviders, probeDeepSeek, requireDeepSeek } from "../agent/deepseek-provider";
 import type { ApiKeyService } from "../credentials/api-key-service";
 import type { SettingsWindow } from "../windows/settings-window";
 import { dispatchCommand } from "./dispatch-command";
@@ -66,7 +66,7 @@ export function registerSettingsIpc(ipc: Pick<IpcMain, "handle">, getServices: (
             },
             saveApiKey: request => {
 
-                return void credentials().save(request.id, request.key, request.revision, authorize);
+                return credentials().save(request.id, request.key, request.revision, authorize);
             },
             removeApiKey: request => {
 
@@ -86,6 +86,13 @@ export function registerSettingsIpc(ipc: Pick<IpcMain, "handle">, getServices: (
             providers: () => {
 
                 return deepSeekProviders(() => {
+
+                    return getServices().apiKeys?.key("deepseek");
+                });
+            },
+            providerAvailability: () => {
+
+                return deepSeekAvailability(() => {
 
                     return getServices().apiKeys?.key("deepseek");
                 });

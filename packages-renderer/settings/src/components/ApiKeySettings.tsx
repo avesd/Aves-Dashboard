@@ -84,14 +84,14 @@ export function ApiKeySettings({ api }: {
                 <Button
                     variant="secondary"
                     size="small"
-                    leading={<RefreshCw
-                        size={16}
-                    />}
                     onClick={() => {
 
                         void refresh();
                     }}
                 >
+                    <RefreshCw
+                        size={16}
+                    />
                     Refresh
                 </Button>
             </div>
