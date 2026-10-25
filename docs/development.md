@@ -64,6 +64,11 @@ general `release/` output exclusion. Run `pnpm --filter @avesd/configuration tes
 for the source/output coverage regression cases. The Configuration compile script
 syntax-checks the shared ESLint configuration and these JavaScript test sources.
 
+Desktop compile coverage includes `test/unit/shared/ipc-commands.types.ts`.
+Its compile-only cases cover command-result inference through public block APIs,
+wire envelopes, composed renderer clients, per-command handlers, and window
+registration. These cases never invoke a transport at runtime.
+
 Handwritten canvas and compatibility widget browser programs live in
 `apps/desktop/src/sandbox/`, covered by desktop web compilation and lint. Entries
 are self-contained IIFEs with erased type queries and no static value imports. The main

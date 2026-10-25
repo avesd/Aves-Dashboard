@@ -7,27 +7,26 @@
 
 import type { BlockActionResult, BlockSnapshot } from "../../../shared/canvas/blocks";
 import type { CanvasDocument } from "../../../shared/canvas/contracts";
-import type { DashboardBlockActions } from "./block-runtime-types";
-import type { AgentTaskStatus } from "@avesd/plugin-api";
+import type { SessionTask } from "../../agent/sessions/agent-sessions";
+import type { BlockActionExecution, DashboardBlockActions } from "./block-runtime-types";
 import type { BlockData, DashboardBlock } from "@avesd/workspace-model";
 
-/** Idle tasks remain pending from the block action caller's perspective. */
-function taskActionStatus(status: AgentTaskStatus): BlockActionResult["status"] {
+function taskActionStatus(status: ReturnType<SessionTask["snapshot"]>["status"]): BlockActionResult["status"] {
 
     switch (status) {
         case "completed":
             return "completed";
         case "error":
-        case "stopped":
+        case "cancelled":
             return "error";
-        case "idle":
         case "running":
+        case "cancelling":
             return "running";
     }
 }
 
 export class BlockSnapshots {
-    constructor(private readonly actions: DashboardBlockActions, private readonly executions: ReadonlyMap<string, BlockActionResult[]>) {}
+    constructor(private readonly actions: DashboardBlockActions, private readonly executions: ReadonlyMap<string, BlockActionExecution[]>) {}
 
     dynamic(block: DashboardBlock, snapshot: BlockSnapshot): boolean {
 
@@ -68,25 +67,19 @@ export class BlockSnapshots {
                 ];
             })) : source;
         }
-        const actions = (this.executions.get(`${canvas.id}/${block.id}/${block.generation}`) ?? []).map(record => {
+        const actions = (this.executions.get(`${canvas.id}/${block.id}/${block.generation}`) ?? []).map(({ result: record, task }) => {
 
-            if (!record.taskId) {
+            if (!task) {
                 return record;
             }
-            const task = this.actions.taskResult(record.taskId);
-            if (!task) {
-                return {
-                    ...record,
-                    status: "error" as const,
-                };
-            }
+            const result = task.snapshot();
 
             return {
                 ...record,
-                status: taskActionStatus(task.status),
+                status: taskActionStatus(result.status),
                 result: {
-                    status: task.status,
-                    answer: task.answer,
+                    status: result.status,
+                    answer: result.answer,
                 },
             };
         });

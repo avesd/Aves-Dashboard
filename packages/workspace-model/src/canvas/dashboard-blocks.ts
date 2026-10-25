@@ -127,6 +127,17 @@ export const blockQuestionSchema = blockQuestionInputSchema.safeExtend({
 });
 export type BlockQuestion = z.infer<typeof blockQuestionSchema>;
 
+function questionAnswerFailure(message: string): z.ZodError {
+
+    return new z.ZodError([
+        {
+            code: "custom",
+            path: [],
+            message,
+        },
+    ]);
+}
+
 /** Validate answer semantics independently of the generated document. */
 export function questionAnswers(question: Pick<BlockQuestion, "fields">, input: unknown): BlockData {
 
@@ -138,20 +149,20 @@ export function questionAnswers(question: Pick<BlockQuestion, "fields">, input: 
             return field.key === key;
         });
     })) {
-        throw new Error("Unknown answer field.");
+        throw questionAnswerFailure("Unknown answer field.");
     }
     const answers: Record<string, JsonObject[string]> = {};
     for (const field of question.fields) {
         const value = supplied[field.key];
         if (value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) {
             if (field.required) {
-                throw new Error("A required answer is missing.");
+                throw questionAnswerFailure("A required answer is missing.");
             }
             continue;
         }
         if (field.type === "text") {
             if (typeof value !== "string" || !value.trim() || value.length > 4096) {
-                throw new Error("Invalid text answer.");
+                throw questionAnswerFailure("Invalid text answer.");
             }
             answers[field.key] = value.trim();
         } else {
@@ -164,7 +175,7 @@ export function questionAnswers(question: Pick<BlockQuestion, "fields">, input: 
                         return candidate.value === option;
                     });
                 })) {
-                throw new Error("Invalid choice answer.");
+                throw questionAnswerFailure("Invalid choice answer.");
             }
             answers[field.key] = field.type === "single_choice" ? values[0] as string : [...values].sort() as string[];
         }

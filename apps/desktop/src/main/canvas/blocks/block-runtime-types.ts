@@ -5,8 +5,8 @@
  * @description Block Runtime Types
  */
 
-import type { AnswerContinuationStatus } from "../../agent/sessions/agent-sessions";
-import type { AgentTaskStatus } from "@avesd/plugin-api";
+import type { BlockActionResult } from "../../../shared/canvas/blocks";
+import type { AnswerContinuationStatus, SessionTask } from "../../agent/sessions/agent-sessions";
 import type { BlockData, BlockQuestionOwner } from "@avesd/workspace-model";
 import type { Rectangle, WebContents } from "electron";
 
@@ -23,6 +23,10 @@ export interface BlockLease {
     rect?: Rectangle;
     errors: string[];
 }
+export interface BlockActionExecution {
+    readonly result: BlockActionResult;
+    readonly task?: SessionTask;
+}
 export interface DashboardBlockActions {
     questionOwner(clientId: string): BlockQuestionOwner | undefined;
     questionActive(owner: BlockQuestionOwner, pending: boolean): boolean;
@@ -33,11 +37,5 @@ export interface DashboardBlockActions {
         viewId: number;
         canvasId?: string;
     }>;
-    task(canvasId: string, prompt: string, input: BlockData, active: () => Promise<boolean>): Promise<{
-        id: string;
-    }>;
-    taskResult(id: string): {
-        status: AgentTaskStatus;
-        answer: string;
-    } | undefined;
+    task(canvasId: string, prompt: string, input: BlockData, active: () => Promise<boolean>): Promise<SessionTask>;
 }

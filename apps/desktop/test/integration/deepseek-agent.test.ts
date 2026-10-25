@@ -347,6 +347,88 @@ void test("untyped host calls without execution identity stop before authorizati
     }
 });
 
+void test("interactive sessions keep trusted execution identity out of direct tool arguments", async () => {
+
+    const requests: {
+        messages: {
+            role: string;
+            content: string;
+        }[];
+        tools: {
+            function: {
+                name: string;
+                parameters: {
+                    properties: Record<string, unknown>;
+                    additionalProperties: boolean;
+                };
+            };
+        }[];
+    }[] = [];
+    let invocations = 0;
+    const sessions: AgentSessions = new AgentSessions(new AgentPreferences(), async () => {
+
+        return {
+            workspaceId: "synthetic-workspace" as DashboardScope["workspaceId"],
+            dashboardId: "synthetic-canvas" as DashboardScope["dashboardId"],
+            kind: "interactive",
+            source: "test",
+        };
+    }, async (_origin, _route, id) => {
+
+        return {
+            host: new DeepSeekAgentHost({
+                key: () => {
+
+                    return "synthetic-key";
+                },
+                tools: canvasToolDefinitions,
+                authorize: executionId => {
+
+                    return sessions.authorizeExecution(id, executionId);
+                },
+                request: async (_url, init) => {
+
+                    requests.push(JSON.parse(init!.body as string) as typeof requests[number]);
+
+                    return requests.length === 1 ? call() : answer();
+                },
+                invoke: async (_name, input, active) => {
+
+                    assert.equal(active(), true);
+                    assert.deepEqual(input, { request: { type: "list" } });
+                    invocations++;
+
+                    return { content: [] };
+                },
+            }),
+            release() {},
+        };
+    }, () => {
+    });
+    try {
+        const { id } = await sessions.create();
+
+        await sessions.prompt("List synthetic canvases", id);
+
+        const initial = requests[0]!;
+        assert.equal(initial.messages.find(message => {
+
+            return message.role === "user";
+        })?.content, "List synthetic canvases");
+        const definition = initial.tools.find(tool => {
+
+            return tool.function.name === "aves_dashboard_canvases";
+        })!.function.parameters;
+        assert.equal(Object.hasOwn(definition.properties, "executionId"), false);
+        assert.equal(definition.additionalProperties, false);
+        assert.equal(invocations, 1);
+        assert.equal(requests.length, 2);
+        assert.equal(sessions.read(id).execution?.status, "completed");
+    } finally {
+        sessions.dispose();
+    }
+});
+
 void test("DeepSeek cancellation retains conversation, rejects late tool responses, and drains supplements FIFO", { timeout: 5000 }, async () => {
 
     let release!: (response: Response) => void;

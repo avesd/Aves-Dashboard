@@ -93,16 +93,16 @@ void test("canvas domain failures use the same window error codes", async () => 
     });
 });
 
-void test("explicit window registration wraps failures without a channel whitelist", async () => {
+void test("typed window registration wraps failures in the result envelope", async () => {
 
     let registered: Parameters<IpcMain["handle"]>[1] | undefined;
     handleWindow({
         handle: (channel, handler) => {
 
-            assert.equal(channel, "synthetic-window:command");
+            assert.equal(channel, "dashboard-blocks:request");
             registered = handler;
         },
-    }, "synthetic-window:command", () => {
+    }, "dashboard-blocks:request", () => {
 
         throw new OperationError(IpcErrorCode.PermissionDenied, "Denied");
     });

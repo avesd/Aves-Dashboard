@@ -5,7 +5,7 @@
  * @description Blocks
  */
 
-import type { IpcFailure } from "../ipc-result";
+import type { CommandInvoke, IpcFailure } from "../ipc-result";
 import type { BlockData, BlockQuestion, DashboardBlock } from "@avesd/workspace-model";
 import { blockChangeSchema, blockDataSchema, blockIdSchema, blockRevisionSchema } from "@avesd/workspace-model";
 import * as z from "zod";
@@ -160,7 +160,18 @@ export interface BlockSnapshotDelivery {
     readonly leaseId: string;
     readonly snapshot: BlockSnapshot;
 }
-export type BlockRuntimeResponse = BlockMount | CanvasSandboxMount | readonly BlockSnapshotDelivery[] | BlockSnapshot | BlockActionResult | undefined;
+export interface BlockResults {
+    mount_canvas: CanvasSandboxMount;
+    release_canvas: undefined;
+    snapshots: readonly BlockSnapshotDelivery[];
+    mount: BlockMount;
+    snapshot: BlockSnapshot;
+    release: undefined;
+    report: undefined;
+    action: BlockActionResult;
+    state: undefined;
+}
+export type BlockRuntimeResponse<R extends BlockRuntimeRequest = BlockRuntimeRequest> = BlockResults[R["type"]];
 export interface BlockRuntimeStatus {
     readonly blockId: string;
     readonly revision: number;
@@ -169,7 +180,7 @@ export interface BlockRuntimeStatus {
     readonly errors: readonly string[];
 }
 export interface DashboardBlocksApi {
-    invoke(request: BlockRuntimeRequest): Promise<BlockRuntimeResponse>;
+    invoke: CommandInvoke<BlockRuntimeRequest, BlockResults>;
     subscribe(listener: () => void): () => void;
 }
 export const dashboardBlocksChannels = {

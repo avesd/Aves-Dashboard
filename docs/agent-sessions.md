@@ -77,8 +77,9 @@ means that a key exists. Old provider tier routes migrate to DeepSeek defaults.
 Each session pins a tier route (flagship, reasoning or action). Interactive
 sessions receive only the five existing canvas tools. Widget background sessions
 receive no tools and operate on supplied text. Each returned tool name and JSON
-argument is validated before the existing domain operation runs. Its result is
-appended as a tool message before requesting the next model response.
+argument is validated before the existing domain operation runs. Direct provider
+prompts do not ask models to supply execution metadata in tool arguments. Each
+tool result is appended as a tool message before requesting the next model response.
 
 A turn permits eight model rounds, 16 tool calls per response, a 60-second
 request timeout, and bounded history/results. There are no automatic request
@@ -99,6 +100,12 @@ Text submission state belongs to its target conversation. A pending request in
 one conversation does not block another idle conversation; switching selection
 shows the selected conversation's own pending state.
 
+A block-launched task keeps the status and assistant reply of its original
+execution. Its handle is available during preparation, settles on completion,
+failure, or cancellation, and remains stable when later turns reuse the session
+or the session is removed. This result lives in memory with the block runtime;
+it does not add transcript persistence or restore Agent conversations after exit.
+
 ## Cancellation, supplements and authorization
 
 - Stop speaking affects audio only.
@@ -118,8 +125,10 @@ shows the selected conversation's own pending state.
 - cancel still permanently stops a session; remove releases its transcript.
 
 The execution ID is supplied directly by the trusted session manager, not by
-model-generated arguments. Each tool captures that exact execution's revocable
-authorization callback. The host checks before dispatch and after awaits;
+model-generated arguments. Both host prompt methods require it in their typed
+contracts; runtime checks also reject missing or revoked identity. Each tool
+captures that exact execution's revocable authorization callback. The host checks
+before dispatch and after awaits;
 CanvasService checks again inside its storage transaction. Completion and
 cancellation revoke the callback permanently. New turns cannot authorize old
 responses. The legacy local-host gateway keeps its independent compatibility

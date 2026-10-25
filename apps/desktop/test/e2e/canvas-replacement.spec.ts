@@ -6,7 +6,6 @@
  */
 
 import { expect, test } from "./desktop-fixture";
-import type { BlockMount } from "@avesd/desktop-contracts/canvas/blocks";
 import type { WireApi } from "@avesd/desktop-contracts/ipc-result";
 import type { CanvasApi } from "@avesd/renderer-canvas/contracts";
 import type { ControllerApi } from "@avesd/renderer-controller/contracts";
@@ -175,7 +174,7 @@ test("failed replacements preserve the display and capacity for repair, and reje
                 if (!mounted.ok) {
                     break;
                 }
-                leases.push((mounted.value as BlockMount).leaseId);
+                leases.push((mounted.value).leaseId);
             }
 
             return leases.length;

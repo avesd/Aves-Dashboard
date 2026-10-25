@@ -162,6 +162,99 @@ void test("cancel one turn, revoke its authorization immediately, and reuse the 
     }
 });
 
+void test("task results settle before queued turns and retain only their own reply", async () => {
+
+    const { sessions, id, host } = await setup();
+    try {
+        const task = sessions.startTask("Synthetic block task", id);
+        assert.deepEqual(task.snapshot(), {
+            status: "running",
+            answer: "",
+        });
+        await tick();
+
+        for (const listener of host.listeners) {
+            listener({
+                type: "messageChunk",
+                text: "Original task answer",
+            });
+        }
+        sessions.enqueue("Synthetic queued turn", id);
+        host.requests[0]!.done.resolve();
+        await tick();
+
+        const settled = task.snapshot();
+        assert.deepEqual(settled, {
+            status: "completed",
+            answer: "Original task answer",
+        });
+        assert.equal(host.requests.length, 2);
+        assert.equal(sessions.read(id).execution?.status, "running");
+
+        for (const listener of host.listeners) {
+            listener({
+                type: "messageChunk",
+                text: "Later conversation answer",
+            });
+        }
+        host.requests[1]!.done.resolve();
+        await tick();
+        await sessions.remove(id);
+
+        assert.deepEqual(task.snapshot(), settled);
+    } finally {
+        sessions.dispose();
+    }
+});
+
+void test("task handles retain failures before execution admission and during preparation", async () => {
+
+    const { sessions, id, host } = await setup();
+    try {
+        const running = sessions.prompt("Existing turn", id);
+        await tick();
+
+        const rejected = sessions.startTask("Cannot overlap", id);
+        await tick();
+
+        assert.equal(rejected.snapshot().status, "error");
+        assert.equal(host.requests.length, 1);
+
+        host.requests[0]!.done.resolve();
+        await running;
+        await sessions.remove(id);
+    } finally {
+        sessions.dispose();
+    }
+
+    const unavailable = new AgentSessions(new AgentPreferences(), async () => {
+
+        throw new Error("No implicit task origin expected.");
+    }, async () => {
+
+        throw new OperationError(IpcErrorCode.ServiceNotReady, "Synthetic unavailable Agent.");
+    }, () => {
+    });
+    try {
+        const created = await unavailable.create("reasoning", {
+            workspaceId: "test-workspace" as DashboardScope["workspaceId"],
+            dashboardId: "test-canvas" as DashboardScope["dashboardId"],
+            kind: "interactive",
+            source: "test",
+        });
+
+        const task = unavailable.startTask("Cannot prepare", created.id);
+        await tick();
+
+        assert.deepEqual(task.snapshot(), {
+            status: "error",
+            answer: "",
+        });
+    } finally {
+        unavailable.dispose();
+    }
+});
+
 void test("supplements execute FIFO once each, with distinct execution IDs", async () => {
 
     const { sessions, id, host } = await setup();

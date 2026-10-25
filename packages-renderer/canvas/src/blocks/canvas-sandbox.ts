@@ -7,7 +7,7 @@
 
 import type { MountedBlock } from "./mounted-block";
 import { createSandboxMessageHandler } from "./sandbox-messages";
-import type { BlockMount, BlockSnapshotDelivery, CanvasSandboxInteraction, CanvasSandboxMount, CanvasViewport, DashboardBlocksApi } from "@avesd/desktop-contracts/canvas/blocks";
+import type { BlockMount, CanvasSandboxInteraction, CanvasSandboxMount, CanvasViewport, DashboardBlocksApi } from "@avesd/desktop-contracts/canvas/blocks";
 import { ipcErrorMessage } from "@avesd/desktop-contracts/ipc-result";
 import type { DashboardBlock } from "@avesd/workspace-model";
 
@@ -140,7 +140,7 @@ export function createCanvasSandbox({ api, canvasId, frame, view, sandbox, error
             const deliveries = await api.invoke({
                 type: "snapshots",
                 sandboxId: mountedSandbox.sandboxId,
-            }) as readonly BlockSnapshotDelivery[];
+            });
             if (isActive()) {
                 for (const { leaseId, snapshot } of deliveries) {
                     if (versions.has(leaseId)) {
@@ -231,7 +231,7 @@ export function createCanvasSandbox({ api, canvasId, frame, view, sandbox, error
                         blockId: block.id,
                         generation: block.generation,
                         revision: block.revision,
-                    }) as BlockMount;
+                    });
                 } catch (cause) {
                     requested.delete(block.id);
                     throw cause;
@@ -326,9 +326,8 @@ export function createCanvasSandbox({ api, canvasId, frame, view, sandbox, error
 
         void refresh();
     });
-    void api.invoke({ type: "mount_canvas" }).then(value => {
+    void api.invoke({ type: "mount_canvas" }).then(mount => {
 
-        const mount = value as CanvasSandboxMount;
         if (!isActive()) {
             void api.invoke({
                 type: "release_canvas",

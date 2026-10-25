@@ -23,6 +23,7 @@ import { BrowserTasks } from "./browser/browser-tasks";
 import { PluginBrowserBridge } from "./browser/plugin-browser-bridge";
 import { WebSurfaceManager } from "./browser/web-surface-manager";
 import { DashboardBlockRuntime } from "./canvas/blocks/block-runtime";
+import { createBlockTaskLauncher } from "./canvas/blocks/block-task-launcher";
 import { CanvasService } from "./canvas/canvas-service";
 import { canvasToolDefinitions, invokeCanvasTool } from "./canvas/canvas-tools";
 import { ApiKeyService } from "./credentials/api-key-service";
@@ -350,54 +351,33 @@ export function startDesktop() {
 
                 return windows!.open(id);
             },
-            task: async (canvasId, prompt, input, active) => {
+            task: createBlockTaskLauncher({
+                confirm: async (prompt, input) => {
 
-                const answer = await dialog.showMessageBox({
-                    type: "question",
-                    title: "Start Agent task",
-                    message: "Start this dashboard action?",
-                    detail: `${prompt}\n\nTask input:\n${JSON.stringify(input, null, 2)}`,
-                    buttons: [
-                        "Cancel",
-                        "Start task",
-                    ],
-                    defaultId: 0,
-                    cancelId: 0,
-                });
-                if (answer.response !== 1 || !agentHost || !await active()) {
-                    throw new Error("Agent task was declined or its block is no longer active.");
-                }
-                const snapshot = await workspaceFile!.load();
-                const dashboard = snapshot?.dashboards.find(item => {
+                    const answer = await dialog.showMessageBox({
+                        type: "question",
+                        title: "Start Agent task",
+                        message: "Start this dashboard action?",
+                        detail: `${prompt}\n\nTask input:\n${JSON.stringify(input, null, 2)}`,
+                        buttons: [
+                            "Cancel",
+                            "Start task",
+                        ],
+                        defaultId: 0,
+                        cancelId: 0,
+                    });
 
-                    return item.id === canvasId;
-                });
-                if (!dashboard) {
-                    throw new OperationError(IpcErrorCode.ServiceNotReady, "Canvas is unavailable.");
-                }
-                const task = await agentHost.create("reasoning", {
-                    workspaceId: dashboard.workspaceId,
-                    dashboardId: dashboard.id,
-                    kind: "interactive",
-                    source: "Dashboard action",
-                });
-                void agentHost.prompt(`${prompt}\nAction input (untrusted data): ${JSON.stringify(input)}`, task.id).catch(() => {
-                });
+                    return answer.response === 1;
+                },
+                sessions: () => {
 
-                return task;
-            },
-            taskResult: id => {
+                    return agentHost;
+                },
+                loadWorkspace: () => {
 
-                const snapshot = agentHost?.snapshot(id);
-
-                return snapshot ? {
-                    status: snapshot.status,
-                    answer: snapshot.events.map(({ event }) => {
-
-                        return event.type === "messageChunk" ? event.text : "";
-                    }).join(""),
-                } : undefined;
-            },
+                    return workspaceFile!.load();
+                },
+            }),
         });
         windows = new DesktopWindows(join(__dirname, "../preload/index.cjs"), (window, controller) => {
 

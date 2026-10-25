@@ -37,10 +37,22 @@ export class OperationError extends Error {
         this.name = "OperationError";
     }
 }
+declare const commandWire: unique symbol;
+
+/** Type-only metadata preserves generic command correlation through WireApi. */
+export interface CommandInvoke<Request extends {
+    type: string;
+}, Results extends Record<Request["type"], unknown>> {
+    <R extends Request>(request: R): Promise<Results[R["type"]]>;
+    readonly [commandWire]?: <R extends Request>(request: R) => Promise<IpcResult<Results[R["type"]]>>;
+}
+
 export type WireApi<T> = {
-    [K in keyof T]: T[K] extends (...args: infer A) => infer R
-        ? R extends Promise<infer V> ? (...args: A) => Promise<IpcResult<V>> : T[K]
-        : T[K] extends object ? WireApi<T[K]> : T[K];
+    [K in keyof T]: typeof commandWire extends keyof T[K]
+        ? NonNullable<T[K][typeof commandWire]>
+        : T[K] extends (...args: infer A) => infer R
+            ? R extends Promise<infer V> ? (...args: A) => Promise<IpcResult<V>> : T[K]
+            : T[K] extends object ? WireApi<T[K]> : T[K];
 };
 
 /** Created in the renderer, after contextBridge has copied the plain result object. */

@@ -6,8 +6,9 @@
  */
 
 import { operationFailure } from "../operation-failure";
+import type { WindowResults } from "@avesd/desktop-contracts/ipc-commands";
 import type { IpcResult } from "@avesd/desktop-contracts/ipc-result";
-import type { IpcMain } from "electron";
+import type { IpcMain, IpcMainInvokeEvent } from "electron";
 
 export async function captureIpcResult<T>(operation: () => T | Promise<T>): Promise<IpcResult<T>> {
 
@@ -26,7 +27,11 @@ export async function captureIpcResult<T>(operation: () => T | Promise<T>): Prom
 }
 
 /** Register a current-window handler explicitly; compatibility handlers use ipc.handle. */
-export function handleWindow(ipc: Pick<IpcMain, "handle">, channel: string, handler: Parameters<IpcMain["handle"]>[1]): void {
+export function handleWindow<C extends keyof WindowResults>(
+    ipc: Pick<IpcMain, "handle">,
+    channel: C,
+    handler: (event: IpcMainInvokeEvent, ...args: unknown[]) => WindowResults[NoInfer<C>] | Promise<WindowResults[NoInfer<C>]>,
+): void {
 
     ipc.handle(channel, (event, ...args: unknown[]) => {
 

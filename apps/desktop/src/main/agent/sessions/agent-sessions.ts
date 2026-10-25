@@ -12,13 +12,13 @@ import { SessionConnections } from "./session-connection";
 import { SessionContinuations } from "./session-continuations";
 import { recordSessionEvent, sessionSnapshot } from "./session-events";
 import { cancelSessionExecution, runSessionPrompt, setExecutionStatus } from "./session-execution";
-import type { AnswerContinuation, AnswerContinuationStatus, SessionEntry, SessionOrigin } from "./session-state";
+import type { AnswerContinuation, AnswerContinuationStatus, SessionEntry, SessionOrigin, SessionTask, SessionTaskResult } from "./session-state";
 import { IpcErrorCode, OperationError } from "@avesd/desktop-contracts/ipc-result";
 import type { AgentEvent, AgentSettings, AgentTier } from "@avesd/plugin-api";
 import type { BlockQuestionOwner } from "@avesd/workspace-model";
 import { randomUUID } from "node:crypto";
 
-export type { AnswerContinuationStatus, SessionOrigin } from "./session-state";
+export type { AnswerContinuationStatus, SessionOrigin, SessionTask } from "./session-state";
 
 export class AgentSessions {
     readonly #entries = new Map<string, SessionEntry>();
@@ -191,6 +191,32 @@ export class AgentSessions {
     }
     async prompt(text: string, id?: string): Promise<void> {
 
+        await this.#submitPrompt(text, id);
+    }
+
+    /** A block retains this execution's result even when its conversation is reused. */
+    startTask(text: string, id: string): SessionTask {
+
+        const result: SessionTaskResult = {
+            status: "running",
+            answer: "",
+        };
+        void this.#submitPrompt(text, id, result).catch(() => {
+
+            result.status = "error";
+        });
+
+        return {
+            id,
+            snapshot: () => {
+
+                return { ...result };
+            },
+        };
+    }
+
+    async #submitPrompt(text: string, id?: string, task?: SessionTaskResult): Promise<void> {
+
         const entry = await this.#resolve(id);
         if (entry.configuring || entry.queue.length > 0) {
             throw new OperationError(IpcErrorCode.Busy, "Wait for the Agent configuration change to finish.");
@@ -202,7 +228,7 @@ export class AgentSessions {
             throw new OperationError(IpcErrorCode.Busy, "Wait for the submitted canvas answer to continue.");
         }
 
-        return this.#prompt(entry, text);
+        return this.#prompt(entry, text, undefined, task);
     }
 
     /** Capture the submitted execution ID; never relabel a late call as the current run. */
@@ -332,9 +358,10 @@ export class AgentSessions {
         return this.#continuations.respond(owner, id, text, active);
     }
 
-    #prompt(entry: SessionEntry, text: string, continuation?: AnswerContinuation): Promise<void> {
+    #prompt(entry: SessionEntry, text: string, continuation?: AnswerContinuation, task?: SessionTaskResult): Promise<void> {
 
         return runSessionPrompt(entry, text, continuation, {
+            ...(task ? { task } : {}),
             disposed: () => {
 
                 return this.#disposed;

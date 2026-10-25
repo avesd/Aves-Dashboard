@@ -24,6 +24,9 @@ export function sessionSnapshot(entry: SessionEntry): AgentSessionSnapshot {
 
 export function recordSessionEvent(entry: SessionEntry, event: AgentEvent): void {
 
+    if (event.type === "messageChunk" && entry.execution?.task && entry.execution.phase === "active") {
+        entry.execution.task.answer += event.text;
+    }
     if (event.type === "settings") {
         entry.settings = event.settings;
     }

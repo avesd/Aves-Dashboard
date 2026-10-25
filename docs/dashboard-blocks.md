@@ -126,7 +126,11 @@ Action requests have an execution ID. Identical retries are deduplicated;
 reusing an ID with different input is rejected. Results report running,
 completed, or error states. The latest eight results for a block are delivered
 in snapshots. Agent task replies and terminal status are reflected through that
-same snapshot channel. Only one action/task may be active for a block at a time.
+same snapshot channel. Each task result belongs to its launched execution.
+Cancellation settles that action as an error with task status `cancelled`,
+releasing the block for another action. Reusing or removing the conversation
+does not change the settled reply or task outcome. Only one action/task may
+be active for a block at a time.
 
 ## Isolation and observation
 
@@ -153,6 +157,25 @@ messages through typed IPC. The main process retains a separate lease for each b
 source revision, registered action, arguments, and independent state/data
 revisions. Source code is never evaluated in the main process.
 
+The block facade, preload result envelopes, and renderer client preserve each
+request type's result through the shared `BlockResults` mapping. Runtime dispatch
+checks each handler against that mapping. IPC registration accepts declared window
+channels and their result types; incoming payloads still require runtime parsing
+and sender authorization.
+
+The host lease registry owns structural lease and deduplicated-request mutations.
+Registering a lease attaches native-owner cleanup once; explicit release, canvas
+release, and native destruction share the same lease/request cleanup path.
+Inspection receives iteration access, and runtime authorization still checks each
+request's owner and canvas before using registry records. Ended leases cannot
+retain requests whose admission resumes after an asynchronous read.
+
+Block-to-Agent task confirmation and launch policy belong to a small main-process
+adapter. Desktop startup supplies the native confirmation, current session host,
+and workspace reader. The adapter checks acceptance and block activity, resolves
+the owning workspace, and launches through `AgentSessions.startTask`; execution
+results remain owned by the launched execution.
+
 Inspection captures visible mounted blocks from the native canvas webContents,
 up to four PNGs per call, and checks that the inspected source/data revision
 has not changed during capture. Offscreen or unopened blocks have no capture;
@@ -171,6 +194,8 @@ There are at most eight fields and 32 options per field. Text answers are
 limited to 4096 characters and the entire answer remains a bounded JSON object.
 The host validates required answers, unknown fields, choice membership, and
 repeated selections. This metadata does not define a fixed visual component.
+Invalid answer structure or semantics returns `INVALID_ARGUMENT` before acceptance
+is persisted or a continuation starts. Error responses do not echo submitted answers.
 
 The calling interactive session must be live and responding. The host binds
 its session ID, Agent connection identity, and originating turn; none can be

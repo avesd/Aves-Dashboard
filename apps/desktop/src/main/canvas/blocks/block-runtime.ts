@@ -5,18 +5,20 @@
  * @description Block Runtime
  */
 
-import type { BlockActionResult, BlockRuntimeResponse, BlockRuntimeStatus } from "../../../shared/canvas/blocks";
+import type { BlockResults, BlockRuntimeRequest, BlockRuntimeResponse, BlockRuntimeStatus } from "../../../shared/canvas/blocks";
 import { blockRuntimeRequestSchema, capabilitiesSchema } from "../../../shared/canvas/blocks";
 import type { CanvasDocument } from "../../../shared/canvas/contracts";
-import { operationFailure } from "../../operation-failure";
+import { dispatchCommand } from "../../ipc/dispatch-command";
+import { canvasFailure, operationFailure } from "../../operation-failure";
 import type { WorkspaceFile } from "../../storage/workspace-file";
 import type { CanvasAccess, CanvasService } from "../canvas-service";
 import { BlockActionExecutor } from "./block-actions";
 import { BlockInspector } from "./block-inspection";
 import { BlockLeases } from "./block-leases";
-import type { DashboardBlockActions } from "./block-runtime-types";
+import type { BlockActionExecution, BlockLease, DashboardBlockActions } from "./block-runtime-types";
 import { BlockSandboxes } from "./block-sandbox";
 import { BlockSnapshots } from "./block-snapshots";
+import type { CommandHandlers } from "@avesd/desktop-contracts/ipc-commands";
 import { IpcErrorCode, OperationError } from "@avesd/desktop-contracts/ipc-result";
 import type { DashboardBlock } from "@avesd/workspace-model";
 import { blockDataSchema } from "@avesd/workspace-model";
@@ -29,7 +31,7 @@ export type { DashboardBlockActions } from "./block-runtime-types";
 export class DashboardBlockRuntime {
     readonly #leases = new BlockLeases();
     readonly #sandboxes = new BlockSandboxes();
-    readonly #executions = new Map<string, BlockActionResult[]>();
+    readonly #executions = new Map<string, BlockActionExecution[]>();
     readonly #inflight = new Set<string>();
     readonly #snapshots: BlockSnapshots;
     readonly #executor: BlockActionExecutor;
@@ -44,9 +46,9 @@ export class DashboardBlockRuntime {
             return this.document(access, canvasId);
         }, lease => {
 
-            return this.#leases.entries.has(lease.id);
+            return this.#leases.has(lease.id);
         });
-        this.#inspector = new BlockInspector(this.#leases.entries, this.#snapshots, (access, canvasId) => {
+        this.#inspector = new BlockInspector(this.#leases, this.#snapshots, (access, canvasId) => {
 
             return this.document(access, canvasId);
         });
@@ -66,8 +68,11 @@ export class DashboardBlockRuntime {
             type: "read",
             canvasId,
         });
-        if (!result.ok || !result.value || !("blocks" in result.value)) {
-            throw new OperationError(IpcErrorCode.PermissionDenied, "Canvas is unavailable to this caller.");
+        if (!result.ok) {
+            throw canvasFailure(result.error);
+        }
+        if (!result.value || !("blocks" in result.value)) {
+            throw new OperationError(IpcErrorCode.Internal, "Canvas could not be loaded.");
         }
 
         return result.value;
@@ -240,225 +245,274 @@ export class DashboardBlockRuntime {
             }
         }
     }
+    invoke<R extends BlockRuntimeRequest>(owner: WebContents, canvasId: string, input: R): Promise<BlockRuntimeResponse<R>>;
     async invoke(owner: WebContents, canvasId: string, input: unknown): Promise<BlockRuntimeResponse> {
 
         const request = blockRuntimeRequestSchema.parse(input);
-        if (request.type === "mount_canvas") {
-            await this.document({
-                clientId: "desktop",
-                canvasIds: [canvasId],
-            }, canvasId);
-            if ([...this.#sandboxes.values()].some(sandbox => {
+        const requireSandbox = (sandboxId: string) => {
 
-                return sandbox.owner === owner;
-            })) {
-                throw new OperationError(IpcErrorCode.Busy, "This canvas already has a sandbox.");
-            }
-            const sandboxId = randomUUID();
-            this.#sandboxes.set(sandboxId, {
-                owner,
-                canvasId,
-            });
-            owner.once("destroyed", () => {
-
-                this.#sandboxes.delete(sandboxId);
-            });
-
-            return {
-                sandboxId,
-                url: `aves-block://render/${sandboxId}`,
-            };
-        }
-        if (request.type === "release_canvas" || request.type === "snapshots") {
-            const sandbox = this.#sandboxes.get(request.sandboxId);
+            const sandbox = this.#sandboxes.get(sandboxId);
             if (!sandbox || sandbox.owner !== owner || sandbox.canvasId !== canvasId) {
                 throw new OperationError(IpcErrorCode.PermissionDenied, "Canvas sandbox has ended.");
             }
-            if (request.type === "release_canvas") {
-                this.#sandboxes.delete(request.sandboxId);
-                for (const lease of this.#leases.entries.values()) {
-                    if (lease.owner === owner) {
-                        this.#leases.release(lease.id);
-                    }
-                }
+        };
+        const requireLease = (leaseId: string): BlockLease => {
 
-                return;
-            }
-            const canvas = await this.document({
-                clientId: "desktop",
-                canvasIds: [canvasId],
-            }, canvasId);
-            const deliveries = [];
-            for (const lease of this.#leases.entries.values()) {
-                if (lease.owner !== owner) {
-                    continue;
-                }
-                const block = canvas.blocks.find(candidate => {
-
-                    return candidate.id === lease.blockId
-                    && candidate.generation === lease.generation && candidate.revision === lease.revision;
-                });
-                if (!block) {
-                    continue;
-                }
-                const snapshot = this.#snapshots.read(canvas, block);
-                lease.dynamic = this.#snapshots.dynamic(block, snapshot);
-                const fingerprint = this.#snapshots.fingerprint(snapshot);
-                if (fingerprint !== lease.fingerprint) {
-                    lease.fingerprint = fingerprint;
-                    deliveries.push({
-                        leaseId: lease.id,
-                        snapshot,
-                    });
-                }
+            const lease = this.#leases.get(leaseId);
+            if (!lease || lease.owner !== owner || lease.canvasId !== canvasId) {
+                throw new OperationError(IpcErrorCode.PermissionDenied, "Block lease has ended.");
             }
 
-            return deliveries;
-        }
-        if (request.type === "mount") {
-            if (request.canvasId !== canvasId) {
-                throw new OperationError(IpcErrorCode.PermissionDenied, "A canvas cannot mount another canvas's blocks.");
-            }
+            return lease;
+        };
+        const currentBlock = async (lease: BlockLease) => {
+
             const canvas = await this.document({
                 clientId: "desktop",
                 canvasIds: [canvasId],
             }, canvasId);
             const block = canvas.blocks.find(candidate => {
 
-                return candidate.id === request.blockId && candidate.generation === request.generation && candidate.revision === request.revision;
+                return candidate.id === lease.blockId;
             });
-            if (!block || [...this.#leases.entries.values()].filter(lease => {
-
-                return lease.owner === owner;
-            }).length >= 128) {
-                throw new OperationError(IpcErrorCode.Busy, "Block is unavailable or the mount limit was reached.");
+            if (!block || block.generation !== lease.generation) {
+                throw new OperationError(IpcErrorCode.NotFound, "Block was removed.");
             }
-            const id = randomUUID();
-            this.#leases.entries.set(id, {
-                id,
-                owner,
-                canvasId,
-                blockId: block.id,
-                revision: block.revision,
-                generation: block.generation,
-                dynamic: this.#snapshots.dynamic(block, this.#snapshots.read(canvas, block)),
-                fingerprint: this.#snapshots.fingerprint(this.#snapshots.read(canvas, block)),
-                status: "loading",
-                errors: [],
-            });
-            this.#leases.watch(owner);
 
             return {
-                leaseId: id,
-                revision: block.revision,
-                snapshot: this.#snapshots.read(canvas, block),
+                canvas,
+                block,
             };
-        }
-        const lease = this.#leases.entries.get(request.leaseId);
-        if (!lease || lease.owner !== owner || lease.canvasId !== canvasId) {
-            throw new OperationError(IpcErrorCode.PermissionDenied, "Block lease has ended.");
-        }
-        if (request.type === "release") {
-            this.#leases.release(lease.id);
+        };
+        const activeBlock = async (lease: BlockLease) => {
 
-            return;
-        }
-        if (request.type === "report") {
-            lease.status = request.status;
-            if (request.rect) {
-                lease.rect = request.rect;
-            }
-            if (request.error && !lease.errors.includes(request.error)) {
-                lease.errors.push(request.error);
+            const current = await currentBlock(lease);
+            if (current.block.revision !== lease.revision || lease.status !== "ready") {
+                throw new OperationError(IpcErrorCode.VersionConflict, "This block version is no longer active.");
             }
 
-            return;
-        }
-        const canvas = await this.document({
-            clientId: "desktop",
-            canvasIds: [canvasId],
-        }, canvasId);
-        const block = canvas.blocks.find(candidate => {
+            return current;
+        };
+        const handlers: CommandHandlers<BlockRuntimeRequest, BlockResults> = {
+            mount_canvas: async () => {
 
-            return candidate.id === lease.blockId;
-        });
-        if (!block || block.generation !== lease.generation) {
-            throw new OperationError(IpcErrorCode.NotFound, "Block was removed.");
-        }
-        if (request.type === "snapshot") {
-            if (block.revision !== lease.revision) {
-                throw new OperationError(IpcErrorCode.VersionConflict, "Block source has changed.");
-            }
+                await this.document({
+                    clientId: "desktop",
+                    canvasIds: [canvasId],
+                }, canvasId);
+                if ([...this.#sandboxes.values()].some(sandbox => {
 
-            return this.#snapshots.read(canvas, block);
-        }
-        if (block.revision !== lease.revision || lease.status !== "ready") {
-            throw new OperationError(IpcErrorCode.VersionConflict, "This block version is no longer active.");
-        }
-        if (request.type === "state") {
-            await this.#executor.write(canvasId, block.id, current => {
-
-                if (current.generation !== lease.generation || current.revision !== lease.revision || current.stateRevision !== request.expectedStateRevision) {
-                    throw new OperationError(IpcErrorCode.VersionConflict, "Block state changed.");
+                    return sandbox.owner === owner;
+                })) {
+                    throw new OperationError(IpcErrorCode.Busy, "This canvas already has a sandbox.");
                 }
+                const sandboxId = randomUUID();
+                this.#sandboxes.set(sandboxId, {
+                    owner,
+                    canvasId,
+                });
+                owner.once("destroyed", () => {
+
+                    this.#sandboxes.delete(sandboxId);
+                });
 
                 return {
-                    ...current,
-                    viewState: request.state,
-                    stateRevision: current.stateRevision + 1,
+                    sandboxId,
+                    url: `aves-block://render/${sandboxId}`,
                 };
-            });
+            },
+            release_canvas: request => {
 
-            return;
-        }
-        const key = `${lease.id}/${request.requestId}`;
-        const fingerprint = JSON.stringify(request);
-        const previous = this.#leases.requests.get(key);
-        if (previous) {
-            if (previous.fingerprint !== fingerprint) {
-                throw new OperationError(IpcErrorCode.InvalidArgument, "Action request ID was reused with different arguments.");
-            }
+                requireSandbox(request.sandboxId);
+                this.#sandboxes.delete(request.sandboxId);
+                this.#leases.releaseOwner(owner);
 
-            return previous.operation;
-        }
-        if (this.#leases.requests.size >= 4096) {
-            throw new OperationError(IpcErrorCode.Busy, "Action request limit reached; reopen this canvas.");
-        }
-        if (this.#inflight.has(`${canvasId}/${block.id}/${block.generation}`) || this.#snapshots.read(canvas, block).actions.some(record => {
+                return undefined;
+            },
+            snapshots: async request => {
 
-            return record.status === "running";
-        })) {
-            throw new OperationError(IpcErrorCode.Busy, "Wait for this block action to complete.");
-        }
-        this.#inflight.add(`${canvasId}/${block.id}/${block.generation}`);
-        const operation = this.#executor.execute(lease, block, request).catch((cause: unknown): BlockActionResult => {
+                requireSandbox(request.sandboxId);
+                const canvas = await this.document({
+                    clientId: "desktop",
+                    canvasIds: [canvasId],
+                }, canvasId);
+                const deliveries = [];
+                for (const lease of this.#leases.values()) {
+                    if (lease.owner !== owner) {
+                        continue;
+                    }
+                    const block = canvas.blocks.find(candidate => {
 
-            return {
-                error: operationFailure(cause),
-                executionId: request.requestId,
-                actionId: request.actionId,
-                status: "error",
-                result: { message: "Action failed or was declined. Inspect current data before retrying." },
-            };
-        });
-        this.#leases.requests.set(key, {
-            fingerprint,
-            operation,
-        });
-        const output = await operation;
-        this.#inflight.delete(`${canvasId}/${block.id}/${block.generation}`);
-        const records = this.#executions.get(`${canvasId}/${block.id}/${block.generation}`) ?? [];
-        this.#executions.set(`${canvasId}/${block.id}/${block.generation}`, [
-            ...records.filter(record => {
+                        return candidate.id === lease.blockId
+                            && candidate.generation === lease.generation && candidate.revision === lease.revision;
+                    });
+                    if (!block) {
+                        continue;
+                    }
+                    const snapshot = this.#snapshots.read(canvas, block);
+                    lease.dynamic = this.#snapshots.dynamic(block, snapshot);
+                    const fingerprint = this.#snapshots.fingerprint(snapshot);
+                    if (fingerprint !== lease.fingerprint) {
+                        lease.fingerprint = fingerprint;
+                        deliveries.push({
+                            leaseId: lease.id,
+                            snapshot,
+                        });
+                    }
+                }
 
-                return record.executionId !== output.executionId;
-            }),
-            output,
-        ].slice(-8));
-        lease.dynamic = !!output.taskId || lease.dynamic;
-        this.#leases.notify(canvasId);
+                return deliveries;
+            },
+            mount: async request => {
 
-        return output;
+                if (request.canvasId !== canvasId) {
+                    throw new OperationError(IpcErrorCode.PermissionDenied, "A canvas cannot mount another canvas's blocks.");
+                }
+                const canvas = await this.document({
+                    clientId: "desktop",
+                    canvasIds: [canvasId],
+                }, canvasId);
+                const block = canvas.blocks.find(candidate => {
+
+                    return candidate.id === request.blockId && candidate.generation === request.generation && candidate.revision === request.revision;
+                });
+                if (!block || [...this.#leases.values()].filter(lease => {
+
+                    return lease.owner === owner;
+                }).length >= 128) {
+                    throw new OperationError(IpcErrorCode.Busy, "Block is unavailable or the mount limit was reached.");
+                }
+                const id = randomUUID();
+                this.#leases.register({
+                    id,
+                    owner,
+                    canvasId,
+                    blockId: block.id,
+                    revision: block.revision,
+                    generation: block.generation,
+                    dynamic: this.#snapshots.dynamic(block, this.#snapshots.read(canvas, block)),
+                    fingerprint: this.#snapshots.fingerprint(this.#snapshots.read(canvas, block)),
+                    status: "loading",
+                    errors: [],
+                });
+
+                return {
+                    leaseId: id,
+                    revision: block.revision,
+                    snapshot: this.#snapshots.read(canvas, block),
+                };
+            },
+            release: request => {
+
+                const lease = requireLease(request.leaseId);
+                this.#leases.release(lease.id);
+
+                return undefined;
+            },
+            report: request => {
+
+                const lease = requireLease(request.leaseId);
+                lease.status = request.status;
+                if (request.rect) {
+                    lease.rect = request.rect;
+                }
+                if (request.error && !lease.errors.includes(request.error)) {
+                    lease.errors.push(request.error);
+                }
+
+                return undefined;
+            },
+            snapshot: async request => {
+
+                const lease = requireLease(request.leaseId);
+                const { canvas, block } = await currentBlock(lease);
+                if (block.revision !== lease.revision) {
+                    throw new OperationError(IpcErrorCode.VersionConflict, "Block source has changed.");
+                }
+
+                return this.#snapshots.read(canvas, block);
+            },
+            state: async request => {
+
+                const lease = requireLease(request.leaseId);
+                const { block } = await activeBlock(lease);
+                await this.#executor.write(canvasId, block.id, current => {
+
+                    if (current.generation !== lease.generation || current.revision !== lease.revision || current.stateRevision !== request.expectedStateRevision) {
+                        throw new OperationError(IpcErrorCode.VersionConflict, "Block state changed.");
+                    }
+
+                    return {
+                        ...current,
+                        viewState: request.state,
+                        stateRevision: current.stateRevision + 1,
+                    };
+                });
+
+                return undefined;
+            },
+            action: async request => {
+
+                const lease = requireLease(request.leaseId);
+                const { canvas, block } = await activeBlock(lease);
+                const fingerprint = JSON.stringify(request);
+                const previous = this.#leases.getRequest(lease.id, request.requestId);
+                if (previous) {
+                    if (previous.fingerprint !== fingerprint) {
+                        throw new OperationError(IpcErrorCode.InvalidArgument, "Action request ID was reused with different arguments.");
+                    }
+
+                    return previous.operation;
+                }
+                if (this.#leases.requestCount >= 4096) {
+                    throw new OperationError(IpcErrorCode.Busy, "Action request limit reached; reopen this canvas.");
+                }
+                if (this.#inflight.has(`${canvasId}/${block.id}/${block.generation}`) || this.#snapshots.read(canvas, block).actions.some(record => {
+
+                    return record.status === "running";
+                })) {
+                    throw new OperationError(IpcErrorCode.Busy, "Wait for this block action to complete.");
+                }
+                this.#inflight.add(`${canvasId}/${block.id}/${block.generation}`);
+                const operation = this.#executor.execute(lease, block, request).catch((cause: unknown): BlockActionExecution => {
+
+                    return {
+                        result: {
+                            error: operationFailure(cause),
+                            executionId: request.requestId,
+                            actionId: request.actionId,
+                            status: "error",
+                            result: { message: "Action failed or was declined. Inspect current data before retrying." },
+                        },
+                    };
+                })
+                    .then(execution => {
+
+                        const output = execution.result;
+                        this.#inflight.delete(`${canvasId}/${block.id}/${block.generation}`);
+                        const records = this.#executions.get(`${canvasId}/${block.id}/${block.generation}`) ?? [];
+                        this.#executions.set(`${canvasId}/${block.id}/${block.generation}`, [
+                            ...records.filter(record => {
+
+                                return record.result.executionId !== output.executionId;
+                            }),
+                            execution,
+                        ].slice(-8));
+                        lease.dynamic = !!execution.task || lease.dynamic;
+                        this.#leases.notify(canvasId);
+
+                        return output;
+                    });
+                this.#leases.registerRequest(lease.id, request.requestId, {
+                    fingerprint,
+                    operation,
+                });
+
+                return operation;
+            },
+        };
+
+        return dispatchCommand<BlockRuntimeRequest, BlockResults>(request, handlers);
     }
     status(canvasId: string, block: DashboardBlock): BlockRuntimeStatus {
 

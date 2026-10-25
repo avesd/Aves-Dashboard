@@ -25,6 +25,14 @@ export interface SessionOrigin extends DashboardScope {
     readonly widgetId?: string;
     readonly pluginId?: string;
 }
+export interface SessionTaskResult {
+    status: NonNullable<AgentSessionSummary["execution"]>["status"];
+    answer: string;
+}
+export interface SessionTask {
+    readonly id: string;
+    snapshot(): Readonly<SessionTaskResult>;
+}
 export interface Execution {
     readonly id: string;
     phase: "preparing" | "active" | "cancelled" | "settled";
@@ -33,6 +41,7 @@ export interface Execution {
     readonly aborted: Promise<void>;
     abort(): void;
     cancellation?: Promise<void>;
+    readonly task?: SessionTaskResult;
 }
 type ConnectionState = {
     readonly status: "unprepared";

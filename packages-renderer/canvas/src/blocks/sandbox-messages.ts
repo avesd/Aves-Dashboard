@@ -6,7 +6,7 @@
  */
 
 import type { MountedBlock } from "./mounted-block";
-import type { BlockActionResult, CanvasSandboxInteraction, DashboardBlocksApi } from "@avesd/desktop-contracts/canvas/blocks";
+import type { CanvasSandboxInteraction, DashboardBlocksApi } from "@avesd/desktop-contracts/canvas/blocks";
 import { blockRuntimeRequestSchema, canvasSandboxInteractionSchema } from "@avesd/desktop-contracts/canvas/blocks";
 import { IpcError, IpcErrorCode, ipcErrorMessage } from "@avesd/desktop-contracts/ipc-result";
 
@@ -90,13 +90,13 @@ export function createSandboxMessageHandler({ api, isActive, versions, connected
                     requestId,
                     leaseId: token,
                 });
-            if (!parsed.success) {
+            if (!parsed.success || (parsed.data.type !== "action" && parsed.data.type !== "state")) {
                 throw new IpcError({
                     code: IpcErrorCode.InvalidArgument,
                     message: "Invalid request parameters.",
                 });
             }
-            const result = await api.invoke(parsed.data) as BlockActionResult | undefined;
+            const result = await api.invoke(parsed.data);
             send({
                 type: "result",
                 token,

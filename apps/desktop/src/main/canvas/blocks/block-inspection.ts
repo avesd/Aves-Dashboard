@@ -16,7 +16,9 @@ import type { DashboardBlock } from "@avesd/workspace-model";
 
 export class BlockInspector {
     constructor(
-        private readonly leases: ReadonlyMap<string, BlockLease>,
+        private readonly leases: {
+            values(): IterableIterator<BlockLease>;
+        },
         private readonly snapshots: BlockSnapshots,
         private readonly document: (access: CanvasAccess, canvasId: string) => Promise<CanvasDocument>,
     ) {}

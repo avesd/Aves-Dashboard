@@ -5,12 +5,11 @@
  * @description Block Actions
  */
 
-import type { BlockActionResult } from "../../../shared/canvas/blocks";
 import type { blockRuntimeRequestSchema } from "../../../shared/canvas/blocks";
 import type { CanvasDocument } from "../../../shared/canvas/contracts";
 import type { WorkspaceFile } from "../../storage/workspace-file";
 import type { CanvasAccess, CanvasService } from "../canvas-service";
-import type { BlockLease, DashboardBlockActions } from "./block-runtime-types";
+import type { BlockActionExecution, BlockLease, DashboardBlockActions } from "./block-runtime-types";
 import { IpcErrorCode, OperationError } from "@avesd/desktop-contracts/ipc-result";
 import type { BlockData, DashboardBlock } from "@avesd/workspace-model";
 import { blockDataSchema, questionAnswers, readDashboardBlocks, writeDashboardBlocks } from "@avesd/workspace-model";
@@ -26,7 +25,7 @@ export class BlockActionExecutor {
 
     async execute(lease: BlockLease, block: DashboardBlock, request: Extract<ReturnType<typeof blockRuntimeRequestSchema.parse>, {
         type: "action";
-    }>): Promise<BlockActionResult> {
+    }>): Promise<BlockActionExecution> {
 
         const action = block.actions.find(candidate => {
 
@@ -39,7 +38,7 @@ export class BlockActionExecutor {
             throw new OperationError(IpcErrorCode.PermissionDenied, "Action or input was not registered.");
         }
         let result: BlockData;
-        let taskId: string | undefined;
+        let task: Awaited<ReturnType<DashboardBlockActions["task"]>> | undefined;
         if (action.capability === "block.set_data") {
             const target = action.parameters.blockId ?? block.id;
             if (typeof target !== "string") {
@@ -151,7 +150,7 @@ export class BlockActionExecutor {
             if (typeof action.parameters.prompt !== "string") {
                 throw new OperationError(IpcErrorCode.InvalidArgument, "Invalid task description.");
             }
-            const task = await this.actions.task(lease.canvasId, action.parameters.prompt, request.input, async () => {
+            task = await this.actions.task(lease.canvasId, action.parameters.prompt, request.input, async () => {
 
                 if (!this.leaseActive(lease) || lease.owner.isDestroyed()) {
                     return false;
@@ -169,16 +168,18 @@ export class BlockActionExecutor {
                     });
                 });
             });
-            taskId = task.id;
             result = { taskId: task.id };
         }
 
         return {
-            executionId: request.requestId,
-            actionId: action.id,
-            status: taskId ? "running" : "completed",
-            result,
-            ...(taskId ? { taskId } : {}),
+            result: {
+                executionId: request.requestId,
+                actionId: action.id,
+                status: task ? "running" : "completed",
+                result,
+                ...(task ? { taskId: task.id } : {}),
+            },
+            ...(task ? { task } : {}),
         };
     }
     async write(canvasId: string, blockId: string, update: (current: DashboardBlock) => DashboardBlock): Promise<void> {

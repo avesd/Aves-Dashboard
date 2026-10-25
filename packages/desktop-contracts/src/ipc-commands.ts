@@ -6,7 +6,7 @@
  */
 
 import type { AgentSessionsApi } from "./agent/sessions";
-import type { BlockActionResult, BlockMount, BlockRuntimeRequest, BlockSnapshot, BlockSnapshotDelivery, CanvasSandboxMount } from "./canvas/blocks";
+import type { BlockResults, BlockRuntimeRequest } from "./canvas/blocks";
 import type { CanvasDocument, CanvasListing, CanvasReceipt, CanvasRequest } from "./canvas/contracts";
 import type { DesktopView, viewRequestSchema } from "./canvas/views";
 import type { IpcResult } from "./ipc-result";
@@ -183,17 +183,7 @@ export interface CanvasResults {
     receipt: CanvasReceipt | null;
     render: CanvasReceipt;
 }
-export interface BlockResults {
-    mount_canvas: CanvasSandboxMount;
-    release_canvas: undefined;
-    snapshots: readonly BlockSnapshotDelivery[];
-    mount: BlockMount;
-    snapshot: BlockSnapshot;
-    release: undefined;
-    report: undefined;
-    action: BlockActionResult;
-    state: undefined;
-}
+export type { BlockResults } from "./canvas/blocks";
 
 /** Request and response correlation for the command channels used by desktop windows. */
 export interface WindowCommands {

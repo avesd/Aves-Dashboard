@@ -7,12 +7,13 @@
 
 import type { AgentSessionsChange, AgentSessionSummary } from "../../../shared/agent/sessions";
 import type { SessionHost } from "../session-host";
-import type { AnswerContinuation, Execution, SessionEntry } from "./session-state";
+import type { AnswerContinuation, Execution, SessionEntry, SessionTaskResult } from "./session-state";
 import { IpcErrorCode, OperationError } from "@avesd/desktop-contracts/ipc-result";
 import type { AgentEvent } from "@avesd/plugin-api";
 import { randomUUID } from "node:crypto";
 
 interface ExecutionContext {
+    readonly task?: SessionTaskResult;
     readonly disposed: () => boolean;
     readonly ended: (entry: SessionEntry) => boolean;
     readonly runningCount: () => number;
@@ -51,6 +52,7 @@ export async function runSessionPrompt(entry: SessionEntry, text: string, contin
         finish,
         aborted,
         abort,
+        ...(context.task ? { task: context.task } : {}),
     };
     entry.execution = execution;
     entry.turnId = execution.id;
@@ -82,13 +84,10 @@ export async function runSessionPrompt(entry: SessionEntry, text: string, contin
                 throw new OperationError(IpcErrorCode.ServiceNotReady, "The original Agent conversation has ended.");
             }
             execution.phase = "active";
-            const request = entry.origin.kind === "interactive"
-                ? `Avesd execution ID: ${execution.id}. Include this exact executionId in every Avesd tool call. Never reuse an earlier execution ID.\n${text}`
-                : text;
             if (continuation) {
-                await host.continuePrompt(request, continuation.owner.connectionId, execution.id);
+                await host.continuePrompt(text, continuation.owner.connectionId, execution.id);
             } else {
-                await host.prompt(request, execution.id);
+                await host.prompt(text, execution.id);
             }
         };
         await Promise.race([
@@ -117,6 +116,9 @@ export async function runSessionPrompt(entry: SessionEntry, text: string, contin
             throw failure;
         }
     } finally {
+        if (execution.phase === "cancelled" && execution.task) {
+            execution.task.status = "cancelled";
+        }
         if (execution.phase !== "cancelled") {
             execution.phase = "settled";
         }
@@ -142,6 +144,9 @@ export async function runSessionPrompt(entry: SessionEntry, text: string, contin
 /** The summary retains the last result after the live execution is released. */
 export function setExecutionStatus(entry: SessionEntry, execution: Execution, status: NonNullable<AgentSessionSummary["execution"]>["status"]): void {
 
+    if (execution.task) {
+        execution.task.status = status;
+    }
     let sessionStatus: AgentSessionSummary["status"];
     switch (status) {
         case "running":
