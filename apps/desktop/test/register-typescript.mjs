@@ -5,6 +5,7 @@
  * @description Register Typescript
  */
 
+import { sandboxSource } from "../build/sandbox-source.mjs";
 import { readFileSync } from "node:fs";
 import { registerHooks, stripTypeScriptTypes } from "node:module";
 
@@ -23,6 +24,13 @@ registerHooks({
     },
     load(url, context, nextLoad) {
 
+        if (url.endsWith("?sandbox")) {
+            return {
+                format: "module",
+                shortCircuit: true,
+                source: `export default ${JSON.stringify(sandboxSource(readFileSync(new URL(url), "utf8")))};`,
+            };
+        }
         if (url.endsWith(".ts")) {
             return {
                 format: "module",

@@ -5,6 +5,7 @@
  * @description Local Widget Sandbox
  */
 
+import widgetRuntime from "../../sandbox/local-widget-runtime.ts?sandbox";
 import type { LocalPluginDraft, PluginTestReport, WidgetTestStep } from "../../shared/plugins/local-plugins";
 import { widgetWorkspaceChannels } from "../../shared/workspace/widget-workspace";
 import { PluginStorage } from "../storage/plugin-storage";
@@ -87,46 +88,12 @@ export async function loadLocalWidget(contents: WebContents, draft: LocalPluginD
     const html = `<!doctype html><html><head><meta charset="utf-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}' blob:; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
     <title>Local widget</title><style>html,body,#widget { margin:0; width:100%; height:100%; overflow:hidden; } body { background:#fafaf6; }</style>
-    </head><body><div id="widget"></div><script nonce="${nonce}">
-    window.__avesdReady = (async () => {
-      const errors = [];
-      addEventListener('error', () => errors.push('Uncaught widget error.'));
-      addEventListener('unhandledrejection', () => errors.push('Unhandled widget promise rejection.'));
-      addEventListener('securitypolicyviolation', () => errors.push('Widget attempted a blocked capability.'));
-      const root = document.querySelector('#widget').attachShadow({mode:'open'});
-      const signal = new AbortController();
-      const url = URL.createObjectURL(new Blob([${literal(draft.source)}], {type:'text/javascript'}));
-      try {
-        const module = await import(url);
-        if (typeof module.mount !== 'function') throw new Error('Export a mount function.');
-        const identity = await window.avesdWidget.initialize();
-        const context = {signal:signal.signal, instanceId:identity.instanceId, workspaceId:identity.workspaceId, dashboardId:identity.dashboardId};
-        for (const capability of identity.capabilities) {
-          const service = window.avesdWidget[capability];
-          context[capability] = Object.freeze({...service, ...(service.subscribe ? {subscribe(listener) {
-            if (signal.signal.aborted) return () => {};
-            const dispose = service.subscribe(() => { if (!signal.signal.aborted) listener(); });
-            const cleanup = () => { dispose(); signal.signal.removeEventListener('abort', cleanup); };
-            signal.signal.addEventListener('abort', cleanup, {once:true});
-            return cleanup;
-          }} : {})});
-        }
-        if (${literal(!!draft.manifest.browser)}) context.browser = Object.freeze({...window.avesdWidget.browser});
-        const controller = module.mount(root, Object.freeze(context));
-        if (!controller || typeof controller.update !== 'function' || typeof controller.dispose !== 'function') {
-          throw new Error('mount must return update and dispose methods.');
-        }
-        const state = {configuration:{},size:${literal(draft.manifest.size)}};
-        controller.update(state);
-        Object.defineProperty(window, '__avesdWidget', { value: Object.freeze({
-          errors, update: (size = state.size) => { state.size = size; controller.update(state); },
-          dispose: () => { signal.abort(); controller.dispose(); root.replaceChildren(); }
-        }) });
-        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-        return true;
-      } finally { URL.revokeObjectURL(url); }
-    })();
-    window.__avesdReady.catch(() => {});
+    </head><body><div id="widget"></div><script id="widget-input" type="application/json" nonce="${nonce}">${literal({
+        source: draft.source,
+        browser: !!draft.manifest.browser,
+        size: draft.manifest.size,
+    })}</script><script nonce="${nonce}">
+    ${widgetRuntime}
     </script></body></html>`;
     await contents.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
     await contents.executeJavaScript("window.__avesdReady");

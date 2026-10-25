@@ -5,12 +5,14 @@
  * @description Electron Vite Config
  */
 
+import { sandboxPlugin } from "./build/sandbox-plugin.mjs";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "electron-vite";
 
 export default defineConfig({
     main: {
+        plugins: [sandboxPlugin()],
         build: {
             externalizeDeps: {
                 exclude: [

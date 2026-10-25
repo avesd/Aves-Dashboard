@@ -81,7 +81,9 @@ snapshots are suppressed, excluding the sampling timestamp from comparison.
 Source JavaScript runs immediately with block-scoped `window`, `document`, and
 `avesBlock` bindings. `document.getElementById`, `querySelector`, and
 `querySelectorAll` address the block's Shadow DOM; `body` and `documentElement`
-address its local body and HTML nodes. CSS can target `html`, `body`, or `:host`;
+address its local body and HTML nodes. Selecting `html` or `body` returns the same
+local node as the corresponding property or `querySelectorAll` result.
+CSS can target `html`, `body`, or `:host`;
 use `:host` instead of `:root`. Attach handlers from JavaScript rather than inline
 HTML attributes, and do not wait for document load events. Common timers,
 animation frames, and document/window listeners are tracked and removed on

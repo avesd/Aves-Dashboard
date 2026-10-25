@@ -26,6 +26,11 @@ navigation. Host-mediated capabilities expose workspace metadata, private
 storage, explicitly shared resources, and declared browser services. At most
 eight live local widgets can be displayed; opening one has a five-second deadline.
 
+The maintained loader is a checked browser entry under `apps/desktop/src/sandbox/`.
+The host inlines its compiled source under the existing nonce and supplies widget
+source, browser availability, and size through escaped JSON. Plugin source still
+loads as a blob module inside the isolated widget document.
+
 ## Private plugin storage
 
 Declare `files` and/or `sqlite` in the manifest's `capabilities`. The host

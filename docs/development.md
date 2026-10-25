@@ -64,6 +64,12 @@ general `release/` output exclusion. Run `pnpm --filter @avesd/configuration tes
 for the source/output coverage regression cases. The Configuration compile script
 syntax-checks the shared ESLint configuration and these JavaScript test sources.
 
+Handwritten canvas and compatibility widget browser programs live in
+`apps/desktop/src/sandbox/`, covered by desktop web compilation and lint. Entries
+are self-contained IIFEs with erased type queries and no static value imports. The main
+build's `?sandbox` loader erases TypeScript and escapes closing script tags before
+inlining the program. The test loader uses the same source transformation.
+
 ## File headers
 
 Every maintained JavaScript and TypeScript source, test, and configuration file
