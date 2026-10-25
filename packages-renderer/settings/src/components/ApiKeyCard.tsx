@@ -173,6 +173,7 @@ export function ApiKeyCard({ status, storageAvailable, api, refresh }: {
                 </p>
             </div>
             <DataBadge
+                className="provider-card-status"
                 tone={status.source === "saved" ? "accent" : "neutral"}
             >
                 {statusLabels[status.source]}

@@ -72,6 +72,16 @@ Model choices are local configuration, not live discovery. Check access sends
 one short request without tools and can consume quota. Configured status only
 means that a key exists. Old provider tier routes migrate to DeepSeek defaults.
 
+Current provider choices read `AgentProviderAvailability`: API kind and local
+`configured`, `missing`, or `unavailable` readiness. This read never verifies
+network/model access. The old installation-shaped `list` response remains at
+the compatibility edge; active controller and Settings flows use `availability`.
+The controller uses its own `agent-providers:availability` channel with controller
+main-frame authorization. Settings uses its separately authorized command channel;
+neither readiness read requires an Agent conversation to be initialized.
+The runtime picker receives APIs and the credential-change subscription explicitly,
+and owns draft selection, refresh, feedback, and closure through intent commands.
+
 ## Execution and tools
 
 Each session pins a tier route (flagship, reasoning or action). Interactive

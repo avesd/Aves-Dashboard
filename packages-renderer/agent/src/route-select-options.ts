@@ -5,7 +5,7 @@
  * @description Route choices for shared selection controls
  */
 
-import type { AgentProviderInstallation } from "@avesd/desktop-contracts/settings";
+import type { AgentProviderAvailability } from "@avesd/desktop-contracts/settings";
 
 export interface AgentRouteChoice {
     readonly value: string;
@@ -14,21 +14,21 @@ export interface AgentRouteChoice {
     readonly disabled?: boolean;
 }
 
-export function providerSelectOptions(providers: readonly AgentProviderInstallation[], selected: string): AgentRouteChoice[] {
+export function providerSelectOptions(providers: readonly AgentProviderAvailability[], selected: string): AgentRouteChoice[] {
 
     const choices = providers.map(provider => {
 
         let availability = "";
         if (!provider.enabled) {
             availability = " · disabled";
-        } else if (provider.status !== "installed") {
+        } else if (provider.readiness !== "configured") {
             availability = " · unavailable";
         }
 
         return {
             value: provider.id,
             label: provider.name + availability,
-            disabled: !provider.enabled || provider.status !== "installed",
+            disabled: !provider.enabled || provider.readiness !== "configured",
         };
     });
     if (!providers.some(provider => {

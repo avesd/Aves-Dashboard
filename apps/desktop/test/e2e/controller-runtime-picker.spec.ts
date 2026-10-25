@@ -16,8 +16,8 @@ test("runtime popover keeps nested choices inside and returns focus after dismis
             modelId: "",
             effortId: "",
         };
-        ipcMain.removeHandler("agent-providers:list");
-        ipcMain.handle("agent-providers:list", () => {
+        ipcMain.removeHandler("agent-providers:availability");
+        ipcMain.handle("agent-providers:availability", () => {
 
             return {
                 ok: true,
@@ -26,11 +26,8 @@ test("runtime popover keeps nested choices inside and returns focus after dismis
                         id: route.providerId,
                         name: "Synthetic Agent",
                         enabled: true,
-                        executablePath: "",
-                        status: "installed",
-                        source: "system",
-                        bundledAvailable: false,
-                        loginCommand: "",
+                        kind: "api",
+                        readiness: "configured",
                     },
                 ],
             };

@@ -47,6 +47,14 @@ The bird mark inherits its current text color. No network fonts are required.
 Use native props, public variants and `className` for customization; do not patch
 private GridUI descendants from renderers.
 
+Controller and Settings presentation uses explicit local classes for headings,
+action buttons, route fields, feedback, and surrounding layout. Ordinary styles
+do not rely on element tag names or child positions. Retained CSS keeps cascade
+order, responsive rules, and application layout in the renderer.
+Typography roles use complete font tokens. Scope a public `--gridui-type-*`
+token when adjusting a role size while retaining its font family and weight,
+as the controller navigation does for narrow windows.
+
 ## Interaction contracts
 
 The settings and controller Select callers explicitly set

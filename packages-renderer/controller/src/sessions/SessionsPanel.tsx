@@ -27,7 +27,11 @@ export function SessionsPanel({ sessions, fail, openChat }: Props) {
         <div
             className="controller-section-title"
         >
-            <h1>Conversations</h1>
+            <h1
+                className="controller-panel-heading"
+            >
+                Conversations
+            </h1>
             <Button
                 variant="quiet"
                 size="small"

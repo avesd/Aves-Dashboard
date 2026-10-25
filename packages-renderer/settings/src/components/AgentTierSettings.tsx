@@ -7,7 +7,7 @@
 
 import { AgentTierRouteSettings } from "./AgentTierRouteSettings";
 import { IpcError, IpcErrorCode, ipcErrorMessage } from "@avesd/desktop-contracts/ipc-result";
-import type { AgentProviderInstallation, AgentProvidersApi } from "@avesd/desktop-contracts/settings";
+import type { AgentProviderAvailability, AgentProvidersApi } from "@avesd/desktop-contracts/settings";
 import type { AgentTierRoute, AgentTierRoutes, SettingsApi } from "@avesd/desktop-contracts/settings";
 import { AGENT_TIERS } from "@avesd/desktop-contracts/settings";
 import type { AgentTier } from "@avesd/plugin-api";
@@ -17,13 +17,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export function AgentTierSettings({ api, providersApi }: {
     readonly api: SettingsApi;
-    readonly providersApi: Pick<AgentProvidersApi, "list">;
+    readonly providersApi: Pick<AgentProvidersApi, "availability">;
 }) {
 
     const [
         providers,
         setProviders,
-    ] = useState<readonly AgentProviderInstallation[]>([]);
+    ] = useState<readonly AgentProviderAvailability[]>([]);
     const [
         routes,
         setRoutes,
@@ -77,7 +77,7 @@ export function AgentTierSettings({ api, providersApi }: {
                     items,
                 ] = await Promise.all([
                     api.read(),
-                    providersApi.list(),
+                    providersApi.availability(),
                 ]);
                 if (!active || current !== generation) {
                     return;
@@ -242,6 +242,7 @@ export function AgentTierSettings({ api, providersApi }: {
                 Save agent tiers
             </Button>
             {message && <p
+                className="settings-save-status"
                 role="status"
             >
                 {message}

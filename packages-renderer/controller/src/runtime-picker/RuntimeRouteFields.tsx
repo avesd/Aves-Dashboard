@@ -6,16 +6,9 @@
  */
 
 import type { useRuntimePicker } from "./useRuntimePicker";
-import type { AgentProviderInstallation } from "@avesd/desktop-contracts/agent/providers";
 import { providerSelectOptions, routeSelectOptions } from "@avesd/renderer-agent/route-select-options";
 import { Combobox, Select } from "@avesd/ui-controls";
 
-const providerSourceLabels: Record<AgentProviderInstallation["source"], string> = {
-    api: "Direct API",
-    bundled: "Bundled runtime",
-    custom: "Custom runtime",
-    system: "Local installation",
-};
 interface Props {
     readonly picker: ReturnType<typeof useRuntimePicker>;
     readonly applying: boolean;
@@ -24,15 +17,18 @@ interface Props {
 
 export function RuntimeRouteFields({ picker, applying, portalContainer }: Props) {
 
-    const { draft, providers, provider, unavailable, loading, options, waiting, defaultModel, defaultEffort, missingModel, setDraft, setMessage, testing } = picker;
+    const { draft, providers, provider, unavailable, loading, options, waiting, defaultModel, defaultEffort, missingModel, chooseProvider, chooseModel, chooseEffort, testing } = picker;
     if (!draft) {
         return null;
     }
 
     return <fieldset
+        className="controller-runtime-fields"
         disabled={applying || testing}
     >
-        <label>
+        <label
+            className="controller-runtime-field"
+        >
             Agent
             <Select
                 position="item-aligned"
@@ -43,25 +39,18 @@ export function RuntimeRouteFields({ picker, applying, portalContainer }: Props)
                 disabled={applying || testing}
                 portalContainer={portalContainer}
                 options={providerSelectOptions(providers, draft.providerId)}
-                onValueChange={providerId => {
-
-                    setDraft({
-                        providerId,
-                        modelId: "",
-                        effortId: "",
-                    });
-                    setMessage(undefined);
-                }}
+                onValueChange={chooseProvider}
             />
         </label>
         {provider && <p
             className="controller-runtime-status"
         >
-            {providerSourceLabels[provider.source]}
-            {provider.version ? ` · v${provider.version}` : ""}
+            Direct API
             {unavailable ? " · unavailable" : ""}
         </p>}
-        <label>
+        <label
+            className="controller-runtime-field"
+        >
             Model
             <Combobox
                 controlSize="small"
@@ -72,18 +61,12 @@ export function RuntimeRouteFields({ picker, applying, portalContainer }: Props)
                 disabled={applying || testing || loading || !options || waiting}
                 portalContainer={portalContainer}
                 options={routeSelectOptions(options?.models, draft.modelId, `Agent default${defaultModel ? ` · ${defaultModel}` : ""}`, "not offered")}
-                onValueChange={modelId => {
-
-                    setDraft({
-                        ...draft,
-                        modelId,
-                        effortId: "",
-                    });
-                    setMessage(undefined);
-                }}
+                onValueChange={chooseModel}
             />
         </label>
-        <label>
+        <label
+            className="controller-runtime-field"
+        >
             Effort
             <Select
                 position="item-aligned"
@@ -93,14 +76,7 @@ export function RuntimeRouteFields({ picker, applying, portalContainer }: Props)
                 disabled={applying || testing || loading || !options || !options.efforts.length || missingModel || waiting}
                 portalContainer={portalContainer}
                 options={routeSelectOptions(options?.efforts, draft.effortId, options && !options.efforts.length ? "Not exposed by this Agent" : `Agent default${defaultEffort ? ` · ${defaultEffort}` : ""}`)}
-                onValueChange={effortId => {
-
-                    setDraft({
-                        ...draft,
-                        effortId,
-                    });
-                    setMessage(undefined);
-                }}
+                onValueChange={chooseEffort}
             />
         </label>
     </fieldset>;

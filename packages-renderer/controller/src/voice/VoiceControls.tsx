@@ -135,7 +135,7 @@ export function VoiceControls({ agentId, disabled = false, expanded }: {
             className="voice-toolbar"
         >
             {!active ? <Button
-                className="voice-start w-full min-h-[40px]"
+                className="voice-toolbar-button voice-start w-full min-h-[40px]"
                 variant="primary"
                 size="small"
                 type="button"
@@ -151,7 +151,7 @@ export function VoiceControls({ agentId, disabled = false, expanded }: {
                 Start voice
             </Button> : <>
                 <Button
-                    className="min-h-[32px] px-gridui-8 py-gridui-4 type-caption"
+                    className="voice-toolbar-button min-h-[32px] px-gridui-8 py-gridui-4 type-caption"
                     variant="quiet"
                     size="small"
                     type="button"
@@ -175,7 +175,7 @@ export function VoiceControls({ agentId, disabled = false, expanded }: {
                     </span>
                 </Button>
                 <Button
-                    className="min-h-[32px] px-gridui-8 py-gridui-4 type-caption"
+                    className="voice-toolbar-button min-h-[32px] px-gridui-8 py-gridui-4 type-caption"
                     variant="quiet"
                     size="small"
                     type="button"
@@ -193,7 +193,7 @@ export function VoiceControls({ agentId, disabled = false, expanded }: {
                     {state.quiet ? "Resume audio" : "Stop speaking"}
                 </Button>
                 <Button
-                    className="min-h-[32px] px-gridui-8 py-gridui-4 type-caption"
+                    className="voice-toolbar-button min-h-[32px] px-gridui-8 py-gridui-4 type-caption"
                     variant="quiet"
                     size="small"
                     type="button"
@@ -211,24 +211,24 @@ export function VoiceControls({ agentId, disabled = false, expanded }: {
             </>}
         </div>
         <p
-            className="voice-status"
+            className="voice-text voice-status"
             role="status"
         >
             {statusMessage}
         </p>
         {expanded && active && <p
-            className="voice-hint"
+            className="voice-text voice-hint"
         >
             Interrupt speech freely. Task additions wait for the current turn.
         </p>}
         {expanded && active && state.input && <p
-            className="voice-caption"
+            className="voice-text voice-caption"
         >
             <strong>You: </strong>
             {state.input}
         </p>}
         {expanded && active && state.output && <p
-            className="voice-caption"
+            className="voice-text voice-caption"
         >
             <strong>Voice: </strong>
             {state.output}

@@ -20,6 +20,31 @@ void test("a removed provider remains visible but cannot be selected again", () 
     ]);
 });
 
+void test("provider choices use local readiness rather than installation status", () => {
+
+    const providers = [
+        {
+            id: "configured",
+            name: "Configured",
+            kind: "api" as const,
+            enabled: true,
+            readiness: "configured" as const,
+        },
+        {
+            id: "missing",
+            name: "Missing",
+            kind: "api" as const,
+            enabled: true,
+            readiness: "missing" as const,
+        },
+    ];
+
+    const choices = providerSelectOptions(providers, "configured");
+
+    equal(choices[0]!.disabled, false);
+    equal(choices[1]!.disabled, true);
+});
+
 void test("unavailable saved models coexist with an explicit default choice", () => {
 
     const choices = routeSelectOptions([

@@ -6,7 +6,7 @@
  */
 
 import { ipcErrorMessage } from "@avesd/desktop-contracts/ipc-result";
-import type { AgentProviderInstallation } from "@avesd/desktop-contracts/settings";
+import type { AgentProviderAvailability } from "@avesd/desktop-contracts/settings";
 import type { AgentTierRoute, SettingsApi } from "@avesd/desktop-contracts/settings";
 import { agentTierLabels } from "@avesd/desktop-contracts/settings";
 import type { AgentTier } from "@avesd/plugin-api";
@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 export function AgentTierRouteSettings({ api, tier, route, providers, saving, onChange, onBlocked }: {
     readonly api: Pick<SettingsApi, "probeRoute">;
     readonly tier: AgentTier;
-    readonly providers: readonly AgentProviderInstallation[];
+    readonly providers: readonly AgentProviderAvailability[];
     readonly route: AgentTierRoute;
     readonly saving: boolean;
     readonly onChange: (tier: AgentTier, route: AgentTierRoute) => void;
@@ -104,13 +104,18 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
     })?.name ?? options?.defaultEffortId;
 
     return <fieldset
+        className="agent-tier-fields"
         disabled={saving || loading || testing}
         aria-busy={loading || testing}
     >
-        <legend>
+        <legend
+            className="agent-tier-title"
+        >
             {label}
         </legend>
-        <label>
+        <label
+            className="agent-tier-field"
+        >
             Agent
             <Select
                 position="item-aligned"
@@ -129,7 +134,9 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
                 }}
             />
         </label>
-        <label>
+        <label
+            className="agent-tier-field"
+        >
             Model
             <Combobox
                 controlSize="small"
@@ -149,7 +156,9 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
                 }}
             />
         </label>
-        <label>
+        <label
+            className="agent-tier-field"
+        >
             Effort
             <Select
                 position="item-aligned"
@@ -198,27 +207,36 @@ export function AgentTierRouteSettings({ api, tier, route, providers, saving, on
             </Button>
         </div>
         {loading && <p
+            className="agent-tier-note"
             role="status"
         >
             Loading Agent options…
         </p>}
         {error && <p
+            className="agent-tier-note"
             role="alert"
         >
             {error}
         </p>}
         {missingModel && <p
+            className="agent-tier-note"
             role="alert"
         >
             The saved model is no longer offered. Choose another model or use the Agent default.
         </p>}
         {missingEffort && !missingModel && <p
+            className="agent-tier-note"
             role="alert"
         >
             The saved effort is unavailable for this model. Choose another effort or its default.
         </p>}
-        {options && !loading && !options.models.length && <p>This Agent did not report model options. You can still test its default.</p>}
+        {options && !loading && !options.models.length && <p
+            className="agent-tier-note"
+        >
+            This Agent did not report model options. You can still test its default.
+        </p>}
         {result?.key === key && <p
+            className="agent-tier-note"
             role={result.failed ? "alert" : "status"}
         >
             {result.message}

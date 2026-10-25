@@ -37,7 +37,11 @@ export function ChatTranscript({ session, conversation, content }: Props) {
                 <MessageCircle
                     size={28}
                 />
-                <h1>What would you like to work on?</h1>
+                <h1
+                    className="controller-welcome-heading"
+                >
+                    What would you like to work on?
+                </h1>
             </div>}
             {messages.map(entry => {
 

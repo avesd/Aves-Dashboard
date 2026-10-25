@@ -182,11 +182,16 @@ export function Controller({ expanded }: {
                 width={22}
                 height={22}
             />
-            <strong>Avesd</strong>
+            <strong
+                className="controller-brand"
+            >
+                Avesd
+            </strong>
             <Button
                 variant="quiet"
                 size="small"
                 layout="icon"
+                className="controller-settings"
                 aria-label="Settings"
                 onClick={() => {
 
@@ -210,10 +215,13 @@ export function Controller({ expanded }: {
             <span
                 className={`controller-status ${busy ? "is-busy" : ""}`}
             />
-            <span>
+            <span
+                className="controller-task-label"
+            >
                 {controllerTaskLabel(session, sending)}
             </span>
             {canCancel && <Button
+                className="controller-task-action"
                 variant="quiet"
                 size="small"
                 onClick={() => {
@@ -231,6 +239,7 @@ export function Controller({ expanded }: {
             className="controller-input-actions"
         >
             <Button
+                className="controller-input-action"
                 ref={textToggle}
                 variant="quiet"
                 size="small"
@@ -244,6 +253,7 @@ export function Controller({ expanded }: {
                 {showingText ? "Hide text input" : "Text input"}
             </Button>
             <Button
+                className="controller-input-action"
                 ref={detailsToggle}
                 variant="quiet"
                 size="small"
@@ -291,7 +301,7 @@ export function Controller({ expanded }: {
                 <Button
                     variant="quiet"
                     size="small"
-                    className="aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
+                    className="controller-nav-button min-h-[32px] px-gridui-8 py-gridui-4 gap-[6px] max-[350px]:px-gridui-4 max-[350px]:gap-gridui-4 aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
                     aria-pressed={panel === "chat"}
                     onClick={() => {
 
@@ -306,7 +316,7 @@ export function Controller({ expanded }: {
                 <Button
                     variant="quiet"
                     size="small"
-                    className="aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
+                    className="controller-nav-button min-h-[32px] px-gridui-8 py-gridui-4 gap-[6px] max-[350px]:px-gridui-4 max-[350px]:gap-gridui-4 aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
                     aria-pressed={panel === "canvases"}
                     onClick={() => {
 
@@ -321,7 +331,7 @@ export function Controller({ expanded }: {
                 <Button
                     variant="quiet"
                     size="small"
-                    className="aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
+                    className="controller-nav-button min-h-[32px] px-gridui-8 py-gridui-4 gap-[6px] max-[350px]:px-gridui-4 max-[350px]:gap-gridui-4 aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
                     aria-pressed={panel === "sessions"}
                     onClick={() => {
 
@@ -363,6 +373,7 @@ export function Controller({ expanded }: {
                 <AgentRuntimePicker
                     api={api.agentSessions}
                     providersApi={api.agentProviders}
+                    settings={api.settings}
                     session={session}
                     disabled={busy}
                     applying={changingAgent}

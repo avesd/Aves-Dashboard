@@ -38,7 +38,11 @@ export function SettingsWorkspace({ api }: {
                     width={24}
                     height={24}
                 />
-                <strong>Avesd</strong>
+                <strong
+                    className="settings-brand-name"
+                >
+                    Avesd
+                </strong>
             </div>
         </header>
         <SidebarLayout

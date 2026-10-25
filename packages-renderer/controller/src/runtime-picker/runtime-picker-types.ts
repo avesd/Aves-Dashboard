@@ -10,7 +10,8 @@ import type { AgentSessionSnapshot, AgentTierRoute } from "@avesd/desktop-contra
 
 export interface RuntimePickerProps {
     readonly api: ControllerApi["agentSessions"];
-    readonly providersApi: ControllerApi["agentProviders"];
+    readonly providersApi: Pick<ControllerApi["agentProviders"], "availability">;
+    readonly settings: Pick<ControllerApi["settings"], "subscribe">;
     readonly session: AgentSessionSnapshot | null;
     readonly disabled: boolean;
     readonly applying: boolean;

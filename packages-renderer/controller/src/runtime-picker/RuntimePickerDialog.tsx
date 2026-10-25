@@ -26,7 +26,7 @@ export function RuntimePickerDialog({ picker, applying, session, manage }: Props
         portalContainer,
         setPortalContainer,
     ] = useState<HTMLDivElement | null>(null);
-    const { draft, close, loading, missingModel, missingEffort, waiting, optionsError, message, failed, testing, options, setRefresh, test, setOpen, unavailable, save } = picker;
+    const { draft, close, loading, missingModel, missingEffort, waiting, optionsError, message, failed, testing, options, refreshOptions, test, unavailable, save } = picker;
     if (!draft) {
         return null;
     }
@@ -39,13 +39,20 @@ export function RuntimePickerDialog({ picker, applying, session, manage }: Props
         className="controller-runtime-popover w-(--radix-popover-trigger-width) max-w-[100vw] rounded-none"
         aria-label="Agent configuration"
     >
-        <header>
-            <strong>Choose your agent</strong>
+        <header
+            className="controller-runtime-heading"
+        >
+            <strong
+                className="controller-runtime-title"
+            >
+                Choose your agent
+            </strong>
             <Button
                 layout="icon"
                 variant="quiet"
                 size="small"
                 type="button"
+                className="controller-runtime-close"
                 aria-label="Close agent configuration"
                 onClick={close}
             >
@@ -95,17 +102,12 @@ export function RuntimePickerDialog({ picker, applying, session, manage }: Props
             className="controller-runtime-tools"
         >
             <Button
+                className="controller-runtime-tool"
                 variant="quiet"
                 size="small"
                 type="button"
                 disabled={loading || testing || applying}
-                onClick={() => {
-
-                    setRefresh(value => {
-
-                        return value + 1;
-                    });
-                }}
+                onClick={refreshOptions}
             >
                 <RefreshCw
                     size={12}
@@ -113,6 +115,7 @@ export function RuntimePickerDialog({ picker, applying, session, manage }: Props
                 Refresh
             </Button>
             <Button
+                className="controller-runtime-tool"
                 variant="quiet"
                 size="small"
                 type="button"
@@ -125,12 +128,13 @@ export function RuntimePickerDialog({ picker, applying, session, manage }: Props
                 {testing ? "Checking…" : "Check access"}
             </Button>
             <Button
+                className="controller-runtime-tool"
                 variant="quiet"
                 size="small"
                 type="button"
                 onClick={() => {
 
-                    setOpen(false);
+                    close();
                     manage();
                 }}
             >
@@ -142,8 +146,12 @@ export function RuntimePickerDialog({ picker, applying, session, manage }: Props
         >
             Model options are configured locally. Check access sends one short request.
         </p>
-        <footer>
-            <span>
+        <footer
+            className="controller-runtime-footer"
+        >
+            <span
+                className="controller-runtime-context"
+            >
                 {session && session.route.providerId !== draft.providerId ? "Opens a new conversation; keeps the current one." : "Keeps this conversation and its context."}
             </span>
             <Button

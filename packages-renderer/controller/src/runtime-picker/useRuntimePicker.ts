@@ -5,17 +5,15 @@
  * @description UseRuntimePicker
  */
 
-import { useControllerApi } from "../controller-context";
 import type { RuntimePickerProps } from "./runtime-picker-types";
-import type { AgentProviderInstallation } from "@avesd/desktop-contracts/agent/providers";
+import type { AgentProviderAvailability } from "@avesd/desktop-contracts/agent/providers";
 import type { AgentTierRoute } from "@avesd/desktop-contracts/agent/sessions";
 import { ipcErrorMessage } from "@avesd/desktop-contracts/ipc-result";
 import { useAgentRouteOptions } from "@avesd/renderer-agent/use-agent-route-options";
 import { useEffect, useState } from "react";
 
-export function useRuntimePicker({ api, providersApi, session, apply }: RuntimePickerProps) {
+export function useRuntimePicker({ api, providersApi, settings, session, apply }: RuntimePickerProps) {
 
-    const settings = useControllerApi().settings;
     const [
         open,
         setOpen,
@@ -23,7 +21,7 @@ export function useRuntimePicker({ api, providersApi, session, apply }: RuntimeP
     const [
         providers,
         setProviders,
-    ] = useState<readonly AgentProviderInstallation[]>([]);
+    ] = useState<readonly AgentProviderAvailability[]>([]);
     const [
         fallback,
         setFallback,
@@ -72,7 +70,7 @@ export function useRuntimePicker({ api, providersApi, session, apply }: RuntimeP
     const providerId = draft?.providerId;
     const modelId = draft?.modelId;
     const providerKnown = !!provider;
-    const unavailable = !!provider && (!provider.enabled || provider.status !== "installed");
+    const unavailable = !!provider && (!provider.enabled || provider.readiness !== "configured");
     const { options, loading, error: optionsError, missingModel, missingEffort } = useAgentRouteOptions(api, draft, open && providerKnown && !unavailable, refresh);
     const waiting = !!session?.waitingForAnswer && draft?.providerId === session.route.providerId;
     const close = () => {
@@ -94,7 +92,7 @@ export function useRuntimePicker({ api, providersApi, session, apply }: RuntimeP
 
         let active = true;
         void Promise.all([
-            providersApi.list(),
+            providersApi.availability(),
             api.routes(),
         ]).then(([
             items,
@@ -189,6 +187,48 @@ export function useRuntimePicker({ api, providersApi, session, apply }: RuntimeP
             setOpen(true);
         }
     };
+    const changeDraft = (route: AgentTierRoute) => {
+
+        setDraft(route);
+        setMessage(undefined);
+        setFailed(false);
+    };
+    const chooseProvider = (providerId: string) => {
+
+        changeDraft({
+            providerId,
+            modelId: "",
+            effortId: "",
+        });
+    };
+    const chooseModel = (modelId: string) => {
+
+        if (draft) {
+            changeDraft({
+                ...draft,
+                modelId,
+                effortId: "",
+            });
+        }
+    };
+    const chooseEffort = (effortId: string) => {
+
+        if (draft) {
+            changeDraft({
+                ...draft,
+                effortId,
+            });
+        }
+    };
+    const refreshOptions = () => {
+
+        setMessage(undefined);
+        setFailed(false);
+        setRefresh(value => {
+
+            return value + 1;
+        });
+    };
     const defaultModel = options?.models.find(item => {
 
         return item.id === options.defaultModelId;
@@ -200,9 +240,7 @@ export function useRuntimePicker({ api, providersApi, session, apply }: RuntimeP
 
     return {
         open,
-        setOpen,
         draft,
-        setDraft,
         providers,
         provider,
         unavailable,
@@ -218,13 +256,15 @@ export function useRuntimePicker({ api, providersApi, session, apply }: RuntimeP
         waiting,
         testing,
         message,
-        setMessage,
         failed,
+        chooseProvider,
+        chooseModel,
+        chooseEffort,
+        refreshOptions,
         close,
         initial,
         test,
         save,
-        setRefresh,
         defaultModel,
         defaultEffort,
     };

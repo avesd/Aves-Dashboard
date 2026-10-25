@@ -25,7 +25,11 @@ export function CanvasesPanel({ canvases, fail }: Props) {
         <div
             className="controller-section-title"
         >
-            <h1>Canvases</h1>
+            <h1
+                className="controller-panel-heading"
+            >
+                Canvases
+            </h1>
         </div>
         <ul
             className="m-0 list-none p-0"
