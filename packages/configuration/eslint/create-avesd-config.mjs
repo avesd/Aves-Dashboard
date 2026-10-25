@@ -23,6 +23,8 @@ export const createAvesdConfig = (tsconfigRootDir = import.meta.dirname) => {
                 "**/node_modules/**",
                 "**/out/**",
                 "**/release/**",
+                "!scripts/release/",
+                "!scripts/release/**",
                 "**/.turbo/**",
             ],
         },

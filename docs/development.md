@@ -54,6 +54,11 @@ JavaScript/TypeScript and two for JSON/YAML.
 workspace dependency declarations, renderer privilege isolation, and the
 runtime neutrality of public plugin contracts.
 
+Maintained `scripts/release/` source is explicitly included in ESLint despite the
+general `release/` output exclusion. Run `pnpm --filter @avesd/configuration test`
+for the source/output coverage regression cases. The Configuration compile script
+syntax-checks the shared ESLint configuration and these JavaScript test sources.
+
 ## File headers
 
 Every maintained JavaScript and TypeScript source, test, and configuration file

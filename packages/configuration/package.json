@@ -3,8 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "compile": "node --check eslint/create-avesd-config.mjs && node --check test/unit/eslint/create-avesd-config.test.mjs",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test": "node --test 'test/unit/**/*.test.mjs'"
   },
   "exports": {
     "./eslint": "./eslint/create-avesd-config.mjs",
