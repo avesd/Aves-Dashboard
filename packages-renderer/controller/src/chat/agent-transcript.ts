@@ -5,6 +5,7 @@
  * @description Agent Transcript
  */
 
+import type { AgentSessionSnapshot } from "@avesd/desktop-contracts/agent/sessions";
 import type { AgentEvent } from "@avesd/plugin-api";
 
 export type TranscriptEntry =
@@ -25,6 +26,13 @@ export type TranscriptEntry =
 
 export function appendAgentEvent(entries: readonly TranscriptEntry[], event: AgentEvent, id: number): readonly TranscriptEntry[] {
 
+    if (event.type === "sessionReset") {
+        return [];
+    }
+    if (event.type === "turnStarted" || event.type === "turnComplete"
+        || (event.type === "status" && (event.status === "error" || event.status === "disconnected"))) {
+        return finishTools(entries);
+    }
     if (event.type === "toolCall") {
         const index = entries.findIndex(entry => {
 
@@ -80,6 +88,33 @@ export function appendAgentEvent(entries: readonly TranscriptEntry[], event: Age
     }
 
     return entries;
+}
+
+export function projectAgentTranscript(session: Pick<AgentSessionSnapshot, "events" | "execution" | "status"> | null): readonly TranscriptEntry[] {
+
+    if (!session) {
+        return [];
+    }
+    const entries = session.events.reduce<readonly TranscriptEntry[]>((previous, { event, sequence }) => {
+
+        return appendAgentEvent(previous, event, sequence);
+    }, []);
+    if (session.status === "stopped") {
+        return finishTools(entries);
+    }
+    if (session.execution) {
+        switch (session.execution.status) {
+            case "running":
+            case "cancelling":
+                return entries;
+            case "cancelled":
+            case "completed":
+            case "error":
+                return finishTools(entries);
+        }
+    }
+
+    return session.status === "running" ? entries : finishTools(entries);
 }
 
 export function finishTools(entries: readonly TranscriptEntry[]): readonly TranscriptEntry[] {

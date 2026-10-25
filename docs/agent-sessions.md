@@ -124,6 +124,11 @@ it does not add transcript persistence or restore Agent conversations after exit
   work requires cancellation followed by a new prompt.
 - cancel still permanently stops a session; remove releases its transcript.
 
+The transcript marks unfinished tool rows as `interrupted` when their execution
+settles, a turn ends, or the connection fails. A later turn finalizes any remaining
+rows from the previous turn while keeping its own active tools in progress.
+This presentation does not claim that an admitted operation was rolled back.
+
 The execution ID is supplied directly by the trusted session manager, not by
 model-generated arguments. Both host prompt methods require it in their typed
 contracts; runtime checks also reject missing or revoked identity. Each tool

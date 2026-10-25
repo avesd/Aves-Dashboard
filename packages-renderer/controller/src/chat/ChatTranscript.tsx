@@ -6,8 +6,7 @@
  */
 
 import { AgentMarkdown } from "./agent-markdown";
-import type { TranscriptEntry } from "./agent-transcript";
-import { appendAgentEvent } from "./agent-transcript";
+import { projectAgentTranscript } from "./agent-transcript";
 import type { AgentSessionSnapshot } from "@avesd/desktop-contracts/agent/sessions";
 import { Disclosure } from "@avesd/ui-controls";
 import { CodeView } from "@avesd/ui-data";
@@ -22,10 +21,7 @@ interface Props {
 
 export function ChatTranscript({ session, conversation, content }: Props) {
 
-    const messages = session?.events.reduce<readonly TranscriptEntry[]>((entries, { event, sequence }) => {
-
-        return event.type === "sessionReset" ? [] : appendAgentEvent(entries, event, sequence);
-    }, []) ?? [];
+    const messages = projectAgentTranscript(session);
 
     return <div
         className="controller-conversation"

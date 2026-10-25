@@ -3,9 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "compile": "tsc --noEmit -p tsconfig.json",
+    "compile": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p test/tsconfig.json",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test": "node --experimental-strip-types --test 'test/unit/**/*.test.ts'"
   },
   "exports": {
     "./entry": "./src/main.tsx",

@@ -64,6 +64,12 @@ general `release/` output exclusion. Run `pnpm --filter @avesd/configuration tes
 for the source/output coverage regression cases. The Configuration compile script
 syntax-checks the shared ESLint configuration and these JavaScript test sources.
 
+Run controller transcript projection tests with
+`pnpm --filter @avesd/renderer-controller test`. They exercise execution terminal
+states and ordered turn boundaries without a browser. The controller's compile
+and lint scripts also cover these test sources; its test TypeScript configuration
+keeps Node types separate from the renderer's source configuration.
+
 Desktop compile coverage includes `test/unit/shared/ipc-commands.types.ts`.
 Its compile-only cases cover command-result inference through public block APIs,
 wire envelopes, composed renderer clients, per-command handlers, and window
