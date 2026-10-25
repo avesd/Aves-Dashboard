@@ -168,6 +168,10 @@ missing fields report an error that may indicate login or a changed page.
 Refresh failures retain the last successful result and timestamp. Editing a
 recipe clears its previous result to avoid presenting old fields as new data.
 
+Known login, load, and missing-field failures carry explicit collection error
+tags. Only their owned safe messages are persisted; unknown failures receive a
+generic recovery message, regardless of their English wording or prefix.
+
 **Open page** presents the existing page for login or inspection. Close that
 window to return it to the background; manual and scheduled refreshes yield
 while it is presented. **Close page** cancels collection, discards pending

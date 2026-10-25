@@ -7,6 +7,7 @@
 
 import type { BrowserTask, BrowserTaskCommand, BrowserTaskSummary } from "../../shared/browser/browser-tasks";
 import { browserTaskRecipeSchema } from "../../shared/browser/browser-tasks";
+import { BrowserCollectionError, browserCollectionMessage } from "./browser-collection-error";
 import type { WebSurfaceManager } from "./web-surface-manager";
 import type { WorkspaceSnapshot } from "@avesd/workspace-model";
 import { randomUUID } from "node:crypto";
@@ -426,10 +427,10 @@ export class BrowserTasks {
                     });
                     if (pages.isPresented(page) || (state.url && new URL(state.url).origin !== new URL(task.url).origin)) {
                         runtime.state = "interaction-required";
-                        throw new Error("Open the page to complete login, then close its window and refresh.");
+                        throw new BrowserCollectionError("interaction-required");
                     }
                     if (state.status === "error") {
-                        throw new Error("The page could not load. Check the connection and retry.");
+                        throw new BrowserCollectionError("load-failed");
                     }
                     if (state.status === "ready") {
                         const output = await pages.command({
@@ -451,7 +452,7 @@ export class BrowserTasks {
                     });
                 }
                 if (!value) {
-                    throw new Error("Expected fields were not found. Check login or repair the extraction rules.");
+                    throw new BrowserCollectionError("fields-missing");
                 }
                 await this.#write(() => {
 
@@ -476,8 +477,7 @@ export class BrowserTasks {
                 if (!current()) {
                     return;
                 }
-                const message = error instanceof Error && /^(Open the page|The page could not|Expected fields)/.test(error.message)
-                    ? error.message : "Collection failed. Open the page and check its rules before retrying.";
+                const message = browserCollectionMessage(error);
                 if (runtime.state !== "interaction-required") {
                     runtime.state = "error";
                 }

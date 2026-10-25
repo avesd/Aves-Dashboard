@@ -43,25 +43,14 @@ export class WorkbenchPreferences {
         if (!Number.isInteger(position) || Number(position) < 0 || Number(position) > 3) {
             return Promise.reject(new Error("Invalid session button position."));
         }
-        const save = this.saving.catch(() => {
-        }).then(async () => {
 
-            const temporary = `${this.path}.${randomUUID()}.tmp`;
-            try {
-                await writeFile(temporary, JSON.stringify({
-                    sidebarSide: this.side,
-                    sessionPosition: position,
-                }), { mode: 0o600 });
-                await rename(temporary, this.path);
-                this.sessionPosition = Number(position);
-            } finally {
-                await unlink(temporary).catch(() => {
-                });
-            }
+        return this.#commit(current => {
+
+            return {
+                ...current,
+                sessionPosition: Number(position),
+            };
         });
-        this.saving = save;
-
-        return save;
     }
 
     setSide(side: unknown): Promise<void> {
@@ -69,17 +58,38 @@ export class WorkbenchPreferences {
         if (side !== "left" && side !== "right") {
             return Promise.reject(new Error("Invalid sidebar position."));
         }
+
+        return this.#commit(current => {
+
+            return {
+                ...current,
+                sidebarSide: side,
+            };
+        });
+    }
+
+    #commit(update: (current: {
+        sidebarSide: SidebarSide;
+        sessionPosition: number;
+    }) => {
+        sidebarSide: SidebarSide;
+        sessionPosition: number;
+    }): Promise<void> {
+
         const save = this.saving.catch(() => {
         }).then(async () => {
 
+            // Compute from the latest committed state after earlier queued writes settle.
+            const next = update({
+                sidebarSide: this.side,
+                sessionPosition: this.sessionPosition,
+            });
             const temporary = `${this.path}.${randomUUID()}.tmp`;
             try {
-                await writeFile(temporary, JSON.stringify({
-                    sidebarSide: side,
-                    sessionPosition: this.sessionPosition,
-                }), { mode: 0o600 });
+                await writeFile(temporary, JSON.stringify(next), { mode: 0o600 });
                 await rename(temporary, this.path);
-                this.side = side;
+                this.side = next.sidebarSide;
+                this.sessionPosition = next.sessionPosition;
             } finally {
                 await unlink(temporary).catch(() => {
                 });

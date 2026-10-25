@@ -26,6 +26,11 @@ relay calls the running desktop host, which owns the same workspace file.
 Electron caches and preferences stay in userData; built-in plugin code stays
 bundled with the application.
 
+Workbench placement preferences use a store-local serialized commit procedure.
+Each write computes from the latest committed state, writes a private temporary
+file, atomically replaces the preference file, then publishes the in-memory
+values. A failed write preserves memory and does not block later queued writes.
+
 An absent configuration file or `{}` preserves the existing default data
 location, Electron's `app.getPath("userData")`. Invalid or unreadable
 configuration stops startup with an error instead of silently opening another
