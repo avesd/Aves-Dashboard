@@ -10,19 +10,12 @@
 
 @layer components {
     .settings-workspace {
-        display: flex;
-        flex-direction: column;
         height: 100dvh;
         min-width: 0;
         overflow: hidden;
     }
     .settings-window-header {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-        flex-wrap: wrap;
         padding: 16px 24px;
-        border-bottom: 1px solid var(--gridui-border);
         flex-shrink: 0;
     }
     .settings-layout {
@@ -30,22 +23,9 @@
         min-height: 0;
     }
     .settings-section-heading {
-        display: grid;
-        gap: 16px;
         padding: 32px 24px 24px;
-        border-bottom: 1px solid var(--gridui-border);
-    }
-    .settings-section-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 16px;
     }
     .settings-brand {
-        display: flex;
-        align-items: center;
-        gap: 8px;
         color: var(--gridui-accent-background);
     }
     .settings-brand-name {
@@ -59,70 +39,9 @@
         overflow-wrap: anywhere;
     }
     .api-key-card {
-        display: grid;
-        gap: 16px;
         padding: 24px;
-        border-bottom: 1px solid var(--gridui-border);
-    }
-    .api-key-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-    .api-key-editor {
-        display: grid;
-        gap: 8px;
-    }
-    .provider-card-heading {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        width: 100%;
-    }
-    .provider-card-status {
-        font: var(--gridui-type-caption);
-        color: var(--gridui-muted);
-    }
-    .agent-tier-fields {
-        min-width: 0;
-        margin: 0;
-        padding: 0;
-        border: 0;
-    }
-    .agent-tier-title {
-        padding: 0 0 16px;
-        font: var(--gridui-type-subheading);
-    }
-    .agent-tier-field {
-        display: grid;
-        gap: 8px;
-        margin-bottom: 16px;
-        font: var(--gridui-type-ui);
-    }
-    .agent-tier-note {
-        margin-top: 12px;
-        font: var(--gridui-type-supporting);
-        color: var(--gridui-muted);
-    }
-    .agent-tier-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding-top: 8px;
     }
     .settings-save {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 16px;
         padding: 24px;
-        border-top: 1px solid var(--gridui-border);
-    }
-    .settings-save-status {
-        font: var(--gridui-type-supporting);
-    }
-    .settings-workspace [role="alert"] {
-        color: var(--gridui-danger-foreground);
     }
 }

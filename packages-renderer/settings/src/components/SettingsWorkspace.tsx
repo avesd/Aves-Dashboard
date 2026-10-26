@@ -8,6 +8,8 @@
 import { AgentTierSettings } from "./AgentTierSettings";
 import { ApiKeySettings } from "./ApiKeySettings";
 import type { SettingsApi } from "@avesd/desktop-contracts/settings";
+import { InlineNotice } from "@avesd/ui-data";
+import { Row, Split } from "@avesd/ui-grid";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarItem, SidebarLayout, SidebarMain, SidebarResizeHandle, SidebarToggle } from "@avesd/ui-layout";
 import { BirdMark } from "@avesd/ui-logo";
 import { Bot, KeyRound } from "lucide-react";
@@ -24,13 +26,16 @@ export function SettingsWorkspace({ api }: {
         setSection,
     ] = useState<SettingsSection>("services");
 
-    return <div
+    return <Split
+        direction="column"
         className="settings-workspace"
     >
         <header
             className="settings-window-header"
         >
-            <div
+            <Row
+                gap={8}
+                align="center"
                 className="settings-brand"
             >
                 <BirdMark
@@ -43,7 +48,7 @@ export function SettingsWorkspace({ api }: {
                 >
                     Avesd
                 </strong>
-            </div>
+            </Row>
         </header>
         <SidebarLayout
             className="settings-layout"
@@ -120,13 +125,13 @@ export function SettingsWorkspace({ api }: {
                             providersApi={api.providers}
                         />
                     </div>
-                </> : <p
-                    className="settings-note"
-                    role="alert"
+                </> : <InlineNotice
+                    tone="danger"
+                    announcement="assertive"
                 >
                     Settings are only available in the desktop application.
-                </p>}
+                </InlineNotice>}
             </SidebarMain>
         </SidebarLayout>
-    </div>;
+    </Split>;
 }

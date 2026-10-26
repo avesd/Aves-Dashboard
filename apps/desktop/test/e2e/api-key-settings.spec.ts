@@ -50,6 +50,22 @@ test("settings saves, replaces and deletes encrypted API keys without restarting
     await openai.getByRole("button", { name: "Add OpenAI API key" }).click();
     const field = openai.getByLabel("OpenAI API key", { exact: true });
     await expect(field).toHaveAttribute("type", "password");
+    await expect(field).toBeFocused();
+    const save = openai.getByRole("button", {
+        name: "Save key",
+        exact: true,
+    });
+    await expect(save).toBeDisabled();
+    await field.fill("   ");
+    await expect(field).toBeEditable();
+    await expect(save).toBeDisabled();
+    await field.press("Enter");
+    await expect(openai.getByText("Not configured", { exact: true })).toBeVisible();
+    await field.press("Escape");
+    const edit = openai.getByRole("button", { name: "Add OpenAI API key" });
+    await expect(edit).toBeFocused();
+    await edit.click();
+    await expect(field).toHaveValue("");
     await field.fill("synthetic-native-key");
     await openai.getByRole("button", {
         name: "Save key",
@@ -57,6 +73,7 @@ test("settings saves, replaces and deletes encrypted API keys without restarting
     }).click();
     await expect(openai.getByText("Configured", { exact: true })).toBeVisible();
     await expect(field).toHaveCount(0);
+    await expect(openai.getByRole("button", { name: "Replace OpenAI API key" })).toBeFocused();
     await expect(openai.getByRole("button", { name: "Test OpenAI connection" })).toBeEnabled();
     const userData = await desktop.evaluate(({ app }) => {
 
@@ -97,13 +114,17 @@ test("settings saves, replaces and deletes encrypted API keys without restarting
     });
     await expect(card.getByText("Configured", { exact: true })).toBeVisible();
     await card.getByRole("button", { name: "Delete OpenAI API key" }).click();
-    await card.getByRole("button", {
+    const confirmation = next.getByRole("alertdialog", { name: "Delete OpenAI API key?" });
+    await expect(confirmation).toBeVisible();
+    await confirmation.getByRole("button", {
         name: "Cancel",
         exact: true,
     }).click();
+    await expect(confirmation).toBeHidden();
+    await expect(card.getByRole("button", { name: "Replace OpenAI API key" })).toBeFocused();
     await expect(card.getByText("Configured", { exact: true })).toBeVisible();
     await card.getByRole("button", { name: "Delete OpenAI API key" }).click();
-    await card.getByRole("button", { name: "Confirm deletion" }).click();
+    await confirmation.getByRole("button", { name: "Confirm deletion" }).click();
     await expect(card.getByText("Not configured", { exact: true })).toBeVisible();
     await expect(card.getByRole("button", { name: "Test OpenAI connection" })).toBeDisabled();
     expect(existsSync(path)).toBe(false);

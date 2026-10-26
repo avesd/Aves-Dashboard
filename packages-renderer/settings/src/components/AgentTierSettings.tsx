@@ -12,7 +12,8 @@ import type { AgentTierRoute, AgentTierRoutes, SettingsApi } from "@avesd/deskto
 import { AGENT_TIERS } from "@avesd/desktop-contracts/settings";
 import type { AgentTier } from "@avesd/plugin-api";
 import { Button } from "@avesd/ui-controls";
-import { Grid, GridItem } from "@avesd/ui-grid";
+import { InlineNotice } from "@avesd/ui-data";
+import { Grid, GridItem, Row, Split, Stack } from "@avesd/ui-grid";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function AgentTierSettings({ api, providersApi }: {
@@ -144,109 +145,122 @@ export function AgentTierSettings({ api, providersApi }: {
         aria-label="Agent tiers"
         className="agent-tier-settings"
     >
-        <header
-            className="settings-section-heading"
+        <Split
+            direction="column"
         >
-            <h2
-                className="type-title"
+            <header
+                className="settings-section-heading"
             >
-                Agent tiers
-            </h2>
-            <p
-                className="type-supporting text-muted"
-            >
-                Changes apply to new conversations.
-            </p>
-        </header>
-        <p
-            className="settings-note"
-        >
-            Model options are configured locally. Listing a model does not guarantee access. Test connection sends a short request and may use provider quota.
-        </p>
-        {conflict && <div
-            role="alert"
-        >
-            Settings changed in another window. Reload before saving this draft.
-            <Button
-                variant="secondary"
-                onClick={() => {
-
-                    void reload().catch((cause) => {
-
-                        return void setMessage(ipcErrorMessage(cause, "Settings could not be reloaded."));
-                    });
-                }}
-            >
-                Reload settings
-            </Button>
-        </div>}
-        <Grid
-            columns={{
-                base: 1,
-
-            }}
-            frame="internal"
-            fillLastRow
-        >
-            {routes && AGENT_TIERS.map(tier => {
-
-                return <GridItem
-                    key={tier}
-                    padding={24}
+                <Stack
+                    gap={16}
                 >
-                    <AgentTierRouteSettings
-                        api={api}
-                        tier={tier}
-                        providers={providers}
-                        route={routes[tier]}
-                        saving={saving}
-                        onChange={changeRoute}
-                        onBlocked={blockRoute}
-                    />
-                </GridItem>;
-            })}
-        </Grid>
-        <div
-            className="settings-save"
-        >
-            <Button
-                size="small"
-                disabled={!routes || saving || conflict || Object.values(blocked).some(Boolean)}
-                onClick={() => {
+                    <h2
+                        className="type-title"
+                    >
+                        Agent tiers
+                    </h2>
+                    <p
+                        className="type-supporting text-muted"
+                    >
+                        Changes apply to new conversations.
+                    </p>
+                </Stack>
+            </header>
+            <p
+                className="settings-note"
+            >
+                Model options are configured locally. Listing a model does not guarantee access. Test connection sends a short request and may use provider quota.
+            </p>
+            {conflict && <div>
+                <InlineNotice
+                    tone="danger"
+                    announcement="assertive"
+                    actions={<Button
+                        variant="secondary"
+                        onClick={() => {
 
-                    if (!routes) {
-                        return;
-                    }
-                    setSaving(true);
-                    savingRef.current = true;
-                    setMessage("");
-                    void api.configure(routes, revision).then(async () => {
+                            void reload().catch(cause => {
 
-                        await reload();
+                                setMessage(ipcErrorMessage(cause, "Settings could not be reloaded."));
+                            });
+                        }}
+                    >
+                        Reload settings
+                    </Button>}
+                >
+                    Settings changed in another window. Reload before saving this draft.
+                </InlineNotice>
+            </div>}
+            <Grid
+                columns={{
+                    base: 1,
 
-                        setMessage("Tier settings saved.");
-                    })
-                        .catch((cause) => {
-
-                            setConflict(cause instanceof IpcError && cause.code === IpcErrorCode.VersionConflict);
-                            setMessage(ipcErrorMessage(cause, "Tier settings could not be saved."));
-                        })
-                        .finally(() => {
-
-                            savingRef.current = false;
-                            setSaving(false);
-                        });
                 }}
-                variant="primary"
+                frame="internal"
+                fillLastRow
             >
-                Save agent tiers
-            </Button>
-            {message && <p
-                className="settings-save-status"
-                role="status"
+                {routes && AGENT_TIERS.map(tier => {
+
+                    return <GridItem
+                        key={tier}
+                        padding={24}
+                    >
+                        <AgentTierRouteSettings
+                            api={api}
+                            tier={tier}
+                            providers={providers}
+                            route={routes[tier]}
+                            saving={saving}
+                            onChange={changeRoute}
+                            onBlocked={blockRoute}
+                        />
+                    </GridItem>;
+                })}
+            </Grid>
+            <Row
+                gap={16}
+                align="center"
+                className="settings-save"
             >
-                {message}
-            </p>}
-        </div>
+                <Button
+                    size="small"
+                    disabled={!routes || saving || conflict || Object.values(blocked).some(Boolean)}
+                    onClick={() => {
+
+                        if (!routes) {
+                            return;
+                        }
+                        setSaving(true);
+                        savingRef.current = true;
+                        setMessage("");
+                        void api.configure(routes, revision).then(async () => {
+
+                            await reload();
+
+                            setMessage("Tier settings saved.");
+                        })
+                            .catch((cause) => {
+
+                                setConflict(cause instanceof IpcError && cause.code === IpcErrorCode.VersionConflict);
+                                setMessage(ipcErrorMessage(cause, "Tier settings could not be saved."));
+                            })
+                            .finally(() => {
+
+                                savingRef.current = false;
+                                setSaving(false);
+                            });
+                    }}
+                    variant="primary"
+                >
+                    Save agent tiers
+                </Button>
+                {message && <InlineNotice
+                    announcement="polite"
+                    className="border-0 bg-transparent p-0"
+                >
+                    {message}
+                </InlineNotice>}
+            </Row>
+        </Split>
     </section>;
 }

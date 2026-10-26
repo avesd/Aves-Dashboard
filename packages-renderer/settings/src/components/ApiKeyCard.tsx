@@ -7,9 +7,10 @@
 
 import { ipcErrorMessage } from "@avesd/desktop-contracts/ipc-result";
 import type { ApiKeyProvider, ApiKeysApi, ApiKeyStatus } from "@avesd/desktop-contracts/settings";
-import { Button, Input } from "@avesd/ui-controls";
-import { DataBadge } from "@avesd/ui-data";
-import { useEffect, useId, useRef, useState } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogPanel, AlertDialogTitle, AlertDialogTrigger, Button, InlineEditor } from "@avesd/ui-controls";
+import { DataBadge, InlineNotice } from "@avesd/ui-data";
+import { Row, Stack } from "@avesd/ui-grid";
+import { useEffect, useRef, useState } from "react";
 
 const providers: Record<ApiKeyProvider, {
     name: string;
@@ -48,7 +49,6 @@ export function ApiKeyCard({ status, storageAvailable, api, refresh }: {
 }) {
 
     const provider = providers[status.id];
-    const inputId = useId();
     const [
         editor,
         setEditor,
@@ -67,7 +67,6 @@ export function ApiKeyCard({ status, storageAvailable, api, refresh }: {
     }>();
     const mounted = useRef(true);
     const pending = useRef(false);
-    const input = useRef<HTMLInputElement>(null);
     const editButton = useRef<HTMLButtonElement>(null);
     useEffect(() => {
 
@@ -78,19 +77,9 @@ export function ApiKeyCard({ status, storageAvailable, api, refresh }: {
             mounted.current = false;
         };
     }, []);
-    useEffect(() => {
-
-        if (editor.type === "edit") {
-            input.current?.focus();
-        }
-    }, [editor.type]);
     const close = () => {
 
         setEditor({ type: "view" });
-        requestAnimationFrame(() => {
-
-            editButton.current?.focus();
-        });
     };
     const run = async (operation: "save" | "remove" | "test") => {
 
@@ -157,186 +146,200 @@ export function ApiKeyCard({ status, storageAvailable, api, refresh }: {
         aria-label={provider.name}
         aria-busy={busy}
     >
-        <div
-            className="provider-card-heading"
+        <Stack
+            gap={16}
         >
-            <div>
-                <h3
-                    className="type-subheading"
+            <Row
+                gap={16}
+                align="center"
+                justify="between"
+            >
+                <div>
+                    <h3
+                        className="type-subheading"
+                    >
+                        {provider.name}
+                    </h3>
+                    <p
+                        className="type-supporting text-muted"
+                    >
+                        {provider.description}
+                    </p>
+                </div>
+                <DataBadge
+                    tone={status.source === "saved" ? "accent" : "neutral"}
                 >
-                    {provider.name}
-                </h3>
-                <p
-                    className="type-supporting text-muted"
-                >
-                    {provider.description}
-                </p>
-            </div>
-            <DataBadge
-                className="provider-card-status"
-                tone={status.source === "saved" ? "accent" : "neutral"}
+                    {statusLabels[status.source]}
+                </DataBadge>
+            </Row>
+            {status.message && <InlineNotice
+                tone="danger"
+                announcement="assertive"
             >
-                {statusLabels[status.source]}
-            </DataBadge>
-        </div>
-        {status.message && <p
-            role="alert"
-            className="type-supporting"
-        >
-            {status.message}
-        </p>}
-        {editor.type === "view" && <div
-            className="api-key-actions"
-        >
-            <Button
-                ref={editButton}
-                variant={saved ? "secondary" : "primary"}
-                size="small"
-                disabled={busy || !storageAvailable}
-                aria-label={`${saved ? "Replace" : "Add"} ${provider.name} API key`}
-                onClick={() => {
+                {status.message}
+            </InlineNotice>}
+            <Row
+                gap={8}
+                align="center"
+            >
+                <InlineEditor
+                    className={editor.type === "edit" ? "w-full" : undefined}
+                    editing={editor.type === "edit"}
+                    onEditingChange={editing => {
 
-                    setFeedback(undefined);
-                    setEditor({
-                        type: "edit",
-                        key: "",
-                        revision: status.revision,
-                    });
-                }}
-            >
-                {saved ? "Replace key" : "Add key"}
-            </Button>
-            <Button
-                variant="secondary"
-                size="small"
-                disabled={busy || status.source !== "saved"}
-                aria-label={`Test ${provider.name} connection`}
-                onClick={() => {
-
-                    void run("test");
-                }}
-            >
-                {busy ? "Working…" : "Test connection"}
-            </Button>
-            {saved && <Button
-                variant="quiet"
-                size="small"
-                disabled={busy}
-                aria-label={`Delete ${provider.name} API key`}
-                onClick={() => {
-
-                    setFeedback(undefined);
-                    setEditor({
-                        type: "delete",
-                        revision: status.revision,
-                    });
-                }}
-            >
-                Delete key
-            </Button>}
-        </div>}
-        {editor.type === "edit" && <form
-            className="api-key-editor"
-            onSubmit={event => {
-
-                event.preventDefault();
-                void run("save");
-            }}
-        >
-            <label
-                htmlFor={inputId}
-                className="type-ui"
-            >
-                {provider.name}
-                {" "}
-                API key
-            </label>
-            <Input
-                ref={input}
-                id={inputId}
-                type="password"
-                autoComplete="off"
-                spellCheck={false}
-                autoCapitalize="none"
-                maxLength={4096}
-                value={editor.key}
-                disabled={busy}
-                required
-                onChange={event => {
-
-                    setEditor({
-                        ...editor,
-                        key: event.target.value,
-                    });
-                }}
-            />
-            <div
-                className="api-key-actions"
-            >
-                <Button
-                    type="submit"
-                    size="small"
-                    disabled={busy || !editor.key.trim() || !storageAvailable}
-                >
-                    Save key
-                </Button>
-                <Button
-                    variant="secondary"
-                    size="small"
-                    disabled={busy}
-                    onClick={close}
-                >
-                    Cancel
-                </Button>
-            </div>
-            {editor.revision !== status.revision && <p
-                className="type-supporting"
-                role="alert"
-            >
-                Configuration changed. Cancel and reopen this form before saving.
-            </p>}
-        </form>}
-        {editor.type === "delete" && <div
-            className="api-key-editor"
-        >
-            <p
-                className="type-supporting"
-            >
-                Delete the saved
-                {" "}
-                {provider.name}
-                {" "}
-                API key? New requests will require a new key.
-            </p>
-            <div
-                className="api-key-actions"
-            >
-                <Button
-                    variant="secondary"
-                    size="small"
-                    disabled={busy}
-                    onClick={() => {
-
-                        void run("remove");
+                        if (editing) {
+                            setFeedback(undefined);
+                            setEditor({
+                                type: "edit",
+                                key: "",
+                                revision: status.revision,
+                            });
+                        } else {
+                            close();
+                        }
                     }}
-                >
-                    Confirm deletion
-                </Button>
-                <Button
-                    variant="quiet"
-                    size="small"
-                    disabled={busy}
-                    onClick={close}
-                >
-                    Cancel
-                </Button>
-            </div>
-        </div>}
-        {feedback && feedback.revision === status.revision && <p
-            className="type-supporting"
-            role={feedback.failed ? "alert" : "status"}
-        >
-            {feedback.message}
-        </p>}
+                    value={editor.type === "edit" ? editor.key : ""}
+                    onValueChange={key => {
+
+                        setEditor(current => {
+
+                            if (current.type !== "edit") {
+                                return current;
+                            }
+
+                            return {
+                                ...current,
+                                key,
+                            };
+                        });
+                    }}
+                    onSubmit={() => {
+
+                        void run("save");
+                    }}
+                    busy={busy}
+                    disabled={!storageAvailable}
+                    submitDisabled={editor.type !== "edit" || !editor.key.trim() || editor.revision !== status.revision}
+                    display={null}
+                    label={`${provider.name} API key`}
+                    editLabel={saved ? "Replace key" : "Add key"}
+                    saveLabel="Save key"
+                    cancelLabel="Cancel"
+                    editButtonProps={{
+                        ref: editButton,
+                        variant: saved ? "secondary" : "primary",
+                        "aria-label": `${saved ? "Replace" : "Add"} ${provider.name} API key`,
+                    }}
+                    inputProps={{
+                        type: "password",
+                        autoComplete: "off",
+                        spellCheck: false,
+                        autoCapitalize: "none",
+                        maxLength: 4096,
+                        required: true,
+                    }}
+                    feedback={editor.type === "edit" && editor.revision !== status.revision && <InlineNotice
+                        tone="danger"
+                        announcement="assertive"
+                    >
+                        Configuration changed. Cancel and reopen this form before saving.
+                    </InlineNotice>}
+                />
+                {editor.type !== "edit" && <>
+                    <Button
+                        variant="secondary"
+                        size="small"
+                        loading={busy}
+                        disabled={status.source !== "saved"}
+                        aria-label={`Test ${provider.name} connection`}
+                        onClick={() => {
+
+                            void run("test");
+                        }}
+                    >
+                        Test connection
+                    </Button>
+                    <AlertDialog
+                        open={editor.type === "delete"}
+                        onOpenChange={open => {
+
+                            if (!open && !busy) {
+                                close();
+                            }
+                        }}
+                    >
+                        {saved && <AlertDialogTrigger
+                            asChild
+                        >
+                            <Button
+                                variant="quiet"
+                                size="small"
+                                disabled={busy}
+                                aria-label={`Delete ${provider.name} API key`}
+                                onClick={() => {
+
+                                    setFeedback(undefined);
+                                    setEditor({
+                                        type: "delete",
+                                        revision: status.revision,
+                                    });
+                                }}
+                            >
+                                Delete key
+                            </Button>
+                        </AlertDialogTrigger>}
+                        <AlertDialogPanel
+                            onCloseAutoFocus={event => {
+
+                                event.preventDefault();
+                                editButton.current?.focus();
+                            }}
+                            onEscapeKeyDown={event => {
+
+                                if (busy) {
+                                    event.preventDefault();
+                                }
+                            }}
+                        >
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                    {`Delete ${provider.name} API key?`}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>New requests will require a new key.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            {feedback?.failed && <InlineNotice
+                                tone="danger"
+                                announcement="assertive"
+                            >
+                                {feedback.message}
+                            </InlineNotice>}
+                            <AlertDialogFooter>
+                                <AlertDialogCancel
+                                    disabled={busy}
+                                >
+                                    Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    loading={busy}
+                                    onClick={event => {
+
+                                        event.preventDefault();
+                                        void run("remove");
+                                    }}
+                                >
+                                    Confirm deletion
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogPanel>
+                    </AlertDialog>
+                </>}
+            </Row>
+            {feedback && feedback.revision === status.revision && editor.type !== "delete" && <InlineNotice
+                tone={feedback.failed ? "danger" : "success"}
+                announcement={feedback.failed ? "assertive" : "polite"}
+            >
+                {feedback.message}
+            </InlineNotice>}
+        </Stack>
     </article>;
 }

@@ -11,17 +11,19 @@ components here.
 | --- | --- |
 | `ui-theme` | GridUI theme integration and Avesd brand/font overrides |
 | `ui-style-utils` | GridUI `cn` and `ClassValue` re-exports |
-| `ui-controls` | GridUI buttons, inputs, selection, disclosure and popup re-exports |
+| `ui-controls` | GridUI forms, inline editors, confirmation dialogs, tabs, selection, popups, collections and follow-scroll re-exports |
 | `ui-grid` | GridUI responsive geometry and frame re-exports |
-| `ui-data` | GridUI data displays and Avesd canvas selection decoration |
-| `ui-layout` | GridUI sidebar, composer, collection, feedback and scrolling re-exports |
+| `ui-data` | GridUI data displays, inline notices and Avesd canvas selection decoration |
+| `ui-layout` | GridUI sidebar and composer re-exports |
 | `ui-logo` | Avesd bird geometry and React SVG rendering |
 | `packages-renderer/*` | Domain state, requests, labels, operations and desktop composition |
 
 Keep GridUI versions aligned in the root catalog. Each owning UI package declares
-its corresponding GridUI dependency. Renderer consumers keep their existing
-`@avesd/ui-*` imports. This system remains independent of the framework-neutral
-legacy `@avesd/plugin-ui` contract and of privileged Electron services.
+its corresponding GridUI dependency. Renderer consumers import collections and
+follow-scroll from `@avesd/ui-controls`, inline notices from `@avesd/ui-data`,
+and sidebar and composer compositions from `@avesd/ui-layout`. This system remains
+independent of the framework-neutral legacy `@avesd/plugin-ui` contract and of
+privileged Electron services.
 
 ## Styles and identity
 
@@ -71,6 +73,25 @@ an unlabeled group using `aria-label` or `aria-labelledby`. Sidebar resizing,
 collapse and compact layout belong to GridUI. Settings supplies `formatWidth`
 for its existing spoken pixel units. Draft-bearing settings panels stay mounted
 with `hidden`; the application owns drafts and future persistence.
+
+Controller panels use GridUI Tabs for keyboard navigation and tab/panel associations.
+The conversation panel stays mounted to retain its draft, runtime selection and
+scroll observers. The voice connection remains outside the panel lifecycle.
+Settings and runtime fields use Fieldset, Field, Label and FieldNote; asynchronous
+feedback uses InlineNotice. Row, Stack and Split own shared alignment, spacing and
+structural seams, while renderers retain window dimensions and product placement.
+
+API key entry uses InlineEditor with a password field, independent submit
+disabledness and native constraints. Avesd clears the draft before an authorized
+save, checks revisions and owns duplicate-request protection. AlertDialog owns
+deletion confirmation, focus isolation and Escape; the caller retains deletion
+authorization and asynchronous error handling.
+
+The catalog remains on published GridUI 2.0.0. A version-specific pnpm patch in
+`patches/` carries the compiled upstream InlineEditor enhancement until its pending
+Controls minor changeset is released. The patch includes its public declaration
+and needs no local repository link. Remove it when upgrading to a release containing
+submitDisabled, editButtonProps, native validity checks and deferred focus recovery.
 
 The controller configures GridUI Composer with inline layout, Enter submission,
 Shift+Enter newlines, editable/submittable busy state, a 32,000-character limit and

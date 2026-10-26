@@ -9,6 +9,8 @@ import { ApiKeyCard } from "./ApiKeyCard";
 import { ipcErrorMessage } from "@avesd/desktop-contracts/ipc-result";
 import type { ApiKeySnapshot, SettingsApi } from "@avesd/desktop-contracts/settings";
 import { Button } from "@avesd/ui-controls";
+import { InlineNotice } from "@avesd/ui-data";
+import { Row, Split, Stack } from "@avesd/ui-grid";
 import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -70,57 +72,70 @@ export function ApiKeySettings({ api }: {
         aria-label="Agent installations"
         aria-busy={loading}
     >
-        <header
-            className="settings-section-heading"
+        <Split
+            direction="column"
         >
-            <div
-                className="settings-section-title"
+            <header
+                className="settings-section-heading"
             >
-                <h2
-                    className="type-title"
+                <Stack
+                    gap={16}
                 >
-                    Models &amp; services
-                </h2>
-                <Button
-                    variant="secondary"
-                    size="small"
-                    onClick={() => {
+                    <Row
+                        gap={16}
+                        align="center"
+                        justify="between"
+                    >
+                        <h2
+                            className="type-title"
+                        >
+                            Models &amp; services
+                        </h2>
+                        <Button
+                            variant="secondary"
+                            size="small"
+                            onClick={() => {
 
-                        void refresh();
-                    }}
+                                void refresh();
+                            }}
+                        >
+                            <RefreshCw
+                                size={16}
+                            />
+                            Refresh
+                        </Button>
+                    </Row>
+                    <p
+                        className="type-supporting text-muted"
+                    >
+                        Saved keys apply to new requests immediately.
+                    </p>
+                </Stack>
+            </header>
+            {loading && <div>
+                <InlineNotice
+                    announcement="polite"
                 >
-                    <RefreshCw
-                        size={16}
-                    />
-                    Refresh
-                </Button>
-            </div>
-            <p
-                className="type-supporting text-muted"
-            >
-                Saved keys apply to new requests immediately.
-            </p>
-        </header>
-        {loading && <p
-            className="settings-note"
-            role="status"
-        >
-            Loading API key settings…
-        </p>}
-        {error && <p
-            className="settings-note"
-            role="alert"
-        >
-            {error}
-        </p>}
-        {snapshot && <>
-            {!snapshot.secureStorageAvailable && <p
-                className="settings-note"
-                role="alert"
-            >
-                System secure storage is unavailable. Unlock your system keychain to save keys. Keys will never be saved as plain text.
-            </p>}
-            {snapshot.providers.map(status => {
+                    Loading API key settings…
+                </InlineNotice>
+            </div>}
+            {error && <div>
+                <InlineNotice
+                    tone="danger"
+                    announcement="assertive"
+                >
+                    {error}
+                </InlineNotice>
+            </div>}
+            {snapshot && !snapshot.secureStorageAvailable && <div>
+                <InlineNotice
+                    tone="danger"
+                    announcement="assertive"
+                >
+                    System secure storage is unavailable. Unlock your system keychain to save keys. Keys will never be saved as plain text.
+                </InlineNotice>
+            </div>}
+            {snapshot?.providers.map(status => {
 
                 return <ApiKeyCard
                     key={status.id}
@@ -130,11 +145,11 @@ export function ApiKeySettings({ api }: {
                     refresh={refresh}
                 />;
             })}
-        </>}
-        <p
-            className="settings-note"
-        >
-            Keys stay encrypted on this device. Existing voice conversations continue until you disconnect. Connection tests check authentication and network access; model permissions, voice access and quota may differ.
-        </p>
+            <p
+                className="settings-note"
+            >
+                Keys stay encrypted on this device. Existing voice conversations continue until you disconnect. Connection tests check authentication and network access; model permissions, voice access and quota may differ.
+            </p>
+        </Split>
     </section>;
 }
