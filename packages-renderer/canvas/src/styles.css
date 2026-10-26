@@ -15,7 +15,7 @@
     .canvas-surface:active { cursor: grabbing; }
     .canvas-surface:focus { outline: none; }
     .canvas-surface:focus-visible { box-shadow: inset 0 0 0 2px var(--gridui-focus-color); }
-    .canvas-error { position: absolute; z-index: 12; right: 24px; bottom: 24px; max-width: min(420px, calc(100% - 48px)); padding: 16px; border: 1px solid var(--gridui-danger-border); background: var(--gridui-danger-background); color: var(--gridui-danger-foreground); font: var(--gridui-type-supporting); overflow-wrap: anywhere; }
+    .canvas-error { position: absolute; z-index: 12; right: 24px; bottom: 24px; max-width: min(420px, calc(100% - 48px)); }
     .dashboard-zoom { position: absolute; right: 24px; bottom: 16px; color: var(--gridui-muted); font: var(--gridui-type-caption); pointer-events: none; animation: dashboard-zoom-fade 1.4s forwards; }
     .canvas-blocks-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; }
     @media (prefers-reduced-motion: reduce) { .dashboard-zoom { animation: none; opacity: 0; } }

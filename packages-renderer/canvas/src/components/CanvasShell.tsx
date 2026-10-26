@@ -10,6 +10,7 @@ import { DashboardMenu } from "./DashboardMenu";
 import type { CanvasSandboxInteraction, DashboardBlocksApi } from "@avesd/desktop-contracts/canvas/blocks";
 import type { CanvasDocument, CanvasServiceApi } from "@avesd/desktop-contracts/canvas/contracts";
 import { ipcErrorMessage } from "@avesd/desktop-contracts/ipc-result";
+import { InlineNotice } from "@avesd/ui-data";
 import type { PointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -315,11 +316,12 @@ export const CanvasShell = ({ api, canvasId, blocksApi, openController }: Props)
                 %
             </div>
         </div>
-        {error && <div
+        {error && <InlineNotice
             className="canvas-error"
-            role="alert"
+            tone="danger"
+            announcement="assertive"
         >
             {error}
-        </div>}
+        </InlineNotice>}
     </section>;
 };

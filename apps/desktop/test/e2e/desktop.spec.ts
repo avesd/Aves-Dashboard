@@ -20,7 +20,7 @@ test("controller expands and collapses its native window", async ({ controller, 
         exact: true,
     }).click();
 
-    await expect(controller.getByRole("navigation", { name: "Controller panels" })).toBeVisible();
+    await expect(controller.getByRole("tablist", { name: "Controller panels" })).toBeVisible();
     await expect.poll(async () => {
 
         const bounds = await nativeWindow.evaluate(window => {
@@ -36,7 +36,7 @@ test("controller expands and collapses its native window", async ({ controller, 
         exact: true,
     }).click();
 
-    await expect(controller.getByRole("navigation", { name: "Controller panels" })).toBeHidden();
+    await expect(controller.getByRole("tablist", { name: "Controller panels" })).toBeHidden();
     await expect.poll(async () => {
 
         const bounds = await nativeWindow.evaluate(window => {

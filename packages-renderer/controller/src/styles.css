@@ -91,21 +91,13 @@
     }
     .controller-nav {
         --gridui-type-ui: 500 12px/1.4 var(--gridui-font-body);
-        display: flex;
         gap: 4px;
         padding: 8px 12px;
-        border-bottom: 1px solid var(--gridui-border);
-        flex-shrink: 0;
     }
     .controller-nav-button {
         flex: 1;
         min-width: 0;
-        color: var(--gridui-muted);
         white-space: nowrap;
-    }
-    .controller-nav-button[aria-pressed="true"] {
-        background: var(--gridui-brand-tint);
-        color: var(--gridui-accent-background);
     }
     .controller-conversation, .controller-content {
         flex: 1;
@@ -124,11 +116,6 @@
     .controller-section-title {
         min-height: 72px;
         padding: 16px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        border-bottom: 1px solid var(--gridui-border);
     }
     .controller-panel-heading {
         font: var(--gridui-type-subheading);
@@ -172,19 +159,11 @@
         flex-shrink: 0;
     }
     .controller-error {
-        padding: 12px 16px;
-        border-top: 1px solid var(--gridui-danger-border);
-        color: var(--gridui-danger-foreground);
-        background: var(--gridui-danger-background);
-        font: var(--gridui-type-caption);
-        overflow-wrap: anywhere;
         flex-shrink: 0;
         max-height: 90px;
         overflow: auto;
     }
     .controller-runtime {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 44px;
         flex-shrink: 0;
         border-top: 1px solid var(--gridui-border);
     }
@@ -211,13 +190,6 @@
     .controller-runtime-popover {
         max-height: min(480px, calc(100dvh - 154px), var(--radix-popover-content-available-height));
     }
-    .controller-runtime-heading {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        margin-bottom: 24px;
-    }
     .controller-runtime-title {
         display: block;
         font: var(--gridui-type-subheading);
@@ -227,54 +199,20 @@
         min-height: 28px;
         padding: 0;
     }
-    .controller-runtime-fields {
-        margin: 0;
-        padding: 0;
-        border: 0;
-        display: grid;
-        gap: 16px;
-        min-width: 0;
-    }
-    .controller-runtime-field {
-        display: grid;
-        gap: 8px;
-        font: var(--gridui-type-caption);
-    }
     .controller-runtime-status, .controller-runtime-note {
         color: var(--gridui-muted);
         font: var(--gridui-type-caption);
-    }
-    .controller-runtime-note {
-        margin-block: 12px;
-    }
-    .controller-runtime-tools {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        margin-top: 16px;
     }
     .controller-runtime-tool {
         font-size: 12px;
         padding-inline: 8px;
     }
     .controller-runtime-footer {
-        display: flex;
-        align-items: center;
-        gap: 16px;
         padding-top: 16px;
-        border-top: 1px solid var(--gridui-border);
     }
     .controller-runtime-context {
         flex: 1;
         color: var(--gridui-muted);
-        font: var(--gridui-type-caption);
-    }
-    .controller-runtime-failure {
-        color: var(--gridui-danger-foreground);
-        font: var(--gridui-type-caption);
-    }
-    .controller-runtime-success {
-        color: var(--gridui-accent-background);
         font: var(--gridui-type-caption);
     }
     .controller-input-actions {
@@ -332,8 +270,10 @@
     }
     @media (max-width: 350px) {
         .controller-nav {
-            --gridui-type-ui: 500 11px/1.4 var(--gridui-font-body);
-        }
+        --gridui-type-ui: 500 12px/1.4 var(--gridui-font-body);
+        gap: 4px;
+        padding: 8px 12px;
+    }
         .voice-mic-label {
             display: none;
         }

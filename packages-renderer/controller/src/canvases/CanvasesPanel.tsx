@@ -7,7 +7,8 @@
 
 import { useControllerApi } from "../controller-context";
 import type { CanvasSummary } from "@avesd/desktop-contracts/canvas/contracts";
-import { CollectionItem, CollectionItemButton } from "@avesd/ui-layout";
+import { CollectionItem, CollectionItemButton } from "@avesd/ui-controls";
+import { Row, Split } from "@avesd/ui-grid";
 import { Layers } from "lucide-react";
 
 interface Props {
@@ -22,42 +23,49 @@ export function CanvasesPanel({ canvases, fail }: Props) {
     return <section
         className="controller-content"
     >
-        <div
-            className="controller-section-title"
+        <Split
+            direction="column"
         >
-            <h1
-                className="controller-panel-heading"
+            <Row
+                align="center"
+                justify="between"
+                gap={16}
+                className="controller-section-title"
             >
-                Canvases
-            </h1>
-        </div>
-        <ul
-            className="m-0 list-none p-0"
-            aria-label="Canvases"
-        >
-            {canvases.map(canvas => {
-
-                return <CollectionItem
-                    className="px-gridui-16"
-                    key={canvas.id}
+                <h1
+                    className="controller-panel-heading"
                 >
-                    <CollectionItemButton
-                        className="min-h-[64px] rounded-none px-gridui-8 py-[12px] type-ui"
-                        title={<span
-                            className="block truncate"
-                        >
-                            {canvas.title}
-                        </span>}
-                        icon={<Layers
-                            size={16}
-                        />}
-                        onClick={() => {
+                    Canvases
+                </h1>
+            </Row>
+            <ul
+                className="m-0 list-none p-0"
+                aria-label="Canvases"
+            >
+                {canvases.map(canvas => {
 
-                            void api.views.open(canvas.id).catch(fail);
-                        }}
-                    />
-                </CollectionItem>;
-            })}
-        </ul>
+                    return <CollectionItem
+                        className="px-gridui-16"
+                        key={canvas.id}
+                    >
+                        <CollectionItemButton
+                            className="min-h-[64px] rounded-none px-gridui-8 py-[12px] type-ui"
+                            title={<span
+                                className="block truncate"
+                            >
+                                {canvas.title}
+                            </span>}
+                            icon={<Layers
+                                size={16}
+                            />}
+                            onClick={() => {
+
+                                void api.views.open(canvas.id).catch(fail);
+                            }}
+                        />
+                    </CollectionItem>;
+                })}
+            </ul>
+        </Split>
     </section>;
 }

@@ -154,7 +154,7 @@ test("pending conversation submissions remain independent and preserve supplemen
     });
     const select = async (id: string) => {
 
-        await controller.getByRole("button", {
+        await controller.getByRole("tab", {
             name: "Sessions",
             exact: true,
         }).click();

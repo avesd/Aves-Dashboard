@@ -7,6 +7,7 @@
 
 import { createCanvasSandbox } from "./canvas-sandbox";
 import type { CanvasSandboxInteraction, CanvasSandboxMount, CanvasViewport, DashboardBlocksApi } from "@avesd/desktop-contracts/canvas/blocks";
+import { InlineNotice } from "@avesd/ui-data";
 import type { DashboardBlock } from "@avesd/workspace-model";
 import { useEffect, useRef, useState } from "react";
 
@@ -92,11 +93,12 @@ export function CanvasBlocks({ canvasId, blocks, api, viewport, interact }: Prop
                 controller.current?.connect();
             }}
         />
-        {error && <div
+        {error && <InlineNotice
             className="canvas-error"
-            role="status"
+            tone="danger"
+            announcement="polite"
         >
             {error}
-        </div>}
+        </InlineNotice>}
     </>;
 }

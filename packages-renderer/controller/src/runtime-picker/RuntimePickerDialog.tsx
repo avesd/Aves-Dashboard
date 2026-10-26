@@ -9,7 +9,8 @@ import type { RuntimePickerProps } from "./runtime-picker-types";
 import { RuntimeRouteFields } from "./RuntimeRouteFields";
 import type { useRuntimePicker } from "./useRuntimePicker";
 import { Button, PopoverPanel } from "@avesd/ui-controls";
-import { InlineNotice } from "@avesd/ui-layout";
+import { InlineNotice } from "@avesd/ui-data";
+import { Row, Split, Stack } from "@avesd/ui-grid";
 import { RefreshCw, X } from "lucide-react";
 import { useState } from "react";
 
@@ -39,134 +40,146 @@ export function RuntimePickerDialog({ picker, applying, session, manage }: Props
         className="controller-runtime-popover w-(--radix-popover-trigger-width) max-w-[100vw] rounded-none"
         aria-label="Agent configuration"
     >
-        <header
-            className="controller-runtime-heading"
+        <Split
+            direction="column"
         >
-            <strong
-                className="controller-runtime-title"
+            <Stack
+                gap={16}
             >
-                Choose your agent
-            </strong>
-            <Button
-                layout="icon"
-                variant="quiet"
-                size="small"
-                type="button"
-                className="controller-runtime-close"
-                aria-label="Close agent configuration"
-                onClick={close}
-            >
-                <X
-                    size={16}
+                <Row
+                    gap={8}
+                    align="center"
+                    justify="between"
+                >
+                    <strong
+                        className="controller-runtime-title"
+                    >
+                        Choose your agent
+                    </strong>
+                    <Button
+                        layout="icon"
+                        variant="quiet"
+                        size="small"
+                        type="button"
+                        className="controller-runtime-close"
+                        aria-label="Close agent configuration"
+                        onClick={close}
+                    >
+                        <X
+                            size={16}
+                        />
+                    </Button>
+                </Row>
+                <RuntimeRouteFields
+                    picker={picker}
+                    portalContainer={portalContainer}
+                    applying={applying}
                 />
-            </Button>
-        </header>
-        <RuntimeRouteFields
-            picker={picker}
-            portalContainer={portalContainer}
-            applying={applying}
-        />
-        {loading && <InlineNotice
-            className="border-0 rounded-none bg-transparent p-0"
-            announcement="polite"
-        >
-            Loading models from Agent…
-        </InlineNotice>}
-        {missingModel && <InlineNotice
-            className="border-0 rounded-none bg-transparent p-0"
-            tone="danger"
-            announcement="assertive"
-        >
-            Choose an offered model or the Agent default.
-        </InlineNotice>}
-        {missingEffort && <InlineNotice
-            className="border-0 rounded-none bg-transparent p-0"
-            tone="danger"
-            announcement="assertive"
-        >
-            Choose an available effort or the Agent default.
-        </InlineNotice>}
-        {waiting && <p
-            className="controller-runtime-note"
-        >
-            Answer the pending canvas question before changing its model. Another Agent opens a separate conversation.
-        </p>}
-        {(optionsError || message) && <InlineNotice
-            className={`border-0 rounded-none bg-transparent p-0 ${optionsError || failed ? "controller-runtime-failure" : "controller-runtime-success"}`}
-            tone={optionsError || failed ? "danger" : "success"}
-            announcement={optionsError || failed ? "assertive" : "polite"}
-        >
-            {optionsError || message}
-        </InlineNotice>}
-        <div
-            className="controller-runtime-tools"
-        >
-            <Button
-                className="controller-runtime-tool"
-                variant="quiet"
-                size="small"
-                type="button"
-                disabled={loading || testing || applying}
-                onClick={refreshOptions}
-            >
-                <RefreshCw
-                    size={12}
-                />
-                Refresh
-            </Button>
-            <Button
-                className="controller-runtime-tool"
-                variant="quiet"
-                size="small"
-                type="button"
-                disabled={!options || loading || testing || applying || missingModel || missingEffort}
-                onClick={() => {
+                {loading && <InlineNotice
+                    className="rounded-none type-caption"
+                    announcement="polite"
+                >
+                    Loading models from Agent…
+                </InlineNotice>}
+                {missingModel && <InlineNotice
+                    className="rounded-none type-caption"
+                    tone="danger"
+                    announcement="assertive"
+                >
+                    Choose an offered model or the Agent default.
+                </InlineNotice>}
+                {missingEffort && <InlineNotice
+                    className="rounded-none type-caption"
+                    tone="danger"
+                    announcement="assertive"
+                >
+                    Choose an available effort or the Agent default.
+                </InlineNotice>}
+                {waiting && <p
+                    className="controller-runtime-note"
+                >
+                    Answer the pending canvas question before changing its model. Another Agent opens a separate conversation.
+                </p>}
+                {(optionsError || message) && <InlineNotice
+                    className="rounded-none type-caption"
+                    tone={optionsError || failed ? "danger" : "success"}
+                    announcement={optionsError || failed ? "assertive" : "polite"}
+                >
+                    {optionsError || message}
+                </InlineNotice>}
+                <Row
+                    gap={4}
+                >
+                    <Button
+                        className="controller-runtime-tool"
+                        variant="quiet"
+                        size="small"
+                        type="button"
+                        disabled={loading || testing || applying}
+                        onClick={refreshOptions}
+                    >
+                        <RefreshCw
+                            size={12}
+                        />
+                        Refresh
+                    </Button>
+                    <Button
+                        className="controller-runtime-tool"
+                        variant="quiet"
+                        size="small"
+                        type="button"
+                        disabled={!options || loading || testing || applying || missingModel || missingEffort}
+                        onClick={() => {
 
-                    void test();
-                }}
-            >
-                {testing ? "Checking…" : "Check access"}
-            </Button>
-            <Button
-                className="controller-runtime-tool"
-                variant="quiet"
-                size="small"
-                type="button"
-                onClick={() => {
+                            void test();
+                        }}
+                    >
+                        {testing ? "Checking…" : "Check access"}
+                    </Button>
+                    <Button
+                        className="controller-runtime-tool"
+                        variant="quiet"
+                        size="small"
+                        type="button"
+                        onClick={() => {
 
-                    close();
-                    manage();
-                }}
+                            close();
+                            manage();
+                        }}
+                    >
+                        Manage Agents
+                    </Button>
+                </Row>
+                <p
+                    className="controller-runtime-note"
+                >
+                    Model options are configured locally. Check access sends one short request.
+                </p>
+            </Stack>
+            <Row
+                gap={16}
+                align="center"
+                className="controller-runtime-footer"
             >
-                Manage Agents
-            </Button>
-        </div>
-        <p
-            className="controller-runtime-note"
-        >
-            Model options are configured locally. Check access sends one short request.
-        </p>
-        <footer
-            className="controller-runtime-footer"
-        >
-            <span
-                className="controller-runtime-context"
-            >
-                {session && session.route.providerId !== draft.providerId ? "Opens a new conversation; keeps the current one." : "Keeps this conversation and its context."}
-            </span>
-            <Button
-                variant="primary"
-                size="small"
-                type="button"
-                className="controller-runtime-apply shrink-0"
-                disabled={loading || applying || testing || !options || unavailable || missingModel || missingEffort || waiting}
-                onClick={() => {
+                <span
+                    className="controller-runtime-context"
+                >
+                    {session && session.route.providerId !== draft.providerId ? "Opens a new conversation; keeps the current one." : "Keeps this conversation and its context."}
+                </span>
+                <Button
+                    variant="primary"
+                    size="small"
+                    type="button"
+                    className="controller-runtime-apply shrink-0"
+                    disabled={loading || applying || testing || !options || unavailable || missingModel || missingEffort || waiting}
+                    onClick={() => {
 
-                    void save();
-                }}
-            >
-                {applying ? "Connecting…" : "Apply"}
-            </Button>
-        </footer>
+                        void save();
+                    }}
+                >
+                    {applying ? "Connecting…" : "Apply"}
+                </Button>
+            </Row>
+        </Split>
     </PopoverPanel>;
 }

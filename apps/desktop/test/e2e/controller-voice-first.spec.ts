@@ -27,6 +27,25 @@ test("text input is opt-in and preserves its draft and keyboard focus", async ({
 
     await expect(input).toBeFocused();
     await input.fill("Synthetic draft for keyboard input");
+    const conversation = controller.getByRole("tab", {
+        name: "Conversation",
+        exact: true,
+    });
+    const sessions = controller.getByRole("tab", {
+        name: "Sessions",
+        exact: true,
+    });
+    await conversation.focus();
+    await controller.keyboard.press("End");
+    await expect(sessions).toBeFocused();
+    await controller.keyboard.press("Enter");
+    await expect(sessions).toHaveAttribute("aria-selected", "true");
+    await expect(input).toBeHidden();
+    await controller.keyboard.press("Home");
+    await expect(conversation).toBeFocused();
+    await controller.keyboard.press("Enter");
+    await expect(input).toHaveValue("Synthetic draft for keyboard input");
+    await expect(input).toBeFocused();
     await controller.screenshot({
         animations: "disabled",
         path: testInfo.outputPath("voice-first-text.png"),
@@ -254,12 +273,12 @@ for (const waiting of [
         await controller.getByRole("button", { name: "Hide text input" }).click();
 
         await expect(controller.getByText("Listening · GPT-Live 1", { exact: true })).toBeVisible();
-        await controller.getByRole("button", {
+        await controller.getByRole("tab", {
             name: "Sessions",
             exact: true,
         }).click();
         await expect(controller.getByText("Listening · GPT-Live 1", { exact: true })).toBeVisible();
-        await controller.getByRole("button", {
+        await controller.getByRole("tab", {
             name: "Conversation",
             exact: true,
         }).click();
@@ -273,7 +292,7 @@ for (const waiting of [
             exact: true,
         }).click();
 
-        await expect(controller.getByRole("navigation", { name: "Controller panels" })).toBeHidden();
+        await expect(controller.getByRole("tablist", { name: "Controller panels" })).toBeHidden();
         await expect(controller.getByText("Listening · GPT-Live 1", { exact: true })).toBeVisible();
         expect(await mediaRequests.evaluate(value => {
 
@@ -325,7 +344,7 @@ for (const waiting of [
 
             window.close();
         });
-        await expect(controller.getByRole("navigation", { name: "Controller panels" })).toBeHidden();
+        await expect(controller.getByRole("tablist", { name: "Controller panels" })).toBeHidden();
         await expect(controller.getByText("Listening · GPT-Live 1", { exact: true })).toBeVisible();
 
         if (waiting) {

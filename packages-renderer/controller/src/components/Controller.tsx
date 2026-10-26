@@ -17,8 +17,8 @@ import { VoiceControls } from "../voice/VoiceControls";
 import { controllerTaskLabel } from "./controller-task-label";
 import type { AgentTierRoute } from "@avesd/desktop-contracts/agent/sessions";
 import { ipcErrorMessage } from "@avesd/desktop-contracts/ipc-result";
-import { Button } from "@avesd/ui-controls";
-import { InlineNotice, useFollowScroll } from "@avesd/ui-layout";
+import { Button, Tabs, TabsList, TabsPanel, TabsTab, useFollowScroll } from "@avesd/ui-controls";
+import { InlineNotice } from "@avesd/ui-data";
 import { BirdMark } from "@avesd/ui-logo";
 import { ChevronDown, ChevronUp, Keyboard, Layers, MessageCircle, Settings2, Square } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -271,7 +271,7 @@ export function Controller({ expanded }: {
             </Button>
         </div>
         {error && <InlineNotice
-            className="controller-error rounded-none border-0 border-t"
+            className="controller-error rounded-none type-caption"
             tone="danger"
             announcement="assertive"
             actions={<Button
@@ -288,62 +288,52 @@ export function Controller({ expanded }: {
         >
             {error}
         </InlineNotice>}
-        <section
+        <Tabs
+            value={panel}
+            onValueChange={value => {
+
+                if (value === "chat" || value === "canvases" || value === "sessions") {
+                    setPanel(value);
+                }
+            }}
             id="controller-details"
-            className="controller-details"
+            className="controller-details hidden:hidden"
             hidden={!expanded}
             aria-label="Workspace details"
         >
-            <nav
+            <TabsList
                 className="controller-nav"
                 aria-label="Controller panels"
             >
-                <Button
-                    variant="quiet"
-                    size="small"
-                    className="controller-nav-button min-h-[32px] px-gridui-8 py-gridui-4 gap-[6px] max-[350px]:px-gridui-4 max-[350px]:gap-gridui-4 aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
-                    aria-pressed={panel === "chat"}
-                    onClick={() => {
-
-                        setPanel("chat");
-                    }}
+                <TabsTab
+                    value="chat"
+                    className="controller-nav-button flex min-h-[32px] items-center justify-center gap-[6px] px-gridui-8 py-gridui-4 max-[350px]:px-gridui-4 max-[350px]:gap-gridui-4"
                 >
                     <MessageCircle
                         size={15}
                     />
                     Conversation
-                </Button>
-                <Button
-                    variant="quiet"
-                    size="small"
-                    className="controller-nav-button min-h-[32px] px-gridui-8 py-gridui-4 gap-[6px] max-[350px]:px-gridui-4 max-[350px]:gap-gridui-4 aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
-                    aria-pressed={panel === "canvases"}
-                    onClick={() => {
-
-                        setPanel("canvases");
-                    }}
+                </TabsTab>
+                <TabsTab
+                    value="canvases"
+                    className="controller-nav-button flex min-h-[32px] items-center justify-center gap-[6px] px-gridui-8 py-gridui-4 max-[350px]:px-gridui-4 max-[350px]:gap-gridui-4"
                 >
                     <Layers
                         size={15}
                     />
                     Canvases
-                </Button>
-                <Button
-                    variant="quiet"
-                    size="small"
-                    className="controller-nav-button min-h-[32px] px-gridui-8 py-gridui-4 gap-[6px] max-[350px]:px-gridui-4 max-[350px]:gap-gridui-4 aria-pressed:bg-brand-tint aria-pressed:text-accent-background"
-                    aria-pressed={panel === "sessions"}
-                    onClick={() => {
-
-                        setPanel("sessions");
-                    }}
+                </TabsTab>
+                <TabsTab
+                    value="sessions"
+                    className="controller-nav-button flex min-h-[32px] items-center justify-center gap-[6px] px-gridui-8 py-gridui-4 max-[350px]:px-gridui-4 max-[350px]:gap-gridui-4"
                 >
                     Sessions
-                </Button>
-            </nav>
-            <div
-                className="controller-chat"
-                hidden={panel !== "chat"}
+                </TabsTab>
+            </TabsList>
+            <TabsPanel
+                value="chat"
+                keepMounted
+                className="controller-chat p-0"
             >
                 <ChatTranscript
                     session={session}
@@ -384,19 +374,29 @@ export function Controller({ expanded }: {
                         void api.settings.open().catch(fail);
                     }}
                 />
-            </div>
-            {panel === "canvases" && <CanvasesPanel
-                canvases={canvases}
-                fail={fail}
-            />}
-            {panel === "sessions" && <SessionsPanel
-                sessions={sessions}
-                fail={fail}
-                openChat={() => {
+            </TabsPanel>
+            <TabsPanel
+                value="canvases"
+                className="min-h-0 overflow-auto p-0"
+            >
+                <CanvasesPanel
+                    canvases={canvases}
+                    fail={fail}
+                />
+            </TabsPanel>
+            <TabsPanel
+                value="sessions"
+                className="min-h-0 overflow-auto p-0"
+            >
+                <SessionsPanel
+                    sessions={sessions}
+                    fail={fail}
+                    openChat={() => {
 
-                    setPanel("chat");
-                }}
-            />}
-        </section>
+                        setPanel("chat");
+                    }}
+                />
+            </TabsPanel>
+        </Tabs>
     </main>;
 }

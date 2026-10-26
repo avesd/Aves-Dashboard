@@ -9,6 +9,7 @@ import type { RuntimePickerProps } from "./runtime-picker-types";
 import { RuntimePickerDialog } from "./RuntimePickerDialog";
 import { useRuntimePicker } from "./useRuntimePicker";
 import { Button, Popover, PopoverAnchor, PopoverTrigger } from "@avesd/ui-controls";
+import { Split } from "@avesd/ui-grid";
 import { ChevronDown, Plus } from "lucide-react";
 
 /** Everyday selection belongs beside the message, installation details belong in Settings. */
@@ -33,14 +34,14 @@ export function AgentRuntimePicker(props: RuntimePickerProps) {
         <PopoverAnchor
             asChild
         >
-            <div
+            <Split
                 className="controller-runtime"
             >
                 <PopoverTrigger
                     variant="quiet"
                     size="small"
                     type="button"
-                    className="controller-runtime-trigger w-full min-w-0 min-h-[44px] justify-start gap-gridui-8 border-0 rounded-none px-[12px] py-gridui-8 data-[state=open]:bg-transparent"
+                    className="controller-runtime-trigger flex-1 min-w-0 min-h-[44px] justify-start gap-gridui-8 border-0 rounded-none px-[12px] py-gridui-8 data-[state=open]:bg-transparent"
                     aria-label="Choose Agent, model and effort"
                     aria-expanded={open}
                     aria-haspopup="dialog"
@@ -71,7 +72,7 @@ export function AgentRuntimePicker(props: RuntimePickerProps) {
                     variant="quiet"
                     size="small"
                     type="button"
-                    className="controller-runtime-new w-[44px] h-[44px] min-h-[44px] rounded-none border-0 border-l border-border p-0"
+                    className="controller-runtime-new shrink-0 w-[44px] h-[44px] min-h-[44px] rounded-none border-0 p-0"
                     aria-label="New conversation"
                     title="New conversation"
                     disabled={disabled || applying}
@@ -87,7 +88,7 @@ export function AgentRuntimePicker(props: RuntimePickerProps) {
                     session={session}
                     manage={manage}
                 />}
-            </div>
+            </Split>
         </PopoverAnchor>
     </Popover>;
 }

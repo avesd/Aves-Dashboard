@@ -7,8 +7,8 @@
 
 import { useControllerApi } from "../controller-context";
 import type { AgentSessionSummary } from "@avesd/desktop-contracts/agent/sessions";
-import { Button } from "@avesd/ui-controls";
-import { CollectionItem, CollectionItemButton } from "@avesd/ui-layout";
+import { Button, CollectionItem, CollectionItemButton } from "@avesd/ui-controls";
+import { Row, Split } from "@avesd/ui-grid";
 import { Plus } from "lucide-react";
 
 interface Props {
@@ -24,80 +24,87 @@ export function SessionsPanel({ sessions, fail, openChat }: Props) {
     return <section
         className="controller-content"
     >
-        <div
-            className="controller-section-title"
+        <Split
+            direction="column"
         >
-            <h1
-                className="controller-panel-heading"
+            <Row
+                align="center"
+                justify="between"
+                gap={16}
+                className="controller-section-title"
             >
-                Conversations
-            </h1>
-            <Button
-                variant="quiet"
-                size="small"
-                layout="icon"
-                aria-label="New conversation"
-                onClick={() => {
-
-                    void api.agentSessions.create("flagship").then(() => {
-
-                        openChat();
-                    })
-                        .catch(fail);
-                }}
-            >
-                <Plus
-                    size={17}
-                />
-            </Button>
-        </div>
-        <ul
-            className="m-0 list-none p-0"
-            aria-label="Conversations"
-        >
-            {sessions.map(item => {
-
-                const status = item.waitingForAnswer && item.status !== "running" ? "Waiting for answer" : item.status;
-
-                return <CollectionItem
-                    className="px-gridui-16"
-                    key={item.id}
-                    actions={<Button
-                        variant="quiet"
-                        size="small"
-                        layout="icon"
-                        aria-label="Remove conversation"
-                        onClick={() => {
-
-                            void api.agentSessions.remove(item.id).catch(fail);
-                        }}
-                    >
-                        ×
-                    </Button>}
+                <h1
+                    className="controller-panel-heading"
                 >
-                    <CollectionItemButton
-                        className="min-h-[64px] flex-wrap rounded-none px-gridui-8 py-[12px] type-ui"
-                        title={<span
-                            className="flex flex-wrap items-center gap-[12px]"
-                        >
-                            {`${item.route.providerId} · ${status}`}
-                            <small
-                                className="text-muted type-caption"
-                            >
-                                {new Date(item.createdAt).toLocaleTimeString()}
-                            </small>
-                        </span>}
-                        onClick={() => {
+                    Conversations
+                </h1>
+                <Button
+                    variant="quiet"
+                    size="small"
+                    layout="icon"
+                    aria-label="New conversation"
+                    onClick={() => {
 
-                            void api.agentSessions.select(item.id).then(() => {
+                        void api.agentSessions.create("flagship").then(() => {
 
-                                openChat();
-                            })
-                                .catch(fail);
-                        }}
+                            openChat();
+                        })
+                            .catch(fail);
+                    }}
+                >
+                    <Plus
+                        size={17}
                     />
-                </CollectionItem>;
-            })}
-        </ul>
+                </Button>
+            </Row>
+            <ul
+                className="m-0 list-none p-0"
+                aria-label="Conversations"
+            >
+                {sessions.map(item => {
+
+                    const status = item.waitingForAnswer && item.status !== "running" ? "Waiting for answer" : item.status;
+
+                    return <CollectionItem
+                        className="px-gridui-16"
+                        key={item.id}
+                        actions={<Button
+                            variant="quiet"
+                            size="small"
+                            layout="icon"
+                            aria-label="Remove conversation"
+                            onClick={() => {
+
+                                void api.agentSessions.remove(item.id).catch(fail);
+                            }}
+                        >
+                            ×
+                        </Button>}
+                    >
+                        <CollectionItemButton
+                            className="min-h-[64px] flex-wrap rounded-none px-gridui-8 py-[12px] type-ui"
+                            title={<span
+                                className="flex flex-wrap items-center gap-[12px]"
+                            >
+                                {`${item.route.providerId} · ${status}`}
+                                <small
+                                    className="text-muted type-caption"
+                                >
+                                    {new Date(item.createdAt).toLocaleTimeString()}
+                                </small>
+                            </span>}
+                            onClick={() => {
+
+                                void api.agentSessions.select(item.id).then(() => {
+
+                                    openChat();
+                                })
+                                    .catch(fail);
+                            }}
+                        />
+                    </CollectionItem>;
+                })}
+            </ul>
+        </Split>
     </section>;
 }
