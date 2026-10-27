@@ -22,12 +22,12 @@ updateConfig:
     - typescript
 
 catalog:
-  "@gridui/controls": 2.0.0
-  "@gridui/data": 2.0.0
-  "@gridui/grid": 2.0.0
-  "@gridui/layout": 2.0.0
-  "@gridui/style-utils": 2.0.0
-  "@gridui/theme": 2.0.0
+  "@gridui/controls": 2.1.1
+  "@gridui/data": 2.1.1
+  "@gridui/grid": 2.1.1
+  "@gridui/layout": 2.1.1
+  "@gridui/style-utils": 2.1.1
+  "@gridui/theme": 2.1.1
   "@playwright/test": 1.64.1
   "@testing-library/react": 16.3.3
   "@testing-library/user-event": 14.6.8
@@ -63,6 +63,3 @@ catalog:
   vite: 8.3.5
   yaml: 2.9.1
   zod: 4.6.7
-
-patchedDependencies:
-  '@gridui/controls@2.0.0': patches/@gridui__controls@2.0.0.patch

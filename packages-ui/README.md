@@ -87,11 +87,9 @@ save, checks revisions and owns duplicate-request protection. AlertDialog owns
 deletion confirmation, focus isolation and Escape; the caller retains deletion
 authorization and asynchronous error handling.
 
-The catalog remains on published GridUI 2.0.0. A version-specific pnpm patch in
-`patches/` carries the compiled upstream InlineEditor enhancement until its pending
-Controls minor changeset is released. The patch includes its public declaration
-and needs no local repository link. Remove it when upgrading to a release containing
-submitDisabled, editButtonProps, native validity checks and deferred focus recovery.
+The catalog uses published GridUI 2.1.1. InlineEditor includes submitDisabled,
+editButtonProps, native validity checks and deferred focus recovery upstream;
+no local package patch or repository link is required.
 
 The controller configures GridUI Composer with inline layout, Enter submission,
 Shift+Enter newlines, editable/submittable busy state, a 32,000-character limit and

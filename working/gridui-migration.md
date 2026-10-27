@@ -1,8 +1,44 @@
 # GridUI migration verification
 
-Status: completed against published GridUI 2.0.0 on 2026-10-25.
+Status: completed against published GridUI 2.1.1 on 2026-10-26.
 All six catalog entries and the installed dependency lockfile are aligned.
 The scoped minimumReleaseAgeExclude entry remains in place.
+
+## GridUI 2.1.1 upgrade - 2026-10-26
+
+- Updated all six catalog entries and the lockfile from 2.0.0 to 2.1.1.
+- Verified the published Controls implementation and declarations include
+  submitDisabled, editButtonProps, native validity checks and deferred focus
+  recovery. Removed the superseded 2.0.0 patch and patchedDependencies entry.
+- Existing application callers need no API migration. Published CSS hashes for
+  all six packages are unchanged; non-GridUI dependency resolutions are unchanged.
+- GridUI 2.1.0 contains the InlineEditor enhancement. The 2.1.1 release note
+  describes upstream repository cleanup.
+
+### Verification
+
+- `pnpm validate` passed lint, file headers, repository/workflow boundaries,
+  release planning, TypeScript and production builds. The first sandboxed
+  invocation produced no output and was stopped; the normal local run passed.
+- Complete affected suites passed 28 tests: Controls 14, Grid 4, Layout 5 and
+  Renderer Controller 5. Offline frozen installation passed without patches.
+- Six native Electron scenarios passed: credential lifecycle, nested runtime
+  selections, independent submissions/cancellation, controller expand/collapse,
+  settings reopening and sidebar draft/resize/compact recovery.
+- Inspected three native settings screenshots: empty InlineEditor in light
+  appearance at 840x768, dark compact appearance at 560x728, and the dark compact
+  deletion dialog. No clipping, overlapping controls or horizontal overflow was
+  observed. Enter submission and focus recovery after save and dialog dismissal
+  passed in the visual session.
+
+The standalone visual session initially remained at settings loading. Final
+screenshots use synthetic settings metadata and a synthetic save response while
+retaining production rendering and preload/IPC. The separate native credential
+scenario exercises the real service boundary. No credential values appear in
+screenshots. External provider connectivity and OS permission dialogs were not
+tested. No application code changes or Git operations were needed.
+
+Logs, screenshots, visual script and metrics: `/tmp/avesd-gridui-211/`.
 
 ## UI ownership adoption - 2026-10-25
 

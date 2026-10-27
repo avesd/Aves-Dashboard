@@ -171,23 +171,23 @@ catalogs:
       specifier: 10.0.1
       version: 10.0.1
     '@gridui/controls':
-      specifier: 2.0.0
-      version: 2.0.0
+      specifier: 2.1.1
+      version: 2.1.1
     '@gridui/data':
-      specifier: 2.0.0
-      version: 2.0.0
+      specifier: 2.1.1
+      version: 2.1.1
     '@gridui/grid':
-      specifier: 2.0.0
-      version: 2.0.0
+      specifier: 2.1.1
+      version: 2.1.1
     '@gridui/layout':
-      specifier: 2.0.0
-      version: 2.0.0
+      specifier: 2.1.1
+      version: 2.1.1
     '@gridui/style-utils':
-      specifier: 2.0.0
-      version: 2.0.0
+      specifier: 2.1.1
+      version: 2.1.1
     '@gridui/theme':
-      specifier: 2.0.0
-      version: 2.0.0
+      specifier: 2.1.1
+      version: 2.1.1
     '@modelcontextprotocol/server':
       specifier: 2.3.1
       version: 2.3.1
@@ -287,9 +287,6 @@ catalogs:
     zod:
       specifier: 4.6.7
       version: 4.6.7
-
-patchedDependencies:
-  '@gridui/controls@2.0.0': c102ea823e65956ecc1e47e17264345e6fc26b810642fe3f6314bd3d7c0873be
 
 importers:
 
@@ -587,7 +584,7 @@ importers:
     dependencies:
       '@gridui/controls':
         specifier: 'catalog:'
-        version: 2.0.0(patch_hash=c102ea823e65956ecc1e47e17264345e6fc26b810642fe3f6314bd3d7c0873be)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 2.1.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react:
         specifier: 'catalog:'
         version: 19.3.1
@@ -636,7 +633,7 @@ importers:
         version: link:../style-utils
       '@gridui/data':
         specifier: 'catalog:'
-        version: 2.0.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 2.1.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react:
         specifier: 'catalog:'
         version: 19.3.1
@@ -661,7 +658,7 @@ importers:
     dependencies:
       '@gridui/grid':
         specifier: 'catalog:'
-        version: 2.0.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 2.1.1(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react:
         specifier: 'catalog:'
         version: 19.3.1
@@ -692,7 +689,7 @@ importers:
     dependencies:
       '@gridui/layout':
         specifier: 'catalog:'
-        version: 2.0.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 2.1.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react:
         specifier: 'catalog:'
         version: 19.3.1
@@ -757,7 +754,7 @@ importers:
     dependencies:
       '@gridui/style-utils':
         specifier: 'catalog:'
-        version: 2.0.0
+        version: 2.1.1
     devDependencies:
       '@avesd/configuration':
         specifier: workspace:*
@@ -776,7 +773,7 @@ importers:
     dependencies:
       '@gridui/theme':
         specifier: 'catalog:'
-        version: 2.0.0
+        version: 2.1.1
     devDependencies:
       '@avesd/configuration':
         specifier: workspace:*
@@ -1322,35 +1319,35 @@ packages:
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
-  '@gridui/controls@2.0.0':
-    resolution: {integrity: sha512-MdpDxUhaP94No4+QE5xMZ8Biu6NuEDg9qG2adOWiHecn3lxyQXkrKV5Gw8tS6QsUxIQMKPma6d7fVFGLZ5dQRA==}
+  '@gridui/controls@2.1.1':
+    resolution: {integrity: sha512-YOuoHATNIBDL6nlR7chFT+r1y+xxKVNnzjOrbBvIFCVTmftkt3eLpBO5nBErug8q01ad/8HOacmDgxRViU6qbQ==}
     peerDependencies:
       react: ^19.2.0
       react-dom: ^19.2.0
 
-  '@gridui/data@2.0.0':
-    resolution: {integrity: sha512-Syml/rqpkeTyzYBJ/1D0LcdbDpM61Px7zZBapMOu0hQ3Jjc9F9uMR6BYowrf0jLtenFAGgp0J9gTh/Y0bmhXVA==}
+  '@gridui/data@2.1.1':
+    resolution: {integrity: sha512-RcKwVQmYTQsyHGgV+2wImdg/Q+Y8i3xcBZKI7dyW71g54/6WH/4Q3hvt+XL/nTtkkeZOFURJH9BjOPRgRSE8qA==}
     peerDependencies:
       react: ^19.0.0
       react-dom: ^19.0.0
 
-  '@gridui/grid@2.0.0':
-    resolution: {integrity: sha512-M9YcyzWXPxoxVLwFmOh+6R1byA/TU/WPb925ycXBbYHSmE6/NIb8lrdIr0fW7/Sah2aXAgkQZHcUN+Up7KyG+A==}
+  '@gridui/grid@2.1.1':
+    resolution: {integrity: sha512-cIUYTi0qLbKutIqpVhERi9Ng88N+ixxWC2echbrNygDfWCK6M3ijb1o1qFk/sJZaa7AMSFzBxyxK93XfEnSNHQ==}
     peerDependencies:
       react: ^19.0.0
       react-dom: ^19.0.0
 
-  '@gridui/layout@2.0.0':
-    resolution: {integrity: sha512-OxIJgLg5+YoCpvMyW52360L+qKCqz/Dq9UHTlcfi/HQ+LwXxpNo44g5GVmzNRNgYs9w7Qp1tCNm7e2RRNhkM5g==}
+  '@gridui/layout@2.1.1':
+    resolution: {integrity: sha512-DqW8H0tXswwSP9Dl0OmAxp2SnfO6Jv7jLGKO6hv7y6WBUW1tNq4Xg3g9Klyd5xXqa5gUEVjz72i+JMjaTpMiow==}
     peerDependencies:
       react: ^19.2.0
       react-dom: ^19.2.0
 
-  '@gridui/style-utils@2.0.0':
-    resolution: {integrity: sha512-rx9YgNfF1u5pZKAKWqvpsSeTPOnh3q2EWRx3KSuXm4gIpFgpnI3OsYCXLRgmMuuEUL/Zubrk/l584Nb4ZIswTw==}
+  '@gridui/style-utils@2.1.1':
+    resolution: {integrity: sha512-dzZvlORA8P4ef0rs8vgPvL8fdT4AAgGzQaJ+rX0HGSw8RfLNC7j/pBxS15A1GknsARpcC4a9pP12feIU8XURWA==}
 
-  '@gridui/theme@2.0.0':
-    resolution: {integrity: sha512-SmRXY98Wo/iX0l3sANTCIk3RTJmcxEp61RuOsi2Eqf7EmfpzpK7JjtkULt7c+NVoNp+PpjbIHBxrSjfqA0aXWw==}
+  '@gridui/theme@2.1.1':
+    resolution: {integrity: sha512-6uvacqHce4xNKLVQZ4jiFUvehS6/WRU/NrdK+KccLdIjHA4dE5v7DsacZnyt4TI0Air9113WL+yyVbZSLrQVzQ==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -3845,12 +3842,12 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@gridui/controls@2.0.0(patch_hash=c102ea823e65956ecc1e47e17264345e6fc26b810642fe3f6314bd3d7c0873be)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@gridui/controls@2.1.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       '@dnd-kit/dom': 0.5.1
       '@dnd-kit/react': 0.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@gridui/style-utils': 2.0.0
-      '@gridui/theme': 2.0.0
+      '@gridui/style-utils': 2.1.1
+      '@gridui/theme': 2.1.1
       '@radix-ui/react-alert-dialog': 1.2.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@radix-ui/react-checkbox': 1.4.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@radix-ui/react-dialog': 1.3.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -3873,10 +3870,10 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  '@gridui/data@2.0.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@gridui/data@2.1.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@gridui/style-utils': 2.0.0
-      '@gridui/theme': 2.0.0
+      '@gridui/style-utils': 2.1.1
+      '@gridui/theme': 2.1.1
       '@radix-ui/react-progress': 1.2.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@radix-ui/react-slot': 1.5.0(@types/react@19.3.0)(react@19.3.1)
       class-variance-authority: 0.7.1
@@ -3886,10 +3883,10 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  '@gridui/grid@2.0.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@gridui/grid@2.1.1(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@gridui/style-utils': 2.0.0
-      '@gridui/theme': 2.0.0
+      '@gridui/style-utils': 2.1.1
+      '@gridui/theme': 2.1.1
       '@radix-ui/react-slot': 1.5.0(@types/react@19.3.0)(react@19.3.1)
       class-variance-authority: 0.7.1
       react: 19.3.1
@@ -3897,13 +3894,13 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
 
-  '@gridui/layout@2.0.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@gridui/layout@2.1.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@gridui/controls': 2.0.0(patch_hash=c102ea823e65956ecc1e47e17264345e6fc26b810642fe3f6314bd3d7c0873be)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@gridui/data': 2.0.0(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@gridui/grid': 2.0.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@gridui/style-utils': 2.0.0
-      '@gridui/theme': 2.0.0
+      '@gridui/controls': 2.1.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@gridui/data': 2.1.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@gridui/grid': 2.1.1(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@gridui/style-utils': 2.1.1
+      '@gridui/theme': 2.1.1
       class-variance-authority: 0.7.1
       lucide-react: 1.61.0(@types/react@19.3.0)(react@19.3.1)
       react: 19.3.1
@@ -3912,12 +3909,12 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  '@gridui/style-utils@2.0.0':
+  '@gridui/style-utils@2.1.1':
     dependencies:
       clsx: 2.1.1
       tailwind-merge: 3.7.0
 
-  '@gridui/theme@2.0.0': {}
+  '@gridui/theme@2.1.1': {}
 
   '@humanfs/core@0.19.2':
     dependencies:
